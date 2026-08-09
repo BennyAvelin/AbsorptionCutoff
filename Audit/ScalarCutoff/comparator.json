@@ -1,0 +1,9 @@
+{
+  "challenge_module": "Audit.ScalarCutoff.Challenge",
+  "solution_module": "Audit.ScalarCutoff.Solution",
+  "theorem_names": [
+    "AbsorptionCutoff.StatementAudit.ScalarCutoff.gaussian_process_cutoff"
+  ],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": false
+}

@@ -1,0 +1,749 @@
+\documentclass[10pt,reqno,a4paper]{amsart}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{mathtools}
+\usepackage[margin=25mm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{seqsplit}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage[capitalize]{cleveref}
+
+\numberwithin{equation}{section}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Pp}{\mathbb{P}}
+\newcommand{\Ee}{\mathbb{E}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\ind}{\Rightarrow}
+\DeclareMathOperator{\Var}{Var}
+
+% Declaration names are long and TeX cannot break inside \texttt. Turn every
+% underscore into a break opportunity, with no hyphen inserted.
+\newcommand{\ubreak}{\char`\_\discretionary{}{}{}}
+\newcommand{\lean}[1]{{\ttfamily\let\_\ubreak\seqsplit{#1}}}
+
+\title[First-passage central limit theorem]{The positive-drift first-passage
+central limit theorem}
+\author{Benny Avelin}
+\date{\today}
+
+\begin{document}
+
+\begin{abstract}
+  We prove the first-passage central limit theorem used in the fixed-width
+  cutoff argument.  The proof uses only the ordinary central limit theorem,
+  the strong law of large numbers, finite-dimensional invariance of an
+  i.i.d. sequence under reversal, Slutsky's theorem, and Portmanteau.  The
+  main estimate is that the terminal drawdown from the running maximum is
+  uniformly tight.  We also prove the moving-level and time-perturbation
+  forms required by the paper and transfer the result to a random walk with
+  an increasing almost surely bounded correction.  The result is used in
+  \S3 of \emph{Absorption cutoff and stationary singularities for rounded
+  Gaussian random dynamical systems}, where it is cited from the literature;
+  the proof given here is the one carried out in the accompanying Lean
+  development.
+\end{abstract}
+
+\maketitle
+\enlargethispage{2pt}
+
+\section{Statement and notation}\label{sec:statement}
+
+Let $(\Omega,\mathcal F,\Pp)$ be a probability space, and let
+$(\xi_j)_{j\geq0}$ be independent identically distributed real random
+variables such that
+\begin{equation}\label{eq:moments}
+  \xi_0\in L^2(\Omega,\mathcal F,\Pp),
+  \qquad
+  \mu:=\Ee\xi_0>0,
+  \qquad
+  \sigma:=\sqrt{\Var(\xi_0)}>0.
+\end{equation}
+Thus $\sigma^2=\Var(\xi_0)$.  We state square-integrability separately
+because positivity of the variance is not used as a substitute for the
+moment hypothesis.
+Put
+\begin{equation}\label{eq:walk-maximum-drawdown}
+  S_0:=0,
+  \qquad
+  S_n:=\sum_{j=0}^{n-1}\xi_j,
+  \qquad
+  M_n:=\max_{0\leq k\leq n}S_k,
+  \qquad
+  D_n:=M_n-S_n.
+\end{equation}
+For $u>0$, define the first weak ascending passage time
+\begin{equation}\label{eq:hitting-time}
+  H_u:=\inf\{n\geq0:S_n\geq u\}.
+\end{equation}
+The value of $H_u$ is allowed to be $+\infty$, although the strong law and
+$\mu>0$ imply that it is finite almost surely.  For the ordinary real-valued
+distributional statement below, define
+\begin{equation}\label{eq:finite-hitting-version}
+  \overline H_u
+  :=
+  \begin{cases}
+    H_u,&H_u<\infty,\\
+    0,&H_u=\infty.
+  \end{cases}
+\end{equation}
+Thus $\overline H_u=H_u$ almost surely after identifying finite natural
+numbers with real numbers.  The survival-probability statement does not
+require this modification.
+
+The form needed in Chapter 3 is the following survival-probability limit.
+
+\begin{theorem}[First-passage central limit theorem]
+\label{thm:first-passage-clt}
+  For $a\in\R$ and $u$ sufficiently large, set
+  \begin{equation}\label{eq:canonical-time}
+    n_u(a)
+    :=
+    \left\lfloor
+      \frac{u}{\mu}
+      +a\frac{\sigma}{\mu^{3/2}}\sqrt{u}
+    \right\rfloor.
+  \end{equation}
+  Then
+  \begin{equation}\label{eq:first-passage-profile}
+    \Pp\bigl(H_u>n_u(a)\bigr)
+    \longrightarrow
+    \Phi_{\mathrm G}(-a),
+    \qquad u\longrightarrow\infty,
+  \end{equation}
+  where $\Phi_{\mathrm G}$ is the standard Gaussian distribution function.
+  Equivalently,
+  \begin{equation}\label{eq:first-passage-distribution}
+    \frac{\overline H_u-u/\mu}
+    {\sigma\mu^{-3/2}\sqrt{u}}
+    \ind N(0,1).
+  \end{equation}
+\end{theorem}
+
+We prove a slightly more flexible statement, which avoids manipulating the
+extended-valued random variable $H_u$.
+
+\begin{proposition}[Moving-level profile]\label{prop:moving-level-profile}
+  Let $(u_r)_{r\geq1}$ be positive real numbers and let
+  $(n_r)_{r\geq1}$ be positive natural numbers such that
+  \begin{equation}\label{eq:moving-level-assumptions}
+    n_r\longrightarrow\infty,
+    \qquad
+    c_r:=\frac{u_r-\mu n_r}{\sigma\sqrt{n_r}}
+    \longrightarrow c\in\R.
+  \end{equation}
+  Then
+  \begin{equation}\label{eq:moving-level-conclusion}
+    \Pp(H_{u_r}>n_r)
+    \longrightarrow
+    \Phi_{\mathrm G}(c).
+  \end{equation}
+\end{proposition}
+
+The proof has three parts.  First, reversal of a finite i.i.d. block
+identifies the terminal drawdown $D_n$ with a running maximum of the
+negative walk.  Second, the strong law makes these negative running maxima
+uniformly tight.  Third, the ordinary central limit theorem and Slutsky's
+theorem transfer the Gaussian limit from $S_n$ to $M_n$.
+
+\section{Reversal and the terminal drawdown}\label{sec:drawdown}
+
+For $0\leq j\leq n$, define the backward partial sums
+\begin{equation}\label{eq:backward-sums}
+  \overleftarrow S_j^{(n)}
+  :=
+  \sum_{r=0}^{j-1}\xi_{n-1-r},
+  \qquad
+  \overleftarrow S_0^{(n)}:=0,
+\end{equation}
+and define
+\begin{equation}\label{eq:negative-maximum}
+  Q_n:=\max_{0\leq j\leq n}(-S_j).
+\end{equation}
+
+\begin{lemma}[Finite reversal]\label{lem:finite-reversal}
+  For every $n\geq0$,
+  \begin{equation}\label{eq:drawdown-backward}
+    D_n
+    =
+    \max_{0\leq j\leq n}\bigl(-\overleftarrow S_j^{(n)}\bigr)
+  \end{equation}
+  pointwise, and
+  \begin{equation}\label{eq:drawdown-identically-distributed}
+    D_n\stackrel{\mathrm d}=Q_n.
+  \end{equation}
+\end{lemma}
+
+\begin{proof}
+  By definition,
+  \begin{align*}
+    D_n
+    &=\max_{0\leq k\leq n}(S_k-S_n)\\
+    &=\max_{0\leq k\leq n}
+      \left(-\sum_{i=k}^{n-1}\xi_i\right).
+  \end{align*}
+  Substituting $j=n-k$ gives \cref{eq:drawdown-backward}.
+
+  The random vectors
+  \begin{equation*}
+    (\xi_{n-1},\xi_{n-2},\ldots,\xi_0)
+    \quad\hbox{and}\quad
+    (\xi_0,\xi_1,\ldots,\xi_{n-1})
+  \end{equation*}
+  have the same distribution.  Indeed, each vector has product law
+  $\mathcal L(\xi_0)^{\otimes n}$; equivalently, the joint law of a finite
+  i.i.d. family is invariant under every permutation of its indices.  The
+  map which sends a vector $(x_0,\ldots,x_{n-1})$ to
+  \begin{equation*}
+    \max_{0\leq j\leq n}
+    \left(-\sum_{r=0}^{j-1}x_r\right)
+  \end{equation*}
+  is continuous, hence measurable.  Applying this map to the two vectors
+  proves \cref{eq:drawdown-identically-distributed}.
+\end{proof}
+
+The next lemma is the only place where positive drift is used in the
+drawdown estimate.
+
+\begin{lemma}[Uniform tightness of the drawdown]
+\label{lem:drawdown-tight}
+  For every $\varepsilon>0$, there exists $b<\infty$ such that
+  \begin{equation}\label{eq:drawdown-tight}
+    \sup_{n\geq0}\Pp(D_n>b)<\varepsilon.
+  \end{equation}
+\end{lemma}
+
+\begin{proof}
+  For $m\in\N$, let
+  \begin{equation}\label{eq:lower-bound-event}
+    A_m:=\{\omega:S_j(\omega)\geq-m\text{ for every }j\geq0\}.
+  \end{equation}
+  Each $A_m$ is measurable, and $A_m\subseteq A_{m+1}$.  The strong law gives
+  \begin{equation}\label{eq:slln}
+    \frac{S_j}{j}\longrightarrow\mu>0
+    \qquad\hbox{almost surely}.
+  \end{equation}
+  On the event in \cref{eq:slln}, there is a random index $j_0$ such that
+  $S_j\geq0$ for every $j\geq j_0$.  The finite set
+  $\{S_0,\ldots,S_{j_0-1}\}$ has a finite minimum.  Hence there exists a
+  natural number $m=m(\omega)$ such that $S_j(\omega)\geq-m$ for every
+  $j\geq0$.  It follows that
+  \begin{equation}\label{eq:lower-bound-exhaustion}
+    \Pp\left(\bigcup_{m\geq0}A_m\right)=1.
+  \end{equation}
+  By continuity of probability from below,
+  \begin{equation}\label{eq:lower-bound-probability}
+    \Pp(A_m^c)\longrightarrow0.
+  \end{equation}
+
+  On $A_m$ we have $Q_n\leq m$ for every $n$.  By
+  \cref{eq:drawdown-identically-distributed},
+  \begin{equation}\label{eq:drawdown-tail-bound}
+    \Pp(D_n>m)
+    =\Pp(Q_n>m)
+    \leq\Pp(A_m^c)
+    \qquad\hbox{for every }n.
+  \end{equation}
+  Choose $m$ so that the right-hand side is smaller than $\varepsilon$.
+  This proves \cref{eq:drawdown-tight}.
+\end{proof}
+
+\begin{corollary}[Negligible drawdown]
+\label{cor:drawdown-negligible}
+  If $b_n>0$ and $b_n\to\infty$, then
+  \begin{equation}\label{eq:drawdown-in-probability}
+    \frac{D_n}{b_n}\longrightarrow0
+    \qquad\hbox{in probability}.
+  \end{equation}
+  In particular, as $n\to\infty$ through $n\geq1$,
+  $D_n/(\sigma\sqrt n)\to0$ in probability.
+\end{corollary}
+
+\begin{proof}
+  Fix $\delta,\varepsilon>0$.  By \cref{lem:drawdown-tight}, choose $m$ such
+  that $\sup_n\Pp(D_n>m)<\varepsilon$.  For all sufficiently large $n$,
+  $m<\delta b_n$, and therefore
+  \begin{equation*}
+    \Pp\left(\frac{D_n}{b_n}>\delta\right)
+    \leq\Pp(D_n>m)
+    <\varepsilon.
+  \end{equation*}
+\end{proof}
+
+\begin{remark}\label{rem:why-reversal}
+  No moment estimate for the all-time negative minimum is needed.  The strong
+  law proves only that the walk is bounded below almost surely, and
+  continuity from below converts this pathwise statement into the uniform
+  tightness in \cref{lem:drawdown-tight}.  This avoids a maximal inequality,
+  an overshoot estimate, and a functional central limit theorem.
+\end{remark}
+
+\section{Central limit theorem for the running maximum}
+\label{sec:maximum-clt}
+
+\begin{proposition}[CLT for the running maximum]
+\label{prop:maximum-clt}
+  Under \cref{eq:moments},
+  \begin{equation}\label{eq:maximum-clt}
+    \frac{M_n-\mu n}{\sigma\sqrt n}
+    \ind N(0,1).
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  The ordinary central limit theorem gives
+  \begin{equation}\label{eq:sum-clt}
+    Z_n:=\frac{S_n-\mu n}{\sigma\sqrt n}
+    \ind Z,
+    \qquad Z\sim N(0,1).
+  \end{equation}
+  By \cref{eq:walk-maximum-drawdown},
+  \begin{equation}\label{eq:maximum-decomposition}
+    \frac{M_n-\mu n}{\sigma\sqrt n}
+    =
+    Z_n+\frac{D_n}{\sigma\sqrt n}.
+  \end{equation}
+  The second term converges to zero in probability by
+  \cref{cor:drawdown-negligible}.  Slutsky's theorem applied to
+  \cref{eq:maximum-decomposition} proves \cref{eq:maximum-clt}.
+\end{proof}
+
+We now pass from the maximum to the passage event.  The precise endpoint is
+important:
+\begin{equation}\label{eq:hitting-maximum-event}
+  \{H_u>n\}
+  =
+  \{S_k<u\text{ for every }0\leq k\leq n\}
+  =
+  \{M_n<u\}.
+\end{equation}
+The strict inequality agrees with the weak inequality in the definition of
+$H_u$.
+
+\begin{proof}[Proof of \cref{prop:moving-level-profile}]
+  Define
+  \begin{equation*}
+    W_n:=\frac{M_n-\mu n}{\sigma\sqrt n}.
+  \end{equation*}
+  Since $n_r\to\infty$, \cref{prop:maximum-clt} along the subsequence
+  $(n_r)$ gives $W_{n_r}\ind Z$.  The deterministic variables $-c_r$
+  converge in probability to $-c$.  Slutsky's theorem therefore gives
+  \begin{equation}\label{eq:shifted-maximum-clt}
+    W_{n_r}-c_r\ind Z-c.
+  \end{equation}
+  The boundary of $(-\infty,0)$ is the singleton $\{0\}$, and the law of
+  $Z-c$ has no atom there.  Portmanteau applied to
+  \cref{eq:shifted-maximum-clt} yields
+  \begin{equation*}
+    \Pp(W_{n_r}-c_r<0)
+    \longrightarrow
+    \Pp(Z-c<0)
+    =\Phi_{\mathrm G}(c).
+  \end{equation*}
+  By the definition of $c_r$ and \cref{eq:hitting-maximum-event},
+  \begin{equation*}
+    \{W_{n_r}-c_r<0\}
+    =\{M_{n_r}<u_r\}
+    =\{H_{u_r}>n_r\}.
+  \end{equation*}
+  This proves \cref{eq:moving-level-conclusion}.
+\end{proof}
+
+\section{Floors, moving levels, and moving times}
+\label{sec:moving-parameters}
+
+The remaining work is deterministic.  We state it in the sequential form
+used by a Lean proof; the same calculation holds along the filter $u\to
+\infty$.
+
+\begin{lemma}[Canonical floor asymptotics]
+\label{lem:canonical-floor}
+  Let $L_r\to\infty$, let $a\in\R$, and let $q_r=o(\sqrt{L_r})$.  For all
+  sufficiently large $r$, define
+  \begin{equation}\label{eq:perturbed-time}
+    n_r
+    :=
+    \left\lfloor
+      \frac{L_r}{\mu}
+      +a\frac{\sigma}{\mu^{3/2}}\sqrt{L_r}
+      +q_r
+    \right\rfloor.
+  \end{equation}
+  If
+  \begin{equation}\label{eq:perturbed-level}
+    \widetilde L_r=L_r+o(\sqrt{L_r}),
+  \end{equation}
+  then
+  \begin{equation}\label{eq:floor-asymptotics}
+    n_r\longrightarrow\infty,
+    \qquad
+    \frac{n_r}{L_r}\longrightarrow\frac1\mu,
+    \qquad
+    \frac{\widetilde L_r-\mu n_r}{\sigma\sqrt{n_r}}
+    \longrightarrow-a.
+  \end{equation}
+\end{lemma}
+
+\begin{proof}
+  Write
+  \begin{equation}\label{eq:floor-error}
+    n_r
+    =
+    \frac{L_r}{\mu}
+    +a\frac{\sigma}{\mu^{3/2}}\sqrt{L_r}
+    +q_r+e_r,
+    \qquad -1<e_r\leq0.
+  \end{equation}
+  Dividing by $L_r$ and using $q_r=o(\sqrt{L_r})$ proves
+  $n_r/L_r\to1/\mu$, and in particular $n_r\to\infty$.  It also gives
+  \begin{equation}\label{eq:sqrt-time-asymptotic}
+    \frac{\sqrt{n_r}}{\sqrt{L_r}}
+    \longrightarrow\frac1{\sqrt\mu}.
+  \end{equation}
+  From \cref{eq:floor-error},
+  \begin{equation}\label{eq:center-floor-expansion}
+    \widetilde L_r-\mu n_r
+    =
+    (\widetilde L_r-L_r)
+    -a\frac{\sigma}{\sqrt\mu}\sqrt{L_r}
+    -\mu q_r-\mu e_r.
+  \end{equation}
+  Divide \cref{eq:center-floor-expansion} by
+  $\sigma\sqrt{n_r}$.  The first, third, and fourth terms tend to zero by
+  \cref{eq:perturbed-level}, the hypothesis on $q_r$, and the bound on
+  $e_r$.  The second tends to $-a$ by
+  \cref{eq:sqrt-time-asymptotic}.
+\end{proof}
+
+\begin{corollary}[Moving-level and time profile]
+\label{cor:moving-level-time-profile}
+  Under the hypotheses of \cref{lem:canonical-floor},
+  \begin{equation}\label{eq:moving-level-time-profile}
+    \Pp(H_{\widetilde L_r}>n_r)
+    \longrightarrow
+    \Phi_{\mathrm G}(-a).
+  \end{equation}
+\end{corollary}
+
+\begin{proof}
+  Apply \cref{prop:moving-level-profile} with $u_r=\widetilde L_r$ and
+  $c=-a$, using \cref{eq:floor-asymptotics}.
+\end{proof}
+
+The paper also perturbs a time which has already been rounded down.  We record
+that convention separately.
+
+\begin{corollary}[Perturbation after flooring]
+\label{cor:post-floor-profile}
+  Fix $a\in\R$.  Let $L_r\to\infty$, let
+  $\widetilde L_r=L_r+o(\sqrt{L_r})$, and let
+  $v_r=o(\sqrt{L_r})$.  Define
+  \begin{align}
+    t_r(a)
+    &:=
+    \left\lfloor
+      \frac{L_r}{\mu}
+      +a\frac{\sigma}{\mu^{3/2}}\sqrt{L_r}
+    \right\rfloor,\label{eq:base-floored-time}\\
+    \widehat n_r
+    &:=\left\lfloor t_r(a)+v_r\right\rfloor.
+    \label{eq:post-floor-time}
+  \end{align}
+  For all sufficiently large $r$, both quantities are positive and are
+  regarded as natural-valued times.  Then
+  \begin{equation}\label{eq:post-floor-profile}
+    \Pp(H_{\widetilde L_r}>\widehat n_r)
+    \longrightarrow
+    \Phi_{\mathrm G}(-a).
+  \end{equation}
+\end{corollary}
+
+\begin{proof}
+  Put
+  \begin{equation*}
+    x_r
+    :=
+    \frac{L_r}{\mu}
+    +a\frac{\sigma}{\mu^{3/2}}\sqrt{L_r},
+    \qquad
+    n_r':=\lfloor x_r+v_r\rfloor.
+  \end{equation*}
+  Since $t_r(a)=\lfloor x_r\rfloor$ is an integer,
+  \begin{equation}\label{eq:two-floor-error}
+    \abs{\widehat n_r-n_r'}\leq1.
+  \end{equation}
+  Indeed, writing $x_r=\lfloor x_r\rfloor+\{x_r\}$ with
+  $0\leq\{x_r\}<1$, the two floors differ by
+  $\lfloor v_r+\{x_r\}\rfloor-\lfloor v_r\rfloor\in\{0,1\}$.
+  By \cref{lem:canonical-floor} with $q_r=v_r$,
+  \begin{equation*}
+    n_r'\longrightarrow\infty,
+    \qquad
+    \frac{\widetilde L_r-\mu n_r'}{\sigma\sqrt{n_r'}}
+    \longrightarrow-a.
+  \end{equation*}
+  The bounded difference in \cref{eq:two-floor-error} implies the same two
+  limits with $\widehat n_r$ in place of $n_r'$.  The conclusion now follows
+  from \cref{prop:moving-level-profile}.
+\end{proof}
+
+\begin{proof}[Proof of \cref{thm:first-passage-clt}]
+  Let $(u_r)$ be an arbitrary sequence with $u_r\to\infty$.  Take
+  $L_r=\widetilde L_r=u_r$ and $q_r=0$ in
+  \cref{cor:moving-level-time-profile}.  This proves
+  \cref{eq:first-passage-profile} along every sequence tending to infinity.
+  The sequential characterization of limits on $\R$ gives the asserted
+  limit as $u\to\infty$.
+
+  Since $H_u$ is integer-valued and finite almost surely, the two events
+  below agree up to a null set:
+  \begin{equation*}
+    \1_{\left\{
+        (\overline H_u-u/\mu)/(\sigma\mu^{-3/2}\sqrt u)>a
+      \right\}}
+    =
+    \1_{\{H_u>n_u(a)\}}
+    \qquad\hbox{almost surely}.
+  \end{equation*}
+  Thus \cref{eq:first-passage-profile} gives convergence of the survival
+  functions at every $a$.  The identity
+  $1-\Phi_{\mathrm G}(-a)=\Phi_{\mathrm G}(a)$ and continuity of the Gaussian
+  distribution function give \cref{eq:first-passage-distribution}.
+\end{proof}
+
+\section{An almost surely bounded increasing correction}
+\label{sec:bounded-correction}
+
+The Chapter 3 logarithmic radius is not exactly $S_n$.  It is $S_n+E_n$,
+where $E_n$ is increasing and converges almost surely to a finite random
+variable.  No independence between $E$ and the increments is needed.
+
+Let $(E_n)_{n\geq0}$ and $E_\infty$ be random variables such that
+\begin{equation}\label{eq:correction-assumptions}
+  \begin{split}
+    \Omega_E:=\{\omega\in\Omega:\;&
+      0\leq E_n(\omega)\leq E_{n+1}(\omega)
+        \leq E_\infty(\omega)<\infty\\
+      &\text{for every }n\geq0\},
+      \qquad \Pp(\Omega_E)=1.
+  \end{split}
+\end{equation}
+For $u>0$, set
+\begin{equation}\label{eq:corrected-hitting-time}
+  T_u:=\inf\{n\geq0:S_n+E_n\geq u\}.
+\end{equation}
+
+\begin{proposition}[Passage with a bounded increasing correction]
+\label{prop:corrected-passage}
+  Fix $a\in\R$.  Suppose $L_r\to\infty$,
+  $\widetilde L_r=L_r+o(\sqrt{L_r})$, and
+  $q_r=o(\sqrt{L_r})$, and let $n_r$ be given by
+  \cref{eq:perturbed-time}.  Then
+  \begin{equation}\label{eq:corrected-profile}
+    \Pp(T_{\widetilde L_r}>n_r)
+    \longrightarrow
+    \Phi_{\mathrm G}(-a).
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  Fix $B\geq0$.  For every $u>B$, on the event
+  $\Omega_E\cap\{E_\infty\leq B\}$ we have
+  \begin{equation}\label{eq:corrected-sandwich}
+    H_{u-B}\leq T_u\leq H_u.
+  \end{equation}
+  Indeed, $S_n\geq u$ implies $S_n+E_n\geq u$, while
+  $S_n+E_n\geq u$ and $E_n\leq B$ imply $S_n\geq u-B$.
+  Since $\Pp(\Omega_E^c)=0$, the exceptional event in the resulting
+  probability bounds may be taken to be $\{E_\infty>B\}$ alone.
+  Since $\widetilde L_r\to\infty$, we may take
+  $u=\widetilde L_r>B$ for all sufficiently large $r$.  Consequently,
+  \begin{align}\label{eq:corrected-probability-sandwich}
+    \Pp(H_{\widetilde L_r-B}>n_r)-\Pp(E_\infty>B)
+    &\leq \Pp(T_{\widetilde L_r}>n_r)\notag\\
+    &\leq
+    \Pp(H_{\widetilde L_r}>n_r)+\Pp(E_\infty>B).
+  \end{align}
+  Both uncorrected probabilities converge to
+  $\Phi_{\mathrm G}(-a)$ by
+  \cref{cor:moving-level-time-profile}, because subtracting the fixed number
+  $B$ is an $o(\sqrt{L_r})$ perturbation of the level.  Taking lower and upper
+  limits in \cref{eq:corrected-probability-sandwich} gives an error at most
+  $\Pp(E_\infty>B)$.  Finally,
+  \begin{equation*}
+    \Pp(E_\infty>B)\longrightarrow0,
+    \qquad B\longrightarrow\infty,
+  \end{equation*}
+  since $E_\infty<\infty$ almost surely.  This proves
+  \cref{eq:corrected-profile}.
+\end{proof}
+
+\begin{corollary}[Corrected perturbation after flooring]
+\label{cor:corrected-post-floor-profile}
+  Fix $a\in\R$.  Under \cref{eq:correction-assumptions}, let $L_r$,
+  $\widetilde L_r$, $v_r$, and $\widehat n_r$ satisfy the hypotheses and definitions of
+  \cref{cor:post-floor-profile}.  Then
+  \begin{equation}\label{eq:corrected-post-floor-profile}
+    \Pp(T_{\widetilde L_r}>\widehat n_r)
+    \longrightarrow
+    \Phi_{\mathrm G}(-a).
+  \end{equation}
+\end{corollary}
+
+\begin{proof}
+  Fix $B\geq0$.  For all sufficiently large $r$, the sandwich
+  \cref{eq:corrected-sandwich} and the same event argument as in
+  \cref{eq:corrected-probability-sandwich} give
+  \begin{align*}
+    \Pp(H_{\widetilde L_r-B}>\widehat n_r)-\Pp(E_\infty>B)
+    &\leq \Pp(T_{\widetilde L_r}>\widehat n_r)\\
+    &\leq
+    \Pp(H_{\widetilde L_r}>\widehat n_r)+\Pp(E_\infty>B).
+  \end{align*}
+  Both uncorrected probabilities converge to
+  $\Phi_{\mathrm G}(-a)$ by \cref{cor:post-floor-profile}; the fixed shift
+  $-B$ preserves the hypothesis
+  $\widetilde L_r=L_r+o(\sqrt{L_r})$.  Taking lower and upper limits and then
+  sending $B\to\infty$ proves the result.
+\end{proof}
+
+\section{Application to the fixed-width Gaussian radius}
+\label{sec:gaussian-application}
+
+Fix $N\geq1$ and $0<A<A_c(N)$.  Let $(\chi_{N,j})_{j\geq0}$ be independent
+copies of a chi random variable with $N$ degrees of freedom, and put
+\begin{equation}\label{eq:gaussian-increments}
+  \begin{aligned}
+    \xi_j
+    &:=-\log\left(\frac{A}{\sqrt N}\chi_{N,j}\right),\\
+    \mu&=\gamma_{A,N}>0,\qquad
+    \sigma_N:=\sqrt{\Var(\log\chi_N)}>0,\qquad
+    \sigma=\sigma_N.
+  \end{aligned}
+\end{equation}
+This is the zero-based reindexing of the paper's sequence
+$(\chi_{N,j})_{j\geq1}$ and matches \cref{eq:walk-maximum-drawdown}.
+On a single event of probability one, the logarithmic radius reduction in
+Chapter 3 gives, simultaneously for every $t\in\N$,
+\begin{equation}\label{eq:log-radius-reduction}
+  -\log R_t
+  =
+  -\log R_0+S_t+E_t,
+\end{equation}
+where the correction satisfies \cref{eq:correction-assumptions}.
+The application uses the following three inputs from that reduction.  The
+Gaussian innovations, and hence the variables $\chi_{N,j}$, are independent;
+$\log\chi_N$ is square-integrable and nonconstant; and $R_t>0$ for every
+$t\in\N$ on one event of probability one.  The last assertion follows by
+taking the countable intersection of the fixed-time nonvanishing events.  On
+this common event, taking logarithms in the definition of the radius entrance
+time is legitimate.
+For a radius threshold $\varepsilon_\varrho$, set
+\begin{equation}\label{eq:paper-levels}
+  L_\varrho:=\log\frac{R_0}{\varrho},
+  \qquad
+  L_{\varepsilon_\varrho}:=
+  \log\frac{R_0}{\varepsilon_\varrho}.
+\end{equation}
+Then the entrance time
+\begin{equation*}
+  \theta_{\varepsilon_\varrho}^{\mathrm{rad}}
+  :=\inf\{t\geq0:R_t\leq\varepsilon_\varrho\}
+\end{equation*}
+agrees almost surely with $T_{L_{\varepsilon_\varrho}}$ from
+\cref{eq:corrected-hitting-time}.  In particular, their survival
+probabilities at every deterministic time are equal.
+
+Assume
+\begin{equation}\label{eq:paper-moving-level}
+  L_{\varepsilon_\varrho}
+  =L_\varrho+o(\sqrt{L_\varrho}),
+  \qquad \varrho\downarrow0.
+\end{equation}
+To justify the limits below from the sequence-indexed results, fix an
+arbitrary sequence of positive meshes $\varrho_r\to0$.  Apply
+\cref{prop:corrected-passage,cor:corrected-post-floor-profile} with
+$L_r=L_{\varrho_r}$ and
+$\widetilde L_r=L_{\varepsilon_{\varrho_r}}$, and with
+$v_r=u_{\varrho_r}$ for the post-floor assertion.  Since the mesh sequence is
+arbitrary, the sequential characterization of limits on $\R$ gives the
+stated limits as $\varrho\downarrow0$.
+
+For every fixed $a\in\R$, since $L_\varrho\to\infty$,
+\cref{prop:corrected-passage} with
+$\mu=\gamma_{A,N}$ and $\sigma=\sigma_N$ gives, for
+\begin{equation}\label{eq:paper-cutoff-time}
+  t_\varrho(a)
+  :=
+  \left\lfloor
+    \frac{L_\varrho}{\gamma_{A,N}}
+    +a\frac{\sigma_N}{\gamma_{A,N}^{3/2}}
+      \sqrt{L_\varrho}
+  \right\rfloor,
+\end{equation}
+the limit
+\begin{equation}\label{eq:paper-profile}
+  \Pp\left(
+    \theta_{\varepsilon_\varrho}^{\mathrm{rad}}>t_\varrho(a)
+  \right)
+  \longrightarrow
+  \Phi_{\mathrm G}(-a).
+\end{equation}
+If the time in \cref{eq:paper-cutoff-time} is perturbed by a deterministic
+$u_\varrho=o(\sqrt{L_\varrho})$ term after the first floor, then
+\cref{cor:corrected-post-floor-profile} gives
+\begin{equation*}
+  \Pp\left(
+    \theta_{\varepsilon_\varrho}^{\mathrm{rad}}
+    >\left\lfloor t_\varrho(a)+u_\varrho\right\rfloor
+  \right)
+  \longrightarrow
+  \Phi_{\mathrm G}(-a).
+\end{equation*}
+This is the exact convention in the paper's Gaussian moving-threshold
+proposition.  No separate renewal theorem or external stopped-random-walk
+theorem is needed.
+
+\section{The formalized statements}\label{sec:formalized}
+
+The proof above is carried out in \texttt{AbsorptionCutoff/FirstPassageCLT.lean}, a
+pure-Mathlib leaf module: it imports nothing else from the development, so the
+argument stands independently of the rounded chain.  The correspondence is the
+following.
+
+The declaration-by-declaration map is given in
+\texttt{notes/formalized-libraries.tex}, which covers this result together with
+the key renewal theorem.
+
+The external inputs are the scalar i.i.d.\ central limit theorem
+\lean{tendstoInDistribution\_inv\_sqrt\_mul\_sum\_sub}, the strong law
+\lean{strong\_law\_ae}, the identification of the laws of the forward and
+reversed blocks through \texttt{IdentDistrib.pi}, the two Slutsky steps, and
+the Portmanteau theorem in the form
+\lean{tendsto\_measure\_of\_null\_frontier\_of\_tendsto'}, applied to
+$(-\infty,0)$, whose frontier $\{0\}$ is null for a nondegenerate Gaussian
+law.  The hitting time is Mathlib's \texttt{hittingAfter}.
+
+Two endpoint conventions are used throughout.  The passage time $H_u$ hits
+the closed set $[u,\infty)$, so survival through time $n$ is the strict event
+$M_n<u$; and the floor error in \cref{eq:floor-error} lies in $(-1,0]$.
+Neither affects the Gaussian limit.
+
+\end{document}

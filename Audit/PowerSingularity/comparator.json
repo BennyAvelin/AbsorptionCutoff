@@ -1,0 +1,9 @@
+{
+  "challenge_module": "Audit.PowerSingularity.Challenge",
+  "solution_module": "Audit.PowerSingularity.Solution",
+  "theorem_names": [
+    "AbsorptionCutoff.StatementAudit.PowerSingularity.nd_power_singularity"
+  ],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": false
+}

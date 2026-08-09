@@ -1,0 +1,216 @@
+version: "v0.3"
+
+project:
+  name: "AbsorptionCutoff"
+  authors:
+    - "Benny Avelin"
+  license: "Apache-2.0"
+
+sources:
+  - title: "Absorption cutoff and stationary singularities for rounded Gaussian random dynamical systems"
+    authors:
+      - "Benny Avelin"
+    id: ""                      # TODO: arXiv identifier once the manuscript is posted
+    type: "manuscript"
+    license: "all rights reserved"
+    author_contacted: "n/a"     # the formalizer is the author of the source
+    prior_work: ""
+
+status:
+  scope: >-
+    A Lean 4 / Mathlib formalization of absorption cutoff and stationary
+    singularities for Gaussian random dynamical systems with coordinatewise tanh
+    nonlinearity and nearest-grid rounding: the fixed-width vanishing-mesh cutoff
+    profile, the fixed-precision dimension cutoff, both clauses of qualitative
+    metastability, the supercritical dimension cutoff in scalar and reconstructed
+    vector form, and the fixed-dimensional stationary power singularity. Every
+    result stated in the manuscript's main-results section is formalized and
+    exposed in AbsorptionCutoff/MainTheorems.lean; all seven are additionally checked by
+    leanprover/comparator against restatements written in Mathlib vocabulary
+    only. Two supporting libraries were built in-project for lack of Mathlib
+    equivalents: positive-drift first-passage asymptotics, and renewal theory up
+    to the key renewal theorem.
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms:
+    - "propext"
+    - "Classical.choice"
+    - "Quot.sound"
+  main_results:
+    - declaration: "AbsorptionCutoff.MainTheorems.rounded_gaussian_nearest_cutoff"
+      file: "AbsorptionCutoff/MainTheorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "Audit/FixedWidthCutoff/comparator.json"
+      literature_dependencies: []
+    - declaration: "AbsorptionCutoff.MainTheorems.subcritical_dimension_cutoff"
+      file: "AbsorptionCutoff/MainTheorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "Audit/DimensionCutoff/comparator.json"
+      literature_dependencies: []
+    - declaration: "AbsorptionCutoff.MainTheorems.rounded_qualitative_metastability"
+      file: "AbsorptionCutoff/MainTheorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "Audit/Metastability/comparator.json"
+      literature_dependencies: []
+    - declaration: "AbsorptionCutoff.MainTheorems.rounded_fixed_dimension_absorption"
+      file: "AbsorptionCutoff/MainTheorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "Audit/FixedDimensionAbsorption/comparator.json"
+      literature_dependencies: []
+    - declaration: "AbsorptionCutoff.MainTheorems.gaussian_process_cutoff"
+      file: "AbsorptionCutoff/MainTheorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "Audit/ScalarCutoff/comparator.json"
+      literature_dependencies: []
+    - declaration: "AbsorptionCutoff.MainTheorems.gaussian_vector_cutoff"
+      file: "AbsorptionCutoff/MainTheorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "Audit/VectorCutoff/comparator.json"
+      literature_dependencies: []
+    - declaration: "AbsorptionCutoff.MainTheorems.nd_power_singularity"
+      file: "AbsorptionCutoff/MainTheorems.lean"
+      sorry_count: 0
+      axioms: ["propext", "Classical.choice", "Quot.sound"]
+      comparator_config: "Audit/PowerSingularity/comparator.json"
+      literature_dependencies: []
+
+automation:
+  methods:
+    - method: "agent"
+      models:
+        # Autoformalization of the manuscript. The bulk of the work over the
+        # final weeks was done by GPT-5.6; the Claude models contributed
+        # throughout, and Opus 5 additionally carried the release track (the
+        # Mathlib-only audit surface, the comparator tooling, CI, and the
+        # release documentation).
+        - "gpt-5.6-sol"
+        - "claude-opus-4-8"
+        - "claude-opus-5"
+      framework: "Codex (OpenAI) and Claude Code (Anthropic) agentic coding harnesses"
+      tool_setup: >-
+        Lake builds under leanprover/lean4:v4.32.0 with Mathlib v4.32.0. The
+        comparator audit was run locally in the pinned container built by
+        docker/audit.Dockerfile, with leanprover/comparator at
+        07bc4ea40f2266dcb861820a2ec1fa3244ed307f, leanprover/lean4export at
+        4e7915201d3f9f04470d9eae002fa695f7cdc589 (both the v4.32.0 window), and
+        Zouuup/landrun v0.1.17. See the disclosure below for the one local
+        modification to that tooling.
+      cost:
+        wall_time: >-
+          About two weeks of calendar time: first Lean commit 2026-07-21,
+          release candidate finalized 2026-08-08, after roughly 2,870
+          development commits. Machine hours were not tracked separately.
+        # The standard names this field spend_usd; the amount below is reported
+        # in EUR, the currency actually billed.
+        spend_usd: >-
+          On the order of EUR 120: consumer subscriptions only -- a EUR 100 per
+          month ChatGPT Pro plan (the lower-priced Pro tier) and a Claude Pro
+          plan, about a single month of each over the two-week project. No
+          metered API usage.
+        hardware: "the author's laptop (Apple Silicon, Docker Desktop)"
+      prompting_notes: >-
+        Autoformalization: the Lean proofs were written from the manuscript's
+        arguments by the models above under the author's supervision, rather
+        than typed by hand, with GPT-5.6 responsible for most of the recent
+        work. Correctness does not depend on that process -- it is
+        enforced by the Lean kernel, by the machine-verified absence of sorry
+        and custom axioms, and by the comparator checks on the public
+        statements.
+  # Reported in EUR, the currency actually billed, despite the field name.
+  spend_usd: >-
+    On the order of EUR 120: consumer subscriptions only (a EUR 100 per month
+    ChatGPT Pro plan, the lower-priced Pro tier, and a Claude Pro plan, about one
+    month of each). No metered API usage.
+  notes: >-
+    Every proof is checked by the Lean kernel and Mathlib; the verified library
+    contains no sorry and no custom axiom. The Mathlib-only comparator challenge
+    files (Audit/*/Challenge.lean) each contain exactly one intentional
+    statement-level sorry -- the body of the theorem being challenged -- which
+    the corresponding Audit/*/Solution.lean fills and leanprover/comparator
+    confirms ("Your solution is okay!"). All seven passed on 2026-08-04.
+
+    DISCLOSURE, tooling modification: the comparator is invoked through
+    docker/landrun-argv-shim.sh rather than calling landrun directly. landrun
+    >= 0.1.16 parses its command line with urfave/cli v3, which consumes the
+    first literal "--"; the comparator invokes
+    "lean4export <module> -- <decls>", so that separator was being swallowed and
+    lean4export read the declaration names as further modules. The shim inserts
+    an explicit "--" before the sandboxed command so the remainder is forwarded
+    intact. It changes argv forwarding only: every sandbox flag reaches the real
+    landrun unmodified, so the Landlock restrictions applied are exactly those
+    the comparator requested. (landrun v0.1.15 does not have this bug, but its
+    --ldd dependency detection omits the aarch64 dynamic loader and therefore
+    cannot exec at all on arm64.) Both are upstream issues.
+
+    DISCLOSURE, sandbox hardening: the comparator's documented invocation wraps
+    the run in "systemd-run --property=RestrictAddressFamilies=~AF_UNIX --user",
+    guarding against a landrun escape. That wrapper is NOT applied here; the
+    local runs instead take place inside a disposable container, which bounds an
+    escape to the container rather than the host. This is a weaker guarantee
+    than the documented one and is stated as such.
+
+fidelity:
+  divergences: >-
+    Recorded item by item in CORRESPONDENCE.md, and all of them are packaging,
+    proof route, or cases where the Lean result is stronger; no theorem rests on
+    a hypothesis weaker than the manuscript's. Summary: the fixed-width theorem
+    is stated along positive mesh sequences rather than as a continuous limit;
+    the renewal terminal term and the signed kernel are handled by different but
+    equivalent routes; several manuscript intermediates (the transfer operator,
+    the linear Markov-additive equation, the operator packaging of the forcing)
+    are not mirrored as standalone declarations because the theorem route
+    consumes their content directly; and forcing continuity is proved for every
+    bounded measurable angular test rather than only continuous ones.
+
+review:
+  status: "author-verified"
+  reviewers:
+    - "Benny Avelin"
+  notes: >-
+    Correctness of every proof is guaranteed by the Lean kernel and Mathlib (no
+    sorry, no custom axiom). The public statements were additionally checked by
+    leanprover/comparator against Mathlib-only restatements. This is not external
+    peer review.
+
+alignment:
+  namespace: "AbsorptionCutoff"
+  statements:
+    - source: "thm:rounded-gaussian-nearest-cutoff"
+      lean: "AbsorptionCutoff.MainTheorems.rounded_gaussian_nearest_cutoff"
+      module: "AbsorptionCutoff.MainTheorems"
+      status: "comparator-checked"
+    - source: "thm:subcritical-dimension-cutoff"
+      lean: "AbsorptionCutoff.MainTheorems.subcritical_dimension_cutoff"
+      module: "AbsorptionCutoff.MainTheorems"
+      status: "comparator-checked"
+    - source: "thm:rounded-qualitative-metastability (persistence clause)"
+      lean: "AbsorptionCutoff.MainTheorems.rounded_qualitative_metastability"
+      module: "AbsorptionCutoff.MainTheorems"
+      status: "comparator-checked"
+    - source: "thm:rounded-qualitative-metastability (absorption clause)"
+      lean: "AbsorptionCutoff.MainTheorems.rounded_fixed_dimension_absorption"
+      module: "AbsorptionCutoff.MainTheorems"
+      status: "comparator-checked"
+    - source: "thm:gaussian-process-cutoff"
+      lean: "AbsorptionCutoff.MainTheorems.gaussian_process_cutoff"
+      module: "AbsorptionCutoff.MainTheorems"
+      status: "comparator-checked"
+    - source: "cor:gaussian-vector-cutoff"
+      lean: "AbsorptionCutoff.MainTheorems.gaussian_vector_cutoff"
+      module: "AbsorptionCutoff.MainTheorems"
+      status: "comparator-checked"
+    - source: "thm:nd-power-singularity"
+      lean: "AbsorptionCutoff.MainTheorems.nd_power_singularity"
+      module: "AbsorptionCutoff.MainTheorems"
+      status: "comparator-checked"
+
+acknowledgements: >-
+  Built on Lean 4, Mathlib, and Lake. The audit in Audit/ uses
+  leanprover/comparator, leanprover/lean4export, and Zouuup/landrun; the
+  blueprint uses leanblueprint and PatrickMassot/checkdecls.

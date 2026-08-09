@@ -1,0 +1,9 @@
+{
+  "challenge_module": "Audit.VectorCutoff.Challenge",
+  "solution_module": "Audit.VectorCutoff.Solution",
+  "theorem_names": [
+    "AbsorptionCutoff.StatementAudit.VectorCutoff.gaussian_vector_cutoff"
+  ],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": false
+}

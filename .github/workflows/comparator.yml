@@ -1,0 +1,88 @@
+name: Comparator audit
+
+# Independently checks the headline theorems against their Mathlib-only
+# restatements in `Audit/`: same elaborated statement, no axiom beyond the three
+# standard ones, accepted by the Lean kernel, both sides built in a landrun
+# sandbox. This is the evidence a reader can re-run without trusting the
+# development.
+#
+# Split from `build.yml` because it is far slower: every challenge re-elaborates
+# `import Mathlib` and every solution imports the whole library.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  comparator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: project
+
+      # comparator and lean4export must target the project's Lean version; both
+      # commits below are the v4.32.0 window. Same pins as docker/audit.Dockerfile.
+      - uses: actions/checkout@v5
+        with:
+          repository: leanprover/comparator
+          ref: 07bc4ea40f2266dcb861820a2ec1fa3244ed307f
+          path: comparator
+      - uses: actions/checkout@v5
+        with:
+          repository: leanprover/lean4export
+          ref: 4e7915201d3f9f04470d9eae002fa695f7cdc589
+          path: lean4export
+      - uses: actions/checkout@v5
+        with:
+          repository: Zouuup/landrun
+          ref: v0.1.17
+          path: landrun
+
+      - uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build landrun
+        working-directory: landrun
+        run: go build -o landrun cmd/landrun/main.go
+
+      # Builds the project itself. The comparator re-elaborates only Challenge
+      # and Solution inside its sandbox, so the library and the Mathlib oleans
+      # must already be present.
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: project
+          use-mathlib-cache: true
+
+      - name: Build lean4export and comparator
+        run: |
+          (cd lean4export && lake build)
+          (cd comparator && lake build)
+
+      - name: Confirm the runner is unprivileged
+        run: id
+
+      # The same script the local Docker run invokes.
+      - name: Run every comparator challenge
+        working-directory: project
+        env:
+          # landrun swallows the `--` the comparator passes to lean4export; the
+          # shim re-inserts it. Forwarding only -- see the script's header.
+          COMPARATOR_LANDRUN: ${{ github.workspace }}/project/docker/landrun-argv-shim.sh
+          LANDRUN_REAL: ${{ github.workspace }}/landrun/landrun
+          COMPARATOR_LEAN4EXPORT: ${{ github.workspace }}/lean4export/.lake/build/bin/lean4export
+          COMPARATOR_BIN: ${{ github.workspace }}/comparator/.lake/build/bin/comparator
+        run: ./scripts/run-comparator.sh

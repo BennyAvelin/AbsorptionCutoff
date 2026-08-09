@@ -1,0 +1,639 @@
+\documentclass[10pt,reqno,a4paper]{amsart}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{mathtools}
+\usepackage[margin=25mm]{geometry}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage[capitalize]{cleveref}
+
+\numberwithin{equation}{section}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\de}{\,\mathrm{d}}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\Fourier}{\mathcal{F}}
+\newcommand{\Ucal}{\mathcal{U}}
+\newcommand{\PV}{\operatorname{pv}}
+\newcommand{\supp}{\operatorname{supp}}
+
+\title[The Blackwell constant]{Identification of the Blackwell constant:\\
+the Blackwell constant by Abel-regularized Fourier inversion}
+\author{Chapter 7 formalization note}
+\date{July 29, 2026}
+
+\begin{document}
+
+\begin{abstract}
+  We consider the remaining constant-identification step in the formalization
+  of Blackwell's renewal theorem.  The symmetric principal-value calculation
+  gives only one half of the constant
+  \(1/m\).  The missing half is the boundary term selected by the one-sided
+  renewal series.  We give a complete Abel-regularized Fourier argument which
+  retains the characteristic-function estimates already formalized, avoids
+  the improper Dirichlet integral, and yields the full constant.  We then
+  derive a uniform local bound, the interval form of Blackwell's theorem, and
+  the key renewal theorem for directly Riemann integrable functions.  We also
+  explain why the alternative Laplace--Tauberian route is not shorter.
+\end{abstract}
+
+\maketitle
+
+\section{Setting and the formalized input}\label{sec:setting}
+
+Let \(\mu\) be a probability measure on \(\R\), and let
+\begin{equation}\label{eq:mean}
+  m:=\int_\R x\,\mu(\de x)\in(0,\infty).
+\end{equation}
+We assume that \(\mu\) is nonlattice, has a finite second moment, and satisfies
+\begin{equation}\label{eq:left-exponential}
+  L(\theta_0):=\int_\R e^{-\theta_0x}\,\mu(\de x)<1
+\end{equation}
+for some \(\theta_0>0\).  The last condition is stronger than the usual
+hypotheses of Blackwell's theorem, but it holds for the tilted Gaussian
+increment law used in Chapter~7.  It implies that the renewal measure
+\begin{equation}\label{eq:renewal-measure}
+  U:=\sum_{n=0}^{\infty}\mu^{*n}
+\end{equation}
+is finite on every half-line \((-\infty,b]\).
+
+We use the Fourier convention
+\begin{align}
+  \widehat w(t)
+  &:=
+  \int_\R e^{-2\pi itx}w(x)\,\de x, \label{eq:fourier-convention}\\
+  \chi(t)
+  &:=
+  \int_\R e^{itx}\,\mu(\de x). \label{eq:characteristic-function}
+\end{align}
+Then
+\begin{equation}\label{eq:fourier-convolution}
+  \Fourier\left(y\mapsto\int_\R w(y-z)\,\mu(\de z)\right)(t)
+  =
+  \widehat w(t)\chi(-2\pi t).
+\end{equation}
+The finite second moment gives
+\begin{equation}\label{eq:characteristic-expansion}
+  1-\chi(-2\pi t)
+  =
+  2\pi i mt+O(t^2),
+  \qquad t\to0.
+\end{equation}
+
+The Lean development already contains the following consequence.  Suppose
+that \(v\) and \(\widehat v\) are integrable, \(\widehat v\) has compact
+support, and
+\begin{equation}\label{eq:difference-kernel}
+  \abs{\widehat v(t)}\leq C\abs t.
+\end{equation}
+Then the partial renewal convolutions converge pointwise, and their limit
+satisfies
+\begin{equation}\label{eq:difference-kernel-limit}
+  \sum_{n=0}^{\infty}\int_\R v(y-z)\,\mu^{*n}(\de z)
+  \longrightarrow 0,
+  \qquad y\to\infty.
+\end{equation}
+This is Blackwell's theorem for difference kernels.  The condition
+\(\widehat v(0)=0\), equivalently \(\int v=0\), cancels the pole in
+\cref{eq:characteristic-expansion}.
+
+\section{Why the symmetric pole is not sufficient}\label{sec:principal-value}
+
+For a kernel \(w\) with \(\widehat w(0)\neq0\), the formal resolvent is
+\begin{equation}\label{eq:formal-resolvent}
+  \frac{\widehat w(t)}{1-\chi(-2\pi t)}
+  \sim
+  \frac{\widehat w(0)}{2\pi i mt}.
+\end{equation}
+The right-hand side is not Lebesgue integrable near the origin.  If it is
+interpreted as a symmetric principal value, then for \(y>0\)
+\begin{align}
+  \PV\int_{-T}^{T}
+  \frac{\widehat w(0)e^{2\pi iyt}}{2\pi i mt}\,\de t
+  &=
+  \frac{\widehat w(0)}{\pi m}
+  \int_0^T\frac{\sin(2\pi yt)}{t}\,\de t \notag\\
+  &\longrightarrow
+  \frac{\widehat w(0)}{2m}.
+  \label{eq:half-constant}
+\end{align}
+Thus the Dirichlet integral alone gives one half of the desired limit.
+
+The renewal series is one-sided in the convolution index \(n\).  Its Fourier
+resolvent therefore has a boundary prescription.  At the level of
+distributions, the model singularity is
+\begin{equation}\label{eq:boundary-value}
+  \frac{1}{m}\1_{(0,\infty)}
+  =
+  \Fourier^{-1}
+  \left(
+    \PV\frac{1}{2\pi i mt}
+    +
+    \frac{1}{2m}\delta_0
+  \right).
+\end{equation}
+The principal-value term in \cref{eq:boundary-value} gives
+\(\frac{1}{2m}\operatorname{sgn}(y)\), while the atom gives the missing
+constant \(1/(2m)\).  Any direct pole proof must construct both terms.  A
+symmetric improper integral, by itself, cannot identify the Blackwell
+constant.
+
+\begin{remark}\label{rem:bochner-integral}
+  The uncorrected function in \cref{eq:formal-resolvent} is not Bochner
+  integrable.  It therefore cannot be inserted directly into the ordinary
+  Lebesgue Fourier transform used by the present Lean theorem.  The
+  Abel regularization below stays within ordinary integrals until the final
+  limit and produces the boundary term in \cref{eq:boundary-value}
+  automatically.
+\end{remark}
+
+\section{Abel-regularized Fourier inversion}\label{sec:abel}
+
+For \(0<r<1\), define the finite Abel renewal measure
+\begin{equation}\label{eq:abel-renewal}
+  U_r:=\sum_{n=0}^{\infty}r^n\mu^{*n}.
+\end{equation}
+It has total mass \((1-r)^{-1}\).  If \(w,\widehat w\in L^1(\R)\), Fourier
+inversion and Tonelli's theorem give
+\begin{equation}\label{eq:abel-parseval}
+  \int_\R w(y-z)\,U_r(\de z)
+  =
+  \int_\R
+  \frac{\widehat w(t)e^{2\pi iyt}}
+       {1-r\chi(-2\pi t)}
+  \,\de t.
+\end{equation}
+There is no singularity in this identity.
+
+We compare the denominator with the model
+\begin{equation}\label{eq:model-denominator}
+  b_r(t):=(1-r)+2\pi i rmt.
+\end{equation}
+Set
+\begin{equation}\label{eq:corrected-resolvent}
+  D_r(t)
+  :=
+  \frac{1}{1-r\chi(-2\pi t)}
+  -
+  \frac{1}{(1-r)+2\pi i rmt}.
+\end{equation}
+
+\begin{lemma}[Uniform pole correction]\label{lem:uniform-pole-correction}
+  Let \(0<T<\infty\).  There are \(r_0\in(0,1)\) and \(C<\infty\) such that
+  \begin{equation}\label{eq:uniform-correction-bound}
+    \abs{D_r(t)}\leq C,
+    \qquad
+    r_0\leq r<1,\quad \abs t\leq T.
+  \end{equation}
+  For every \(t\neq0\),
+  \begin{equation}\label{eq:correction-pointwise-limit}
+    D_r(t)\longrightarrow
+    D_1(t)
+    :=
+    \frac{1}{1-\chi(-2\pi t)}
+    -
+    \frac{1}{2\pi i mt}.
+  \end{equation}
+\end{lemma}
+
+\begin{proof}
+  Write
+  \begin{equation*}
+    q(t):=1-\chi(-2\pi t)-2\pi i mt.
+  \end{equation*}
+  By \cref{eq:characteristic-expansion}, there are \(\delta>0\) and
+  \(C_0<\infty\) such that
+  \begin{equation}\label{eq:q-quadratic}
+    \abs{q(t)}\leq C_0t^2,
+    \qquad \abs t\leq\delta.
+  \end{equation}
+  After decreasing \(\delta\), the imaginary part in
+  \cref{eq:characteristic-expansion} and the nonnegative real part of
+  \(1-r\chi\) give
+  \begin{align}
+    \abs{1-r\chi(-2\pi t)}
+    &\geq c\bigl((1-r)+\abs t\bigr), \label{eq:true-denominator-lower}\\
+    \abs{(1-r)+2\pi i rmt}
+    &\geq c\bigl((1-r)+\abs t\bigr) \label{eq:model-denominator-lower}
+  \end{align}
+  for \(r\geq1/2\) and \(\abs t\leq\delta\), where \(c=c(m)>0\).
+  Since the two denominators differ by \(rq(t)\),
+  \begin{equation*}
+    \abs{D_r(t)}
+    \leq
+    \frac{rC_0t^2}
+    {c^2((1-r)+\abs t)^2}
+    \leq \frac{C_0}{c^2}.
+  \end{equation*}
+
+  On the compact annulus \(\delta\leq\abs t\leq T\), nonlatticeness implies
+  \(\chi(-2\pi t)\neq1\).  Hence \(1-\chi(-2\pi t)\) is bounded away from zero
+  there.  Both denominators in \cref{eq:corrected-resolvent} are therefore
+  bounded away from zero for \(r\) sufficiently close to one.  This proves
+  \cref{eq:uniform-correction-bound}.  The pointwise convergence in
+  \cref{eq:correction-pointwise-limit} is immediate.
+\end{proof}
+
+\begin{lemma}[The model pole]\label{lem:model-pole}
+  Suppose that \(w,\widehat w\in L^1(\R)\) and Fourier inversion holds for
+  \(w\).  Then
+  \begin{align}
+    M_r(y)
+    &:=
+    \int_\R
+    \frac{\widehat w(t)e^{2\pi iyt}}
+         {(1-r)+2\pi i rmt}
+    \,\de t \notag\\
+    &=
+    \frac{1}{rm}
+    \int_{-\infty}^{y}
+    \exp\left(
+      -\frac{1-r}{rm}(y-x)
+    \right)
+    w(x)\,\de x. \label{eq:model-pole-formula}
+  \end{align}
+  Consequently,
+  \begin{equation}\label{eq:model-pole-limit}
+    M_r(y)\longrightarrow
+    \frac{1}{m}\int_{-\infty}^{y}w(x)\,\de x
+    \qquad\text{as }r\uparrow1.
+  \end{equation}
+\end{lemma}
+
+\begin{proof}
+  We use
+  \begin{equation*}
+    \frac{1}{(1-r)+2\pi i rmt}
+    =
+    \int_0^\infty
+    e^{-(1-r)s}e^{-2\pi i rmts}\,\de s.
+  \end{equation*}
+  Fubini's theorem and Fourier inversion yield
+  \begin{equation*}
+    M_r(y)
+    =
+    \int_0^\infty e^{-(1-r)s}w(y-rms)\,\de s.
+  \end{equation*}
+  The change of variables \(x=y-rms\) gives
+  \cref{eq:model-pole-formula}.  Dominated convergence gives
+  \cref{eq:model-pole-limit}.
+\end{proof}
+
+We now fix a continuous real-valued kernel \(\kappa\) satisfying
+\begin{equation}\label{eq:reference-kernel}
+  \kappa\geq0,\qquad
+  \kappa,\widehat\kappa\in L^1(\R),\qquad
+  \supp\widehat\kappa\subseteq[-T,T].
+\end{equation}
+The sinc-squared kernel already formalized in
+\texttt{RenewalKernel.lean}, after normalization and scaling, has these
+properties.
+
+\begin{proposition}[Reference-kernel limit]\label{prop:reference-kernel}
+  Under the assumptions of \cref{sec:setting},
+  \begin{equation}\label{eq:reference-kernel-limit}
+    \sum_{n=0}^{\infty}
+    \int_\R\kappa(y-z)\,\mu^{*n}(\de z)
+    \longrightarrow
+    \frac{1}{m}\int_\R\kappa(x)\,\de x,
+    \qquad y\to\infty.
+  \end{equation}
+  In particular, the series on the left is finite for every \(y\).
+\end{proposition}
+
+\begin{proof}
+  By \cref{eq:abel-parseval}, we split the Abel convolution as
+  \begin{equation}\label{eq:abel-split}
+    \int_\R\kappa(y-z)\,U_r(\de z)
+    =
+    M_r(y)+E_r(y),
+  \end{equation}
+  where
+  \begin{equation*}
+    E_r(y):=
+    \int_{-T}^{T}
+    \widehat\kappa(t)e^{2\pi iyt}D_r(t)\,\de t.
+  \end{equation*}
+  By \cref{lem:uniform-pole-correction} and dominated convergence,
+  \begin{equation}\label{eq:correction-abel-limit}
+    E_r(y)\longrightarrow
+    E(y)
+    :=
+    \int_{-T}^{T}
+    \widehat\kappa(t)e^{2\pi iyt}D_1(t)\,\de t
+  \end{equation}
+  for every \(y\).  The integrand defining \(E\) belongs to \(L^1\), and hence
+  the Riemann--Lebesgue lemma gives
+  \begin{equation}\label{eq:correction-vanishes}
+    E(y)\longrightarrow0,
+    \qquad y\to\infty.
+  \end{equation}
+  By \cref{lem:model-pole},
+  \begin{equation}\label{eq:model-abel-limit-reference}
+    M_r(y)\longrightarrow
+    \frac{1}{m}\int_{-\infty}^{y}\kappa(x)\,\de x.
+  \end{equation}
+
+  Since \(\kappa\geq0\), monotone convergence in the series index gives
+  \begin{equation*}
+    \lim_{r\uparrow1}
+    \int_\R\kappa(y-z)\,U_r(\de z)
+    =
+    \sum_{n=0}^{\infty}
+    \int_\R\kappa(y-z)\,\mu^{*n}(\de z).
+  \end{equation*}
+  Combining this identity with
+  \cref{eq:abel-split,eq:correction-abel-limit,eq:model-abel-limit-reference}
+  shows that
+  \begin{equation}\label{eq:reference-representation}
+    \sum_{n=0}^{\infty}
+    \int_\R\kappa(y-z)\,\mu^{*n}(\de z)
+    =
+    \frac{1}{m}\int_{-\infty}^{y}\kappa(x)\,\de x+E(y).
+  \end{equation}
+  We let \(y\to\infty\) and use \cref{eq:correction-vanishes}.
+\end{proof}
+
+\begin{remark}[Where the missing half enters]\label{rem:missing-half}
+  Formula \cref{eq:model-pole-formula} converges to
+  \(m^{-1}\int_{-\infty}^y w\), not to
+  \((2m)^{-1}\int w\).  Thus the Abel denominator in
+  \cref{eq:model-denominator} contains both the principal-value term and the
+  atom in \cref{eq:boundary-value}.  No separate Dirichlet-integral
+  calculation is needed.
+\end{remark}
+
+\section{General band-limited kernels}\label{sec:band-limited}
+
+Let \(w\) be a continuous real- or complex-valued kernel such that
+\(w,\widehat w\in L^1(\R)\), \(\widehat w\) has compact support, and
+\(\widehat w\) is Lipschitz at the origin.  Choose a reference kernel
+\(\kappa\) as in \cref{eq:reference-kernel}, scaled so that its Fourier support
+contains that of \(w\), and set
+\begin{equation}\label{eq:difference-decomposition}
+  a:=\frac{\int_\R w}{\int_\R\kappa},
+  \qquad
+  v:=w-a\kappa.
+\end{equation}
+Then \(\widehat v(0)=0\).  The Lipschitz assumption and compact Fourier support
+give
+\begin{equation*}
+  \abs{\widehat v(t)}\leq C\abs t,
+  \qquad t\in\R.
+\end{equation*}
+The formalized difference-kernel theorem applies to \(v\), while
+\cref{prop:reference-kernel} applies to \(\kappa\).  We obtain the following
+statement.
+
+\begin{theorem}[Band-limited key renewal limit]\label{thm:band-limited}
+  Under the assumptions of \cref{sec:setting},
+  \begin{equation}\label{eq:band-limited-limit}
+    \sum_{n=0}^{\infty}
+    \int_\R w(y-z)\,\mu^{*n}(\de z)
+    \longrightarrow
+    \frac{1}{m}\int_\R w(x)\,\de x,
+    \qquad y\to\infty,
+  \end{equation}
+  for every kernel \(w\) in the preceding class.
+\end{theorem}
+
+\begin{proof}
+  For every finite \(N\), the partial renewal convolution of \(w\) is the sum
+  of the corresponding convolution of \(v\) and \(a\kappa\).  The first
+  sequence converges by the formalized \(N\to\infty\) theorem for difference
+  kernels, and its limit tends to zero as \(y\to\infty\).  The second sequence
+  converges by monotone convergence and
+  \cref{prop:reference-kernel}.  Since
+  \(a\int\kappa=\int w\), this gives \cref{eq:band-limited-limit}.
+\end{proof}
+
+\section{Uniform local boundedness}\label{sec:local-bound}
+
+We choose the scale of the nonnegative reference kernel so that
+\begin{equation}\label{eq:kernel-dominates-interval}
+  \kappa(x)\geq c_\kappa>0,
+  \qquad \abs x\leq1.
+\end{equation}
+This is possible because the normalized sinc-squared kernel is continuous and
+strictly positive in a neighborhood of the origin.
+
+\begin{proposition}[Uniform local bound]\label{prop:uniform-local-bound}
+  There exists \(C_U<\infty\) such that
+  \begin{equation}\label{eq:uniform-local-bound}
+    U([y-1,y+1])\leq C_U,
+    \qquad y\in\R.
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  By \cref{eq:kernel-dominates-interval},
+  \begin{equation*}
+    c_\kappa U([y-1,y+1])
+    \leq
+    \int_\R\kappa(y-z)\,U(\de z).
+  \end{equation*}
+  The right-hand side converges as \(y\to\infty\) by
+  \cref{prop:reference-kernel}, and is therefore bounded for all sufficiently
+  large \(y\).  For \(y\) bounded above, the interval \([y-1,y+1]\) is
+  contained in one fixed half-line.  Its \(U\)-mass is finite by
+  \cref{eq:left-exponential}.  This proves \cref{eq:uniform-local-bound}.
+\end{proof}
+
+For a measurable function \(g\), set
+\begin{equation}\label{eq:dri-norm}
+  \norm{g}_{\mathrm{dri}}
+  :=
+  \sum_{j\in\mathbb Z}
+  \sup_{x\in[j,j+1]}\abs{g(x)}.
+\end{equation}
+The local bound gives
+\begin{equation}\label{eq:dri-convolution-bound}
+  \sup_{y\in\R}
+  \int_\R\abs{g(y-z)}\,U(\de z)
+  \leq
+  C_U\norm{g}_{\mathrm{dri}},
+\end{equation}
+after enlarging \(C_U\).
+
+\section{Blackwell's theorem and the key renewal theorem}\label{sec:key-renewal}
+
+Let \(\rho\) be a normalized nonnegative sinc-squared kernel, and put
+\begin{equation}\label{eq:approximate-identity}
+  \rho_a(x):=a\rho(ax),
+  \qquad a\geq1.
+\end{equation}
+Then \(\int\rho_a=1\), the Fourier transform of \(\rho_a\) has compact
+support, and \((\rho_a)_{a\geq1}\) is an approximate identity.
+
+\begin{lemma}[Band-limited approximation]\label{lem:band-limited-approximation}
+  If \(f\) is continuous and compactly supported, then
+  \begin{equation}\label{eq:dri-approximation}
+    \norm{f*\rho_a-f}_{\mathrm{dri}}\longrightarrow0,
+    \qquad a\to\infty.
+  \end{equation}
+\end{lemma}
+
+\begin{proof}
+  On a fixed compact interval, \cref{eq:dri-approximation} follows from
+  uniform continuity and the approximate-identity property.  Outside a
+  slightly larger interval, the sinc-squared bound
+  \begin{equation*}
+    \rho_a(x)\leq\frac{Ca}{1+a^2x^2}
+  \end{equation*}
+  gives a summable cellwise majorant whose sum tends to zero as
+  \(a\to\infty\).  Combining the compact and tail estimates proves the claim.
+\end{proof}
+
+\begin{proposition}[Compactly supported test functions]\label{prop:compact-tests}
+  If \(f\) is continuous and compactly supported, then
+  \begin{equation}\label{eq:compact-test-limit}
+    \int_\R f(y-z)\,U(\de z)
+    \longrightarrow
+    \frac{1}{m}\int_\R f(x)\,\de x,
+    \qquad y\to\infty.
+  \end{equation}
+\end{proposition}
+
+\begin{proof}
+  The function \(f*\rho_a\) is band-limited and satisfies the hypotheses of
+  \cref{thm:band-limited}.  By \cref{eq:dri-convolution-bound},
+  \begin{equation*}
+    \sup_y
+    \abs{
+      \int_\R
+      \bigl((f*\rho_a)-f\bigr)(y-z)\,U(\de z)
+    }
+    \leq
+    C_U\norm{f*\rho_a-f}_{\mathrm{dri}}.
+  \end{equation*}
+  We first let \(y\to\infty\) and then \(a\to\infty\), using
+  \cref{lem:band-limited-approximation} and
+  \(\int f*\rho_a=\int f\).
+\end{proof}
+
+\begin{theorem}[Blackwell]\label{thm:blackwell}
+  For every \(h>0\),
+  \begin{equation}\label{eq:blackwell}
+    U((y,y+h])
+    \longrightarrow
+    \frac{h}{m},
+    \qquad y\to\infty.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  For every \(\varepsilon>0\), choose nonnegative continuous compactly
+  supported functions \(f_\varepsilon^-\) and \(f_\varepsilon^+\) such that
+  \begin{equation*}
+    f_\varepsilon^-
+    \leq\1_{[0,h)}
+    \leq f_\varepsilon^+,
+    \qquad
+    \int_\R f_\varepsilon^-\geq h-\varepsilon,
+    \qquad
+    \int_\R f_\varepsilon^+\leq h+\varepsilon.
+  \end{equation*}
+  Apply \cref{prop:compact-tests} to both functions and squeeze.  Since
+  \begin{equation*}
+    \int_\R \1_{[0,h)}(y+h-z)\,U(\de z)=U((y,y+h]),
+  \end{equation*}
+  letting \(\varepsilon\downarrow0\) gives \cref{eq:blackwell}.
+\end{proof}
+
+\begin{definition}\label{def:directly-riemann-integrable}
+  A function \(g:\R\to\C\) is directly Riemann integrable if it is almost
+  everywhere continuous and
+  \begin{equation}\label{eq:dri-condition}
+    \sum_{j\in\mathbb Z}
+    \sup_{x\in[j,j+1]}\abs{g(x)}<\infty.
+  \end{equation}
+\end{definition}
+
+\begin{theorem}[Key renewal theorem]\label{thm:key-renewal}
+  If \(g\) is directly Riemann integrable, then
+  \begin{equation}\label{eq:key-renewal}
+    \int_\R g(y-z)\,U(\de z)
+    \longrightarrow
+    \frac{1}{m}\int_\R g(x)\,\de x,
+    \qquad y\to\infty.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  It is enough to consider \(g\geq0\).  Fix a mesh \(\delta>0\), and bound
+  \(g\) from below and above by its lower and upper step functions on the
+  intervals \([k\delta,(k+1)\delta)\).  For each fixed cell,
+  \cref{thm:blackwell} gives
+  \begin{equation*}
+    U((y-(k+1)\delta,y-k\delta])
+    \longrightarrow
+    \frac{\delta}{m}.
+  \end{equation*}
+  The uniform local bound in \cref{prop:uniform-local-bound} and
+  \cref{eq:dri-condition} control the tails uniformly in \(y\).  We may
+  therefore pass to the limit first on finitely many cells and then in the
+  cell cutoff.  The resulting lower and upper bounds are the corresponding
+  Riemann sums divided by \(m\).
+
+  On each compact interval, almost-everywhere continuity is the Lebesgue
+  criterion for Riemann integrability.  The summability in
+  \cref{eq:dri-condition} controls the two tails.  Hence the lower and upper
+  sums converge to \(\int g\) as \(\delta\downarrow0\), proving
+  \cref{eq:key-renewal}.  For a complex-valued \(g\), apply the result to the
+  positive and negative parts of its real and imaginary parts.
+\end{proof}
+
+\section{Comparison with the Laplace--Tauberian route}\label{sec:tauberian}
+
+The exponential-transform identities already formalized give
+\begin{equation}\label{eq:renewal-laplace}
+  \int_\R e^{-\theta x}\,U(\de x)
+  =
+  \frac{1}{1-L(\theta)}.
+\end{equation}
+The finite mean implies
+\begin{equation}\label{eq:laplace-asymptotic}
+  1-L(\theta)\sim m\theta,
+  \qquad \theta\downarrow0.
+\end{equation}
+Since \(U((-\infty,0])<\infty\), a monotone Tauberian theorem would yield
+\begin{equation}\label{eq:elementary-renewal}
+  U([0,x])\sim\frac{x}{m}.
+\end{equation}
+There are two remaining difficulties.
+
+First, \cref{eq:elementary-renewal} does not follow from a one-line
+exponential squeeze.  Taking \(\theta=a/x\) only gives a bound containing
+\(e^a/a\).  The exact constant requires the index-one Karamata theorem, or
+its proof by polynomial approximation of indicator functions in the variable
+\(e^{-x}\).
+
+Second, the cumulative asymptotic \cref{eq:elementary-renewal} does not imply
+the local limit \cref{eq:blackwell}.  One still needs nonlatticeness, uniform
+local control, and a smoothing or Tauberian argument at fixed spatial scale.
+Using the already formalized difference-kernel theorem at this stage does not
+remove the need for local compactness.  In particular, asymptotic invariance
+under each fixed translation together with a Cesàro limit is not sufficient
+for pointwise convergence.
+
+Thus the Laplace route requires both a new monotone Tauberian lemma and a
+second local-limit argument.  It does not consume the pole-correction work
+already present in the branch.
+
+\end{document}

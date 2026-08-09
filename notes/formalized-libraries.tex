@@ -1,0 +1,461 @@
+\documentclass[10pt,reqno,a4paper]{amsart}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm,amsfonts}
+\usepackage{mathtools}
+\usepackage[margin=25mm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{seqsplit}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage[capitalize]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\N}{\mathbb N}
+\newcommand{\Pp}{\mathbb P}
+\newcommand{\Ee}{\mathbb E}
+\newcommand{\Fou}{\mathcal F}
+\DeclareMathOperator{\Var}{Var}
+\newcommand{\dri}[1]{\lVert #1\rVert_{\mathrm{DRI}}}
+% Declaration names are long and TeX cannot break inside \texttt. Turn every
+% underscore into a break opportunity, with no hyphen inserted.
+\newcommand{\ubreak}{\char`\_\discretionary{}{}{}}
+\newcommand{\lean}[1]{{\ttfamily\let\_\ubreak\seqsplit{#1}}}
+
+\title[Two formalized libraries]{Two formalized libraries: a positive-drift
+first-passage central limit theorem and the key renewal theorem}
+\author{Benny Avelin}
+\date{\today}
+
+\raggedbottom
+
+\begin{document}
+
+\begin{abstract}
+  The manuscript \emph{Absorption cutoff and stationary singularities for
+  rounded Gaussian random dynamical systems} uses two classical results that
+  Mathlib does not contain: a central limit theorem for the first passage time
+  of a positive-drift random walk, and the key renewal theorem for directly
+  Riemann integrable functions on the line. The manuscript cites the literature
+  for both. The accompanying Lean development cannot, so it proves them, and
+  those proofs appear nowhere in the paper. This note records them at outline
+  level and maps each step to the declaration that carries it.
+\end{abstract}
+
+\maketitle
+
+\section{Why this note exists}
+
+A formalization cannot cite. Where the manuscript writes ``by
+\cite{gut2009stopped}'' or ``by \cite{feller1971vol2}'', the Lean development
+has to supply a proof, and in these two cases Mathlib offered no starting
+point: it contains no renewal theory whatsoever --- the identifiers
+\lean{renewal}, \lean{Blackwell}, \lean{directly Riemann} and \lean{ladder} do
+not occur in the library --- and no first-passage asymptotics. Two libraries
+were therefore built inside the project.
+
+They are genuine mathematical content of the formalization rather than
+bookkeeping, and a reader who wants to know what was actually verified should
+not have to reconstruct them from Lean source. That is what this note is for.
+It is an outline: complete enough to follow the architecture and check that the
+steps compose, and deliberately not a substitute for the source. Two longer
+notes in this repository, \texttt{CH3\_FIRST\_PASSAGE\_CLT\_PROOF.tex} and
+\texttt{A4G4\_BLACKWELL\_PROOF\_NOTE.tex}, carry the detailed arguments for
+\cref{sec:clt} and for the constant identification in \cref{sec:renewal}
+respectively.
+
+Throughout, declaration names are given without their \lean{AbsorptionCutoff} or
+\lean{AbsorptionCutoff.Renewal} prefix.
+
+\section{The positive-drift first-passage central limit theorem}
+\label{sec:clt}
+
+\subsection{Setting}
+
+Let $X_0, X_1, \dots$ be independent, identically distributed, square
+integrable real random variables with
+\begin{equation*}
+  \mu := \Ee X_0 > 0,
+  \qquad
+  \sigma^2 := \Var X_0 \in (0,\infty),
+\end{equation*}
+and write
+\begin{equation*}
+  S_n := \sum_{j<n} X_j,
+  \qquad
+  M_n := \max_{0\le k\le n} S_k,
+  \qquad
+  H_u := \inf\{n\ge 0 : S_n \ge u\},
+\end{equation*}
+for the partial sums (\lean{partialSum}), their running maximum
+(\lean{runningMax}) and the first weak ascending passage time above the level
+$u$ (\lean{firstPassageTime}, defined as Mathlib's \lean{hittingAfter} of
+$[u,\infty)$). The passage time takes values in $\N\cup\{\infty\}$.
+
+\begin{theorem}[Sequence-indexed first-passage profile]\label{thm:clt}
+  Let $n_r \to \infty$ be observation times and $u_r$ levels such that
+  \begin{equation}\label{eq:clt-centering}
+    \frac{u_r - n_r\mu}{\sigma\sqrt{n_r}} \longrightarrow c \in \R .
+  \end{equation}
+  Then $\Pp(H_{u_r} > n_r) \to \Phi(c)$, where $\Phi$ is the standard Gaussian
+  distribution function.
+\end{theorem}
+
+\noindent
+This is \lean{tendsto\_measureReal\_firstPassageTime\_gt}.
+
+\subsection{Outline}
+
+\emph{Step 1: duality.} Directly from the definitions,
+\begin{equation}\label{eq:duality}
+  \{H_u > n\} = \{M_n < u\},
+\end{equation}
+so the passage-time profile is a statement about the running maximum. Everything
+below is about $M_n$.
+
+\emph{Step 2: the terminal drawdown by finite reversal.} Put
+$D_n := M_n - S_n \ge 0$ (\lean{terminalDrawdown}). Reversing the first $n$
+increments --- the permutation \lean{finiteReversal}, i.e.\ \lean{Fin.revPerm}
+--- carries $D_n$ to the maximal negative partial sum of the reversed block:
+\begin{equation}\label{eq:reversal}
+  D_n
+  \;\overset{d}{=}\;
+  \max_{0\le j\le n}\bigl(-S_j\bigr) .
+\end{equation}
+The identity is pathwise on a finite block (\lean{backwardPartialSum},
+\lean{negativeBackwardRunningMax}, \lean{finiteNegativeRunningMax}), and the two
+blocks have the same law because the increments are i.i.d.; only exchangeability
+of the finite block is used.
+
+\emph{Step 3: uniform tightness of the drawdown.} By \eqref{eq:reversal} it
+suffices to bound $\max_{j\le n}(-S_j)$ uniformly in $n$. Positive drift and the
+strong law give $\inf_j S_j > -\infty$ almost surely, so the events
+$\{\forall j,\ S_j \ge -m\}$ (\lean{lowerBoundEvent}) increase to a set of full
+measure. Hence $\{D_n\}_{n}$ is tight, uniformly in $n$ --- the point being that
+the bound does not degrade as $n$ grows.
+
+\emph{Step 4: the central limit theorem for the running maximum.} Write
+$M_n = S_n + D_n$. Mathlib's Lindeberg--L\'evy theorem
+(\lean{tendstoInDistribution\_inv\_sqrt\_mul\_sum\_sub}) gives
+$(S_n - n\mu)/(\sigma\sqrt n) \Rightarrow N(0,1)$, and $D_n/\sqrt n \to 0$ in
+probability by Step 3. Slutsky then yields
+\begin{equation*}
+  \frac{M_n - n\mu}{\sigma\sqrt n} \Longrightarrow N(0,1) .
+\end{equation*}
+This is the only place a distributional limit is created; everything after it is
+deterministic bookkeeping about levels and times.
+
+\emph{Step 5: from the maximum back to the passage time.} By \eqref{eq:duality},
+\begin{equation*}
+  \Pp(H_{u_r} > n_r)
+  =
+  \Pp\!\left(
+    \frac{M_{n_r} - n_r\mu}{\sigma\sqrt{n_r}}
+    <
+    \frac{u_r - n_r\mu}{\sigma\sqrt{n_r}}
+  \right),
+\end{equation*}
+and \eqref{eq:clt-centering} together with continuity of $\Phi$ gives
+\cref{thm:clt}. Continuity is what makes the strict inequality harmless, and it
+is also why the Gaussian limit law being atomless matters here.
+
+\emph{Step 6: canonical and post-floor observation times.} The application needs
+a specific time, not an abstract sequence. For a diverging scale $L_r$ and a
+Gaussian offset $a$ set
+\begin{equation}\label{eq:canonical-time}
+  t_r
+  :=
+  \left\lfloor
+    \frac{L_r}{\mu}
+    +
+    \frac{a\sigma}{\mu^{3/2}}\sqrt{L_r}
+    +
+    q_r
+  \right\rfloor ,
+\end{equation}
+which is \lean{canonicalTimeArgument} and \lean{canonicalTime}; the variant that
+adds the perturbation \emph{after} flooring is \lean{postFloorTime}. Substituting
+$n_r = t_r$ and $u_r = L_r$ into \eqref{eq:clt-centering} makes the centering
+ratio converge to $-a$, so the limit is $\Phi(-a)$
+(\lean{tendsto\_measureReal\_firstPassageTime\_gt\_canonicalTime} and
+\lean{tendsto\_measureReal\_firstPassageTime\_gt\_postFloorTime}). The floor
+costs at most one unit and is absorbed on the $\sqrt{L_r}$ scale.
+
+\emph{Step 7: an almost surely bounded increasing correction.} The logarithmic
+radius of the Gaussian model is not a random walk but a random walk plus a
+nonlinear correction. The library therefore proves the profile for
+$S_n + E_n$, where $E$ is nonnegative, nondecreasing in $n$, and dominated by an
+almost surely finite envelope $E_\infty$; that conjunction is the path event
+\lean{correctionGoodEvent}, and the corrected passage time is
+\lean{correctedFirstPassageTime}. Monotonicity gives the two-sided sandwich
+\begin{equation*}
+  H_{u} - \text{(shift)}
+  \;\le\;
+  H^{E}_{u}
+  \;\le\;
+  H_{u}
+\end{equation*}
+at levels displaced by $E_\infty$ (\lean{correctedFirstPassageTime\_sandwich}),
+and one squeezes with the auxiliary displacement $B_r := \sqrt{\sqrt{L_r}}$,
+chosen because $B_r \to \infty$ --- so the envelope is eventually below it ---
+while $B_r/\sqrt{L_r}\to 0$, so the displacement is invisible on the CLT scale.
+The result is
+\lean{tendsto\_measureReal\_correctedFirstPassageTime\_gt\_postFloorTime}, again
+with limit $\Phi(-a)$. This is the form the fixed-width cutoff theorem consumes.
+
+\subsection{Declaration map}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.60\textwidth}@{}}
+  \toprule
+  Object or step & Declaration \\
+  \midrule
+  $S_n$, $M_n$, $D_n$, $H_u$
+    & \lean{partialSum}, \lean{runningMax}, \lean{terminalDrawdown},
+      \lean{firstPassageTime} \\
+  Reversal identity \eqref{eq:reversal}
+    & \lean{finiteReversal}, \lean{backwardPartialSum},
+      \lean{negativeBackwardRunningMax} \\
+  Drawdown tightness
+    & \lean{lowerBoundEvent}, \lean{negativeRunningMax} \\
+  Abstract profile (\cref{thm:clt})
+    & \lean{tendsto\_measureReal\_firstPassageTime\_gt} \\
+  Observation times \eqref{eq:canonical-time}
+    & \lean{canonicalTimeArgument}, \lean{canonicalTime}, \lean{postFloorTime} \\
+  At the canonical time
+    & \lean{tendsto\_measureReal\_firstPassageTime\_gt\_canonicalTime} \\
+  At the post-floor time
+    & \lean{tendsto\_measureReal\_firstPassageTime\_gt\_postFloorTime} \\
+  Bounded increasing correction
+    & \lean{correctionGoodEvent}, \lean{correctedFirstPassageTime},
+      \lean{correctedFirstPassageTime\_sandwich} \\
+  Corrected profile
+    & \lean{tendsto\_measureReal\_correctedFirstPassageTime\_gt\_postFloorTime} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+All of the above live in \texttt{AbsorptionCutoff/FirstPassageCLT.lean}, which is a pure
+Mathlib leaf: it imports nothing else from the project.
+
+\section{The key renewal theorem}\label{sec:renewal}
+
+\subsection{Setting}
+
+Let $\widehat\mu$ be a nonlattice probability measure on $\R$ with finite second
+moment and drift
+\begin{equation*}
+  \widehat m := \int_\R z\,\widehat\mu(\mathrm dz) \in (0,\infty),
+\end{equation*}
+and assume a finite exponential moment $\int e^{-\theta z}\,\widehat\mu(\mathrm dz)<1$
+for some $\theta>0$. Write $\widehat\mu^{*n}$ for the $n$-fold convolution and
+\begin{equation*}
+  U := \sum_{n\ge0}\widehat\mu^{*n}
+\end{equation*}
+for the renewal measure. For $g:\R\to\R$ put
+\begin{equation}\label{eq:dri-norm}
+  \dri{g} := \sum_{k\in\Z}\ \sup_{y\in[k,k+1]} \lvert g(y)\rvert ,
+\end{equation}
+the directly-Riemann-integrable norm (\lean{driNorm}).
+
+\begin{theorem}[Key renewal theorem]\label{thm:key-renewal}
+  For every continuous $z:\R\to\R$ with $\dri{z}<\infty$,
+  \begin{equation*}
+    \sum_{n\ge0}\int_\R z(y-s)\,\widehat\mu^{*n}(\mathrm ds)
+    \;\longrightarrow\;
+    \frac{1}{\widehat m}\int_\R z ,
+    \qquad y\to\infty .
+  \end{equation*}
+\end{theorem}
+
+\noindent
+This is \lean{tendsto\_tsum\_integral\_comp\_sub\_of\_driNorm}.
+
+\subsection{Outline}
+
+Mathlib supplies convolution of measures (\lean{Measure.conv}) with
+associativity, commutativity, unit laws and the integral formulas, and nothing
+else relevant. Everything below is built on that substrate.
+
+\emph{Step 1: the renewal measure is locally finite.} A Chernoff estimate on the
+exponential transform gives the explicit left-tail bound
+$U(s) \le e^{\theta b}/(1-\int e^{-\theta z}\,\mathrm d\widehat\mu)$ for
+$s\subseteq(-\infty,b]$ (\lean{renewalMeasure\_le\_of\_expTransform}), hence
+$U(I)<\infty$ for every bounded interval
+(\lean{renewalMeasure\_Icc\_lt\_top}). Local finiteness is what makes the
+smoothed series meaningful at all.
+
+\emph{Step 2: the d.R.i.\ norm controls the series.} A \emph{uniform} bound
+$U([y,y+\ell])\le C$, valid for all $y\in\R$ rather than only $y\to\infty$,
+converts \eqref{eq:dri-norm} into the estimate
+\begin{equation}\label{eq:dri-control}
+  \sum_{n\ge0}\int_\R g(y-s)\,\widehat\mu^{*n}(\mathrm ds)
+  \;\le\;
+  C\,\dri{g}
+  \qquad\text{uniformly in } y
+\end{equation}
+(\lean{tsum\_lintegral\_comp\_sub\_le}), together with
+$\lVert\cdot\rVert_{L^1}\le\dri{\cdot}$
+(\lean{lintegral\_le\_driNorm}). Two kernels' series therefore differ by at most
+$C\dri{z-w}$ uniformly in $y$
+(\lean{norm\_tsum\_integral\_comp\_sub\_sub\_le}). This inequality is the engine
+of the whole approximation argument: it means it is enough to prove the limit on
+a $\dri{\cdot}$-dense class.
+
+\emph{Step 3: a kernel with compactly supported Fourier transform.} The
+Fourier transform of the box $\mathbf 1_{[-1,1]}$ is the sinc function, so the
+\emph{square}
+\begin{equation*}
+  \mathrm{sincSq} := \mathrm{sinc}^2
+\end{equation*}
+is nonnegative and its Fourier transform is the triangle function, which is
+compactly supported (\lean{RenewalKernel.lean}: \lean{sincSq},
+\lean{triangle\_eq}, \lean{sincSq\_le}). Compact \emph{spectral} support is
+exactly what licenses the Riemann--Lebesgue step without assuming any decay of
+the characteristic function of $\widehat\mu$ at infinity --- decay that
+nonlatticeness alone does not provide. This is the reason the argument is run
+against a bandlimited test kernel rather than directly against $z$.
+
+\emph{Step 4: Abel regularization identifies the constant.} Testing the renewal
+series against a bandlimited kernel and inverting the Fourier transform produces
+a pole at the origin. The naive symmetric principal value around that pole yields
+only \emph{half} of $1/\widehat m$; the missing half is the boundary term that
+the one-sided renewal series $\sum_{n\ge0}$ selects. Abel regularization ---
+weighting the $n$-th convolution by $r^n$ and letting $r\uparrow1$ --- keeps the
+characteristic-function estimates, avoids the improper Dirichlet integral, and
+delivers the full constant. The outcome is the reference-kernel limit
+\begin{equation*}
+  \sum_{n\ge0}\int v(y-z)\,\widehat\mu^{*n}(\mathrm dz)
+  \longrightarrow
+  \frac{1}{\widehat m}\int v
+\end{equation*}
+for bounded nonnegative continuous bandlimited $v$
+(\lean{tendsto\_tsum\_integral\_comp\_sub}), extended to signed bandlimited
+kernels by \lean{tendsto\_of\_tendsto\_sum\_integral\_comp\_sub\_bandlimited}.
+\textbf{This is the step where Blackwell's constant is identified}, and it is the
+mathematical heart of the library;
+\texttt{A4G4\_BLACKWELL\_PROOF\_NOTE.tex} gives it in full, including why the
+Laplace--Tauberian alternative does not shorten the work.
+
+\emph{Step 5: discharging the abstract hypotheses.} Reading
+$\Fou(\mathrm{sincSq})$ at the origin gives $\int \mathrm{sincSq} = 2$
+(\lean{integral\_sincSq}), so Step 4 applies concretely:
+$\sum_n\int \mathrm{sincSq}(y-z)\,\widehat\mu^{*n}(\mathrm dz)\to 2/\widehat m$
+(\lean{tendsto\_tsum\_integral\_comp\_sub\_sincSq}). The two-sided uniform cell
+bound of Step 2 is obtained here as well, by combining the $y\to\infty$ bound
+with the Chernoff left-tail bound
+(\lean{exists\_bound\_renewalMeasure\_Icc\_of\_expTransform}).
+
+\emph{Step 6: bandlimited approximation in $\dri{\cdot}$.} Let
+$K_a := \tfrac a2\,\mathrm{sincSq}(a\,\cdot)$ be the rescaled approximate
+identity (\lean{smoothKernel}): it has unit mass, band $[-2a,2a]$ and decay
+$4a/(1+a^2t^2)$. For continuous compactly supported $w$ the smoothing
+$w \star K_a$ (\lean{smoothed}) is bandlimited at $2a$
+(\lean{fourier\_smoothed\_eq\_zero}), converges to $w$ uniformly
+(\lean{exists\_forall\_norm\_smoothed\_sub\_le}), and has far field decaying like
+$(a\cdot\mathrm{dist}^2)^{-1}$ (\lean{norm\_smoothed\_le\_of\_support}) --- fast
+enough for the far cells of \eqref{eq:dri-norm} to be summable. The two regimes
+combine into $\dri{w - w\star K_a}\to0$
+(\lean{exists\_driNorm\_smoothed\_sub\_lt}).
+
+\emph{Step 7: conclusion.} A continuous kernel of finite d.R.i.\ norm is
+$\dri{\cdot}$-approximable by continuous compactly supported ones
+(\lean{exists\_hasCompactSupport\_driNorm\_sub\_lt}), those by bandlimited ones
+(Step 6), and the limit is known for bandlimited kernels (Steps 4--5). Since by
+\eqref{eq:dri-control} the series depend on the kernel $\dri{\cdot}$-Lipschitzly
+and uniformly in $y$, the limit passes to $z$, giving \cref{thm:key-renewal}.
+
+\begin{remark}[Why continuity, and not almost-everywhere continuity]
+  The classical statement assumes only that $z$ is almost everywhere continuous.
+  This route needs genuine continuity, because the approximation is carried out
+  in $\dri{\cdot}$ and indicators are \emph{not} $\dri{\cdot}$-approximable by
+  continuous functions --- the supremum over a cell straddling a jump does not
+  shrink. The gap is real at the level of the abstract theorem and costs nothing
+  in the application: the manuscript states \lean{lem:nd-gaussian-renewal} with
+  the continuity hypothesis, and \lean{prop:nd-forcing-admissibility} proves that
+  the only forcing the lemma is ever applied to is continuous in the radial
+  level.
+\end{remark}
+
+\subsection{Declaration map}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.60\textwidth}@{}}
+  \toprule
+  Object or step & Declaration \\
+  \midrule
+  Renewal measure, Chernoff tail
+    & \lean{renewalMeasure\_le\_of\_expTransform},
+      \lean{renewalMeasure\_Icc\_lt\_top} \\
+  d.R.i.\ norm \eqref{eq:dri-norm} and \eqref{eq:dri-control}
+    & \lean{driNorm}, \lean{tsum\_lintegral\_comp\_sub\_le},
+      \lean{lintegral\_le\_driNorm} \\
+  Uniform kernel-difference bound
+    & \lean{norm\_tsum\_integral\_comp\_sub\_sub\_le} \\
+  Uniform cell bound
+    & \lean{exists\_bound\_renewalMeasure\_Icc\_of\_expTransform} \\
+  The $\mathrm{sinc}^2$ kernel
+    & \lean{sincSq}, \lean{triangle\_eq}, \lean{integral\_sincSq} \\
+  Constant identification (Abel)
+    & \lean{tendsto\_tsum\_integral\_comp\_sub} \\
+  Signed bandlimited kernels
+    & \lean{tendsto\_of\_tendsto\_sum\_integral\_comp\_sub\_bandlimited} \\
+  Concrete limit at $\mathrm{sinc}^2$
+    & \lean{tendsto\_tsum\_integral\_comp\_sub\_sincSq} \\
+  Approximate identity and smoothing
+    & \lean{smoothKernel}, \lean{smoothed}, \lean{fourier\_smoothed\_eq\_zero} \\
+  Bandlimited $\dri{\cdot}$-approximation
+    & \lean{exists\_driNorm\_smoothed\_sub\_lt},
+      \lean{exists\_hasCompactSupport\_driNorm\_sub\_lt} \\
+  Key renewal theorem (\cref{thm:key-renewal})
+    & \lean{tendsto\_tsum\_integral\_comp\_sub\_of\_driNorm} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+These live in \texttt{AbsorptionCutoff/Supercritical/}: \texttt{Renewal.lean} (renewal
+measure, d.R.i.\ norm, cell estimates), \texttt{RenewalKernel.lean} (the
+$\mathrm{sinc}^2$ kernel), \texttt{RenewalAbel.lean} (the Abel argument),
+\texttt{RenewalSinc.lean} (discharging the abstract hypotheses) and
+\texttt{RenewalApprox.lean} (bandlimited approximation and the theorem). The
+split across five modules is for build time, not mathematics.
+
+\subsection{What the manuscript uses}
+
+\cref{thm:key-renewal} is instantiated at the Cram\'er-tilted increment law
+$\widehat\mu_{A,N}$ to give the manuscript's
+\lean{lem:nd-gaussian-renewal}, whose four analytic hypotheses --- nonlattice,
+square integrable, positive drift, finite exponential moment --- are each
+established for that law in \texttt{StationaryEquation.lean}. The angular part
+of the manuscript's renewal equation requires no measure theory on the sphere:
+the product form of the tilted kernel makes the angular integral factor out as a
+constant, leaving the same scalar convolution for every test function.
+
+\begin{thebibliography}{9}
+\bibitem{feller1971vol2}
+  W.~Feller,
+  \emph{An Introduction to Probability Theory and Its Applications}, vol.~2,
+  2nd ed., Wiley, 1971. \S XI.1 and \S XI.9.
+\bibitem{gut2009stopped}
+  A.~Gut,
+  \emph{Stopped Random Walks: Limit Theorems and Applications},
+  2nd ed., Springer, 2009. Theorem 3.5.1; Theorem 6.6 and Remark 6.4.
+\end{thebibliography}
+
+\end{document}

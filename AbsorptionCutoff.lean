@@ -1,0 +1,88 @@
+/-
+Copyright (c) 2026 Benny Avelin. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Benny Avelin
+-/
+import AbsorptionCutoff.Rounding
+import AbsorptionCutoff.Lattice
+import AbsorptionCutoff.FixedPrecision
+import AbsorptionCutoff.OrbitAmplification
+import AbsorptionCutoff.RadiusConcentration
+import AbsorptionCutoff.GaussianSum
+import AbsorptionCutoff.FirstPassageCLT
+import AbsorptionCutoff.FixedWidth
+import AbsorptionCutoff.FixedWidthCorrection
+import AbsorptionCutoff.FixedWidthCoupling
+import AbsorptionCutoff.FixedWidthCouplingProbability
+import AbsorptionCutoff.FixedWidthCouplingAdapted
+import AbsorptionCutoff.FixedWidthCouplingLaw
+import AbsorptionCutoff.FixedWidthCouplingRadial
+import AbsorptionCutoff.FixedWidthCouplingIID
+import AbsorptionCutoff.FixedWidthCouplingSubproducts
+import AbsorptionCutoff.FixedWidthCouplingAccumulation
+import AbsorptionCutoff.FixedWidthCouplingProductBounds
+import AbsorptionCutoff.FixedWidthAbsorption
+import AbsorptionCutoff.FixedWidthAbsorptionEntrance
+import AbsorptionCutoff.FixedWidthAbsorptionEntranceBounds
+import AbsorptionCutoff.FixedWidthAbsorptionEntranceAssembly
+import AbsorptionCutoff.FixedWidthAbsorptionEntranceTransfer
+import AbsorptionCutoff.FixedWidthAbsorptionRegenerationFinal
+import AbsorptionCutoff.MeanMap
+import AbsorptionCutoff.Cutoff
+import AbsorptionCutoff.Estimates
+import AbsorptionCutoff.AffineEntrance
+import AbsorptionCutoff.StoppedMoment
+import AbsorptionCutoff.AbsorptionTime
+import AbsorptionCutoff.MarkovTrajectory
+import AbsorptionCutoff.Chains
+import AbsorptionCutoff.RoundedAbsorption
+import AbsorptionCutoff.VectorReduction
+import AbsorptionCutoff.InvariantSelection
+import AbsorptionCutoff.DimensionCutoff
+import AbsorptionCutoff.RoundedVectorReduction
+import AbsorptionCutoff.Metastability
+import AbsorptionCutoff.Supercritical.Deterministic
+import AbsorptionCutoff.Supercritical.GaussianRadial
+import AbsorptionCutoff.Supercritical.TruncatedCramer
+import AbsorptionCutoff.Supercritical.InvariantLaw
+import AbsorptionCutoff.Supercritical.ScoreSmoothing
+import AbsorptionCutoff.Supercritical.ScoreTensorization
+import AbsorptionCutoff.Supercritical.TerminalLocalization
+import AbsorptionCutoff.Supercritical.TerminalEntrance
+import AbsorptionCutoff.Supercritical.TerminalEntranceAssembly
+import AbsorptionCutoff.Supercritical.TerminalCutoff
+import AbsorptionCutoff.Supercritical.ScalarCutoff
+import AbsorptionCutoff.Supercritical.ScalarCutoffAssembly
+import AbsorptionCutoff.Supercritical.CutoffProfileAssembly
+import AbsorptionCutoff.Supercritical.CutoffLimitAssembly
+import AbsorptionCutoff.Supercritical.InvariantSelection
+import AbsorptionCutoff.Supercritical.Renewal
+import AbsorptionCutoff.Supercritical.RenewalKernel
+import AbsorptionCutoff.Supercritical.RenewalAbel
+import AbsorptionCutoff.Supercritical.RenewalSinc
+import AbsorptionCutoff.Supercritical.RenewalApprox
+import AbsorptionCutoff.Supercritical.RenewalEquation
+import AbsorptionCutoff.Supercritical.StationaryEquation
+import AbsorptionCutoff.Supercritical.StationaryRenewal
+import AbsorptionCutoff.Supercritical.LogPolar
+import AbsorptionCutoff.Supercritical.PolarPerturbation
+import AbsorptionCutoff.Supercritical.PolarPerturbationIntegral
+import AbsorptionCutoff.Supercritical.NonlinearForcingAdmissibilityAssembly
+import AbsorptionCutoff.Supercritical.NonlinearForcingAdmissibilityFinal
+import AbsorptionCutoff.Supercritical.PowerSingularity
+import AbsorptionCutoff.Supercritical.PowerSingularityRenewal
+import AbsorptionCutoff.MainTheorems
+
+/-!
+# AbsorptionCutoff
+
+Lean formalization of *Absorption cutoff and stationary singularities for rounded
+Gaussian random dynamical systems*.
+
+The public theorem surface is `AbsorptionCutoff.MainTheorems`. The imported modules
+formalize the common setup and all headline results in manuscript §§2--7:
+fixed-width and fixed-precision cutoff, metastability and fixed-dimensional
+absorption, supercritical scalar and vector cutoff, and the stationary power
+singularity. The auxiliary development includes the positive-drift
+first-passage and key-renewal libraries needed by those proofs.
+-/

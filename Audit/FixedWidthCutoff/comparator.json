@@ -1,0 +1,9 @@
+{
+  "challenge_module": "Audit.FixedWidthCutoff.Challenge",
+  "solution_module": "Audit.FixedWidthCutoff.Solution",
+  "theorem_names": [
+    "AbsorptionCutoff.StatementAudit.FixedWidthCutoff.rounded_gaussian_nearest_cutoff"
+  ],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": false
+}

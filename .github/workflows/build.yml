@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Reclaim ~30 GB of preinstalled tooling: the Mathlib oleans do not fit on
+      # the stock ubuntu-latest disk ("No space left on device").
+      - uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
+      # Installs the toolchain from `lean-toolchain`, runs `lake exe cache get`
+      # for the prebuilt Mathlib oleans, then `lake build` on the default target.
+      - uses: leanprover/lean-action@v1
+        with:
+          use-mathlib-cache: true
+
+      # The Mathlib-only comparator surface. Each Challenge.lean ends in one
+      # intentional statement-level `sorry`, which is why `Audit` is not part of
+      # `defaultTargets` and is built separately here.
+      - name: Build the audit surface
+        run: lake build Audit
+
+      # `blueprint/lean_decls` is committed so this checks the complete public
+      # dependency graph without requiring the Python leanblueprint toolchain.
+      - name: Check blueprint declarations
+        run: lake exe checkdecls blueprint/lean_decls
+
+      # Prints `#print axioms` for the seven headline theorems, so the log itself
+      # records that they use only propext, Classical.choice, and Quot.sound.
+      - name: Axiom audit
+        run: lake build AbsorptionCutoff.Meta.AxiomsAudit

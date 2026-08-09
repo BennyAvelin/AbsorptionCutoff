@@ -1,0 +1,2888 @@
+% Blueprint content for the AbsorptionCutoff formalization.
+% Nodes carry \lean{...} (Lean declaration), \leanok (formalized), and
+% \uses{...} (dependencies) so leanblueprint can build the dependency graph
+% and checkdecls can verify the declaration names against the Lean project.
+
+\chapter{Setup: rounding, the squared-radius mean map, and cutoff}
+
+This chapter collects the state-independent scaffolding of the paper (§1--§2):
+the nearest-grid rounding map, the squared-radius mean map $V_A$ and its
+fixed-point structure, and the total-variation cutoff / mixing-time definitions.
+It corresponds to the first formalized batch.
+
+\section{Nearest-grid rounding}
+
+\begin{definition}[Unit-grid rounding]
+  \label{def:Q1}
+  \lean{AbsorptionCutoff.Q₁}
+  \leanok
+  The scalar nearest-integer rounding $Q_1:\mathbb{R}\to\mathbb{Z}$, with ties
+  broken toward the grid point of smaller absolute value (round half toward
+  zero).
+\end{definition}
+
+\begin{lemma}[Zero bin]
+  \label{lem:Q1-zero}
+  \lean{AbsorptionCutoff.Q₁_zero_iff}
+  \leanok
+  \uses{def:Q1}
+  $Q_1 u = 0 \iff |u| \le \tfrac12$.
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{def:Q1}
+  Split on the sign of $u$ and use $\lceil r\rceil = 0 \iff r\in(-1,0]$.
+\end{proof}
+
+\begin{lemma}[Rounding error]
+  \label{lem:Q1-err}
+  \lean{AbsorptionCutoff.Q₁_sub_le}
+  \leanok
+  \uses{def:Q1}
+  $|Q_1 u - u| \le \tfrac12$.
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{def:Q1}
+  From $r \le \lceil r\rceil < r+1$ with $r = |u| - \tfrac12$.
+\end{proof}
+
+\begin{definition}[Grid and vector rounding]
+  \label{def:Qrho}
+  \lean{AbsorptionCutoff.gridRound, AbsorptionCutoff.Qρ}
+  \leanok
+  \uses{def:Q1}
+  $\mathrm{gridRound}_\varrho(u) = \varrho\, Q_1(u/\varrho)$ and the
+  coordinatewise vector rounding $Q_\varrho(x)_i = \mathrm{gridRound}_\varrho(x_i)$
+  onto $(\varrho\mathbb{Z})^N$.
+\end{definition}
+
+\begin{lemma}[Vector zero bin]
+  \label{lem:Qrho-zero}
+  \lean{AbsorptionCutoff.Qρ_eq_zero_iff}
+  \leanok
+  \uses{def:Qrho}
+  For $\varrho>0$, $Q_\varrho x = 0 \iff |x_i|\le \varrho/2$ for all $i$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:Q1-zero}\end{proof}
+
+\section{The squared-radius mean map}
+
+\begin{definition}[Squared-radius mean map]
+  \label{def:V}
+  \lean{AbsorptionCutoff.V}
+  \leanok
+  $V_A(q) = \mathbb{E}\!\left[\tanh^2\!\big(A\sqrt{q}\,G\big)\right]$, where
+  $G\sim\mathcal N(0,1)$.
+\end{definition}
+
+\begin{lemma}[Elementary values]
+  \label{lem:V-basic}
+  \lean{AbsorptionCutoff.V_zero, AbsorptionCutoff.V_nonneg}
+  \leanok
+  \uses{def:V}
+  $V_A(0) = 0$ and $V_A(q) \ge 0$.
+\end{lemma}
+\begin{proof}\leanok\uses{def:V}\end{proof}
+
+\begin{theorem}[Unique positive fixed point]
+  \label{thm:fixed-point}
+  \lean{AbsorptionCutoff.exists_unique_positive_fixed}
+  \leanok
+  \uses{lem:no-two-fixed}
+  A continuous, strictly concave self-map $f$ of $[0,1]$ with $f(0)=0$,
+  $f(1)<1$, that exceeds the diagonal at some interior point, has a unique fixed
+  point in $(0,1)$. This is the state-independent core of the paper's
+  Lemma on fixed points and linearization of $V_A$.
+\end{theorem}
+\begin{proof}
+  \leanok
+  \uses{lem:no-two-fixed}
+  Existence: the intermediate value theorem applied to $g=f-\mathrm{id}$ on
+  $[q_0,1]$, where $g(q_0)>0>g(1)$. Uniqueness: Lemma~\ref{lem:no-two-fixed}.
+\end{proof}
+
+\begin{lemma}[At most one positive fixed point]
+  \label{lem:no-two-fixed}
+  \lean{AbsorptionCutoff.no_two_fixed}
+  \leanok
+  A strictly concave $f$ on $[0,1]$ with $f(0)=0$ has no two distinct positive
+  fixed points.
+\end{lemma}
+\begin{proof}
+  \leanok
+  Writing the smaller fixed point $a$ as a strict convex combination of $0$ and
+  the larger $b$, strict concavity gives $f(a) > a$, contradicting $f(a)=a$.
+\end{proof}
+
+\begin{lemma}[$V_A < 1$]
+  \label{lem:V-lt-one}
+  \lean{AbsorptionCutoff.V_lt_one}
+  \leanok
+  \uses{def:V}
+  $V_A(q) < 1$ for all $q$; in particular $V_A(1)<1$. Since $\tanh^2<1$ pointwise,
+  $1-V_A(q)=\int(1-\tanh^2)\,\mathrm d\mu>0$.
+\end{lemma}
+\begin{proof}\leanok\uses{def:V}\end{proof}
+
+\begin{lemma}[$V_A$ continuous]
+  \label{lem:V-continuous}
+  \lean{AbsorptionCutoff.V_continuous}
+  \leanok
+  \uses{def:V}
+  $V_A$ is continuous (continuity under the integral sign, dominated by $1$).
+\end{lemma}
+\begin{proof}\leanok\uses{def:V}\end{proof}
+
+\begin{theorem}[Fixed point of $V_A$, conditional]
+  \label{thm:V-fixed}
+  \lean{AbsorptionCutoff.V_exists_unique_fixed_of_structural}
+  \leanok
+  \uses{thm:fixed-point, def:V, lem:V-basic, lem:V-lt-one, lem:V-continuous}
+  Conditional only on strict concavity of $V_A$, the map has a unique positive fixed
+  point; continuity and the boundary value $V_A(1)<1$ are supplied by
+  Lemmas~\ref{lem:V-continuous} and~\ref{lem:V-lt-one}. The unconditional $A>1$
+  statement follows after the strict-concavity and near-zero slope estimates below.
+\end{theorem}
+\begin{proof}\leanok\uses{thm:fixed-point, lem:V-lt-one, lem:V-continuous}\end{proof}
+
+\begin{lemma}[$\tanh x / x$ strictly decreasing]
+  \label{lem:tanh-div}
+  \lean{AbsorptionCutoff.tanh_div_self_strictAntiOn}
+  \leanok
+  The map $x\mapsto \tanh x/x$ is strictly decreasing on $(0,\infty)$.
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  Its derivative is $((1-\tanh^2 x)x-\tanh x)/x^2$, which is negative because
+  $x<\sinh(2x)/2$.
+\end{proof}
+
+\begin{lemma}[Ratio monotonicity of $V_A$]
+  \label{lem:V-ratio}
+  \lean{AbsorptionCutoff.V_ratio_strictAntiOn}
+  \leanok
+  \uses{lem:tanh-div, def:V}
+  For $A\neq0$, $q\mapsto V_A(q)/q$ is strictly decreasing on $(0,1)$: integrate the
+  pointwise decrease of $\tanh^2(A\sqrt q\,g)/q$, strict off the Gaussian-null set
+  $\{g=0\}$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:tanh-div}\end{proof}
+
+\begin{lemma}[$V_A$ strictly concave]
+  \label{lem:V-concave}
+  \lean{AbsorptionCutoff.V_strictConcaveOn}
+  \leanok
+  \uses{def:V, lem:tanh-div}
+  For $A\neq0$, $V_A$ is strictly concave on $[0,1]$ (paper's
+  \emph{lem:gaussian-mean-field-concavity}). Pointwise $q\mapsto\tanh^2(A g\sqrt q)$
+  is strictly concave (its derivative $a^2(\tanh x/x)\sech^2 x$, $x=a\sqrt q$, is
+  strictly decreasing); integrate, strict off the Gaussian-null set $\{g=0\}$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:tanh-div}\end{proof}
+
+\begin{lemma}[$V_A$ strictly increasing]
+  \label{lem:V-mono}
+  \lean{AbsorptionCutoff.V_strictMonoOn}
+  \leanok
+  \uses{def:V}
+  For $A\neq0$, $V_A$ is strictly increasing on $[0,1]$: pointwise
+  $q\mapsto\tanh^2(A g\sqrt q)$ is increasing, strict off $\{g=0\}$; integrate.
+\end{lemma}
+\begin{proof}\leanok\uses{def:V}\end{proof}
+
+\begin{theorem}[Unique fixed point of $V_A$]
+  \label{thm:V-fixed-uncond}
+  \lean{AbsorptionCutoff.V_exists_unique_fixed}
+  \leanok
+  \uses{lem:V-concave, lem:V-continuous, lem:V-lt-one}
+  For $A\neq0$, if $V_A$ exceeds the diagonal at some $q_0\in(0,1)$ (true for $A>1$),
+  it has a unique positive fixed point. This is the paper's
+  \emph{lem:gaussian-mean-field-concavity}, proved the paper's way via strict concavity
+  of $V_A$ (continuity and $V_A(1)<1$ are also discharged).
+\end{theorem}
+\begin{proof}\leanok\uses{lem:V-concave}\end{proof}
+
+\begin{lemma}[$V_A$ differentiable under the integral]
+  \label{lem:V-deriv}
+  \lean{AbsorptionCutoff.hasDerivAt_V}
+  \leanok
+  \uses{def:V}
+  For $A\neq0$ and $q>0$, $V_A$ is differentiable at $q$ with
+  $V_A'(q)=\int f_{Ag}'(q)\,d\mu$, obtained by differentiating under the integral sign.
+  The derivative integrand $f_{Ag}'(q)=(Ag)^2(\tanh x/x)\sech^2 x$ ($x=A\sqrt q\,g$) is
+  dominated by $g\mapsto(Ag)^2$, integrable since the standard Gaussian has a finite
+  second moment.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Fixed-point multiplier $\mu_A\in(0,1)$]
+  \label{lem:V-multiplier}
+  \lean{AbsorptionCutoff.V_multiplier_mem_Ioo}
+  \leanok
+  \uses{lem:V-deriv, lem:V-concave}
+  At any positive fixed point $q_\ast\in(0,1)$ of $V_A$ ($A\neq0$), the multiplier
+  $\mu_A:=V_A'(q_\ast)$ satisfies $0<\mu_A<1$ (paper \emph{eq:gaussian-fixed-point}):
+  positivity from $V_A'(q_\ast)=\int f_{Ag}'(q_\ast)>0$ (integrand positive off
+  $\{g=0\}$); the upper bound from strict concavity, the graph lying below the tangent
+  at $q_\ast$, so $V_A'(q_\ast)<V_A(q_\ast)/q_\ast=1$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:V-deriv, lem:V-concave}\end{proof}
+
+\begin{lemma}[Near-zero slope $V_A'(0+)=A^2$]
+  \label{lem:V-deriv-zero}
+  \lean{AbsorptionCutoff.V_ratio_tendsto}
+  \leanok
+  \uses{def:V}
+  For $A\neq0$, $V_A(q)/q\to A^2$ as $q\to0^+$ (paper
+  \emph{eq:gaussian-mean-field-near-zero}). Dominated convergence of
+  $g\mapsto\tanh^2(A\sqrt q\,g)/q\to(Ag)^2$ (bound $\tanh^2 x\le x^2$, dominating
+  function $A^2g^2$), using the Gaussian second moment $\int g^2=1$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{theorem}[Unconditional fixed point for $A>1$]
+  \label{thm:V-fixed-gt-one}
+  \lean{AbsorptionCutoff.V_exists_unique_fixed_of_one_lt}
+  \leanok
+  \uses{lem:V-deriv-zero, thm:V-fixed-uncond}
+  For $A>1$, $V_A$ has a unique positive fixed point $q_\ast\in(0,1)$, with no
+  exceed-diagonal hypothesis: since $V_A'(0+)=A^2>1$, $V_A$ exceeds the diagonal near
+  $0$ (\texttt{V\_exceeds\_diagonal\_of\_one\_lt}), discharging the last hypothesis of
+  \cref{thm:V-fixed-uncond}. This is the full $A>1$ case of
+  \emph{lem:gaussian-mean-field-concavity}.
+\end{theorem}
+\begin{proof}\leanok\uses{lem:V-deriv-zero}\end{proof}
+
+\begin{theorem}[Only fixed point $0$ for $A\le1$]
+  \label{thm:V-fixed-le-one}
+  \lean{AbsorptionCutoff.V_fixed_eq_zero_of_le_one}
+  \leanok
+  \uses{lem:V-ratio, lem:V-deriv-zero, lem:V-lt-one}
+  For $0<A\le1$, the only fixed point of $V_A$ in $[0,1]$ is $0$ (the $A\le1$ case of
+  \emph{lem:gaussian-mean-field-concavity}). Since $q\mapsto V_A(q)/q$ is strictly
+  decreasing with right-limit $A^2$ at $0^+$, it is $<A^2\le1$ throughout $(0,1)$
+  (\texttt{V\_ratio\_lt\_sq}), so $V_A(q)<q$ there (\texttt{V\_lt\_self\_of\_le\_one});
+  with $V_A(1)<1$ this excludes any positive fixed point.
+\end{theorem}
+\begin{proof}\leanok\uses{lem:V-ratio, lem:V-deriv-zero}\end{proof}
+
+\begin{lemma}[Orbit sign relative to the fixed point]
+  \label{lem:V-orbit-sign}
+  \lean{AbsorptionCutoff.V_gt_self_of_lt_fixed, AbsorptionCutoff.V_lt_self_of_gt_fixed}
+  \leanok
+  \uses{lem:V-ratio}
+  Let $q_\ast\in(0,1)$ be a fixed point of $V_A$ ($A\ne0$). Since $q\mapsto V_A(q)/q$ is
+  strictly decreasing and equals $1$ at $q_\ast$, one has $V_A(q)>q$ for $q\in(0,q_\ast)$
+  and $V_A(q)<q$ for $q\in(q_\ast,1)$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:V-ratio}\end{proof}
+
+\begin{theorem}[Deterministic orbit convergence $V_A^t(q)\to q_\ast$]
+  \label{thm:V-orbit-convergence}
+  \lean{AbsorptionCutoff.V_orbit_tendsto, AbsorptionCutoff.exists_fixed_and_orbit_tendsto,
+    AbsorptionCutoff.V_orbit_tendsto_Ioc,
+    AbsorptionCutoff.summable_abs_V_orbit_sub_fixed,
+    AbsorptionCutoff.koenigsOrbitFactor, AbsorptionCutoff.V_iterate_ne_fixed,
+    AbsorptionCutoff.summable_abs_koenigsOrbitFactor_sub_one,
+    AbsorptionCutoff.koenigsOrbitFactor_pos, AbsorptionCutoff.koenigsOrbitProduct,
+    AbsorptionCutoff.multipliable_koenigsOrbitFactor_and_product_ne_zero,
+    AbsorptionCutoff.mul_prod_range_koenigsOrbitFactor_eq_normalized,
+    AbsorptionCutoff.mul_koenigsOrbitProduct_ne_zero,
+    AbsorptionCutoff.tendsto_normalized_V_orbit_sub_fixed,
+    AbsorptionCutoff.koenigsCoefficient,
+    AbsorptionCutoff.koenigsCoefficient_ne_zero,
+    AbsorptionCutoff.V_orbit_sub_fixed_sub_koenigsCoefficient_mul_pow_isLittleO,
+    AbsorptionCutoff.exists_uniform_eventual_geometric_V_orbit_bound,
+    AbsorptionCutoff.exists_uniform_summable_koenigsOrbitFactor_tail_bound,
+    AbsorptionCutoff.exists_hasProdUniformlyOn_koenigsOrbitFactor_tail,
+    AbsorptionCutoff.continuousOn_koenigsOrbitFactor,
+    AbsorptionCutoff.exists_tendstoUniformlyOn_koenigsCoefficient,
+    AbsorptionCutoff.continuousOn_koenigsCoefficient,
+    AbsorptionCutoff.exists_tendstoUniformlyOn_shifted_normalized_V_orbit_sub_fixed,
+    AbsorptionCutoff.exists_tendstoUniformlyOn_normalized_V_orbit_sub_fixed,
+    AbsorptionCutoff.exists_tendstoUniformlyOn_koenigs_remainder_ratio,
+    AbsorptionCutoff.exists_continuous_local_uniform_koenigs_asymptotic}
+  \leanok
+  \uses{lem:V-orbit-sign, lem:V-mono, lem:V-continuous, lem:V-lt-one, thm:V-fixed-gt-one}
+  Assume $A>1$, and let $q_\ast$ be the unique positive fixed point of $V_A$ and
+  $\mu_A=V_A'(q_\ast)\in(0,1)$. For every $q\in(0,1]$,
+  \[
+    V_A^n(q)\longrightarrow q_\ast,
+    \qquad
+    \sum_{n=0}^\infty |V_A^n(q)-q_\ast|<\infty.
+  \]
+  If $q\ne q_\ast$, there is a nonzero coefficient $C(q)$ such that
+  \[
+    V_A^n(q)-q_\ast-C(q)\mu_A^n=o(\mu_A^n)
+  \]
+  as $n\to\infty$. The coefficient $C$ is continuous and nonzero locally on
+  $(0,1]$ away from $q_\ast$, and the normalized remainder
+  \[
+    \frac{V_A^n(q)-q_\ast-C(q)\mu_A^n}{\mu_A^n}
+  \]
+  tends to zero locally uniformly there.
+\end{theorem}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:V-orbit-sign, lem:V-mono, lem:V-continuous, thm:V-fixed-gt-one}
+  The orbit-sign lemma makes every orbit monotone and bounded. Its limit is a
+  fixed point by continuity, and hence equals $q_\ast$. After finite entrance
+  into a neighborhood on which $V_A$ is a strict contraction, the orbit error
+  has a summable geometric bound.
+
+  For $q\ne q_\ast$, strict monotonicity keeps the orbit on one side of the
+  fixed point. The positive secant factors are therefore well-defined, their
+  deviations from one are summable, and their infinite product is nonzero.
+  The finite-product identity gives the coefficient $C(q)$ and the pointwise
+  asymptotic. On a neighborhood of any $q\ne q_\ast$, a common entrance time
+  and summable majorant give uniform convergence of the product. This proves
+  continuity of $C$ and the locally uniform remainder estimate.
+\end{proof}
+
+\begin{lemma}[Deterministic entrance into the stable interval]
+  \label{lem:gaussian-deterministic-entrance}
+  \lean{AbsorptionCutoff.exists_local_V_contraction_with_deriv,
+    AbsorptionCutoff.abs_V_sub_fixed_le_abs_sub_fixed,
+    AbsorptionCutoff.antitone_abs_V_iterate_sub_fixed,
+    AbsorptionCutoff.exists_uniform_V_iterate_abs_sub_fixed_lt,
+    AbsorptionCutoff.exists_uniform_V_iterate_stable_margin,
+    AbsorptionCutoff.exists_uniform_stable_V_orbit_interval_Icc,
+    AbsorptionCutoff.exists_pos_uniform_V_tracking_tolerance,
+    AbsorptionCutoff.exists_uniform_markovPathMeasure_stable_entrance_exp_bound,
+    AbsorptionCutoff.exists_uniform_Kchain_pow_stable_entrance_exp_bound,
+    AbsorptionCutoff.exists_uniform_stable_V_orbit_interval,
+    AbsorptionCutoff.exists_eventually_stable_V_orbit_interval}
+  \leanok
+  \uses{thm:V-orbit-convergence, lem:V-continuous, lem:V-deriv}
+  A compact interval centered at the positive fixed point can be chosen
+  strictly inside $(0,1)$ so that one factor $\kappa<1$ bounds both
+  $|V_A'|$ and the map contraction throughout it. For every macroscopic
+  initial radius, one neighborhood enters a smaller concentric interval at a
+  common time and remains a positive distance from the outer boundary, with a
+  uniform geometric bound thereafter. Consequently, if $q_N\to q_0$ and
+  eventually $q_N\in(0,1]$, one dimension threshold $N_0$ makes these
+  conclusions hold for every $N\ge N_0$, exactly as in the paper's
+  \texttt{eq:gaussian-deterministic-entrance} and
+  \texttt{eq:gaussian-stable-basin-derivative}.
+\end{lemma}
+\begin{proof}\leanok\uses{thm:V-orbit-convergence, lem:V-continuous, lem:V-deriv}\end{proof}
+
+\chapter{Common scalar estimates}
+
+\begin{lemma}[Negative moments from Laplace envelopes]
+  \label{lem:laplace-envelope-negative-moment}
+  \lean{AbsorptionCutoff.integrable_neg_rpow_and_integral_le_of_laplace_le,
+    AbsorptionCutoff.exp_neg_add_one_mul_self_rpow_le_Gamma_add_one,
+    AbsorptionCutoff.rpow_div_Gamma_add_one_le_exp_mul_div_rpow}
+  \leanok
+  Let $X$ be a measurable random variable with $X>0$ almost surely and let
+  $p>0$. If its Laplace transform is bounded by $B(t)$ for $t>0$ and
+  $t^{p-1}B(t)$ is integrable there, then $X^{-p}$ is integrable and
+  \[
+    \mathbb E[X^{-p}]
+    \le \Gamma(p)^{-1}\int_0^\infty t^{p-1}B(t)\,dt.
+  \]
+  The proof applies Fubini to the Mellin--Laplace representation. Almost-sure
+  strict positivity is essential because Lean's real-power convention assigns
+  value zero to $0^{-p}$. Integrating the Gamma density only over
+  $[p,p+1]$ also gives the elementary lower bound
+  $e^{-(p+1)}p^p\leq\Gamma(p+1)$, which is sufficient for exponential
+  dimension estimates and avoids invoking Stirling's formula. In normalized
+  form this gives
+  $n^p/\Gamma(p+1)\leq e^{p+1}(n/p)^p$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Hölder interpolation on a measurable set]
+  \label{lem:set-fractional-moment-holder}
+  \lean{AbsorptionCutoff.integrableOn_rpow_and_setIntegral_rpow_le}
+  \leanok
+  Let $f\ge0$ almost everywhere be integrable on a finite measure space.
+  For a measurable set $S$ and $0<\theta<1$,
+  $f^\theta$ is integrable on $S$ and
+  \[
+    \int_S f^\theta\,d\mu
+    \le
+    \left(\int f\,d\mu\right)^\theta
+    \mu(S)^{1-\theta}.
+  \]
+  This is the reusable Hölder step for controlling lower negative moments on
+  the truncated-Cramér bad event.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Hölder interpolation for negative moments]
+  \label{lem:set-negative-moment-holder}
+  \lean{AbsorptionCutoff.integrableOn_neg_rpow_and_setIntegral_neg_rpow_le}
+  \leanok
+  Let $X>0$ almost everywhere on a finite measure space, let $N>0$, and let
+  $0<\gamma<\alpha$. If $X^{-\alpha N}$ is integrable, then for every
+  measurable set $S$, the function $X^{-\gamma N}$ is integrable on $S$ and
+  \[
+    \int_S X^{-\gamma N}\,d\mu
+    \le
+    \left(\int X^{-\alpha N}\,d\mu\right)^{\gamma/\alpha}
+    \mu(S)^{1-\gamma/\alpha}.
+  \]
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Preserving a strict product gap]
+  \label{lem:strict-product-gap}
+  \lean{AbsorptionCutoff.exists_eps_delta_of_one_lt_mul}
+  \leanok
+  If $a>0$ and $a\mu>1$, then there are
+  $\varepsilon\in(0,1)$ and $\delta>0$ such that
+  \[
+    (1-\varepsilon)a(\mu-\delta)>1.
+  \]
+  An explicit two-stage construction first spends half of the additive
+  mean gap on $\delta$, then half of the remaining multiplicative gap on
+  $\varepsilon$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Killed-moment recursion bound]
+  \label{lem:geom-recursion}
+  \lean{AbsorptionCutoff.geom_recursion_bound,
+    AbsorptionCutoff.geom_recursion_bound_contraction,
+    AbsorptionCutoff.geom_recursion_bound_contraction_of_lt,
+    AbsorptionCutoff.geom_recursion_bound_contraction_pow_of_lt,
+    AbsorptionCutoff.eventually_nat_mul_exp_neg_le_inv_nat,
+    AbsorptionCutoff.eventually_two_nat_horizon_mul_exp_neg_le_mul_inv_nat}
+  \leanok
+  Iterating $m_{t+1} \le a_t m_t + b_t$ (with $a_u \ge 0$) gives
+  \[ m_t \le \Big(\textstyle\prod_{u<t} a_u\Big) m_0
+      + \sum_{s<t}\Big(\textstyle\prod_{s<u<t} a_u\Big) b_s. \]
+  This is the deterministic engine of the paper's killed second-moment bound;
+  the stochastic wrapper is deferred. For a constant
+  coefficient $0\le a<1$ and increment $B$, direct induction also gives the
+  uniform fixed-point bound
+  $m_t\le\max\{m_0,B/(1-a)\}$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Uniform killed-moment bound]
+  \label{lem:geom-recursion-const}
+  \lean{AbsorptionCutoff.geom_recursion_bound_const}
+  \leanok
+  \uses{lem:geom-recursion}
+  With $a_u \le \alpha$ ($\alpha\ge1$) and $b_s \le \beta$, the bound simplifies to
+  $m_t \le \alpha^t m_0 + t\,\alpha^t\beta$ — the form used with the amplification
+  bound $K_N$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:geom-recursion}\end{proof}
+
+\begin{lemma}[Backward weights for the stopped-moment telescoping]
+  \label{lem:back-weight}
+  \lean{AbsorptionCutoff.backWeight, AbsorptionCutoff.backWeight_self, AbsorptionCutoff.one_le_backWeight,
+    AbsorptionCutoff.backWeight_succ_le, AbsorptionCutoff.sq_mul_backWeight_succ_le}
+  \leanok
+  For the stopped-moment estimate, define the backward weights
+  $W_t=\prod_{u=t}^{T-1}(1\vee\alpha_u^2)$. Each factor is $\ge1$, so $W_T=1$,
+  $1\le W_t$, the weights are nonincreasing ($W_{t+1}\le W_t$), and they dominate the
+  forward multiplier: $\alpha_t^2W_{t+1}\le W_t$. These feed the telescoping
+  $\Ee[W_{t+1}\overline{\mathcal R}_{t+1}^2]-\Ee[W_t\overline{\mathcal R}_t^2]\le CK_N^2/N$;
+  the stochastic wrapper (filtration, stopping time, conditional expectation) is deferred.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Killed second-moment estimate (stochastic wrapper)]
+  \label{lem:killed-moment}
+  \lean{AbsorptionCutoff.killed_step_pointwise, AbsorptionCutoff.condExp_add_sq_le,
+    AbsorptionCutoff.killed_condExp_step, AbsorptionCutoff.killedMoment,
+    AbsorptionCutoff.killed_moment_recursion, AbsorptionCutoff.killed_moment_closed_form}
+  \leanok
+  \uses{lem:geom-recursion}
+  On a filtered probability space, let $\mathcal R$ be adapted, let $A_t$ be
+  $\mathcal F_t$-measurable with $|A_t|\le\alpha_t$, and let $\eta$ be
+  martingale-difference noise satisfying
+  ($\Ee[\eta_{t+1}\mid\mathcal F_t]=0$, $\Ee[\eta_{t+1}^2\mid\mathcal F_t]\le C\sigma_t^2/N$),
+  and let $\tau$ be a stopping time. Then
+  \[
+    m_{t+1}\leq\alpha_t^2m_t+\frac{C\sigma_t^2}{N},
+    \qquad
+    m_t=\Ee[\mathcal R_t^2\mathbf 1_{\{\tau>t\}}].
+  \]
+  The recursion bound of \Cref{lem:geom-recursion} gives the corresponding
+  closed-form killed-moment estimate.
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:geom-recursion}
+  Pointwise,
+  $\mathbf{1}_{\tau>t+1}\mathcal R_{t+1}^2\le
+  \mathbf{1}_{\tau>t}(A_t\mathcal R_t+\eta_{t+1})^2$. Taking
+  $\Ee[\,\cdot\mid\mathcal F_t]$ (the cross term drops since $\Ee[\eta\mid\mathcal F_t]=0$)
+  gives $\Ee[\mathbf{1}_{\tau>t+1}\mathcal R_{t+1}^2\mid\mathcal F_t]\le
+  \mathbf{1}_{\tau>t}(\alpha_t^2\mathcal R_t^2+C\sigma_t^2/N)$.
+  Integrate and apply \Cref{lem:geom-recursion}.
+\end{proof}
+
+\begin{lemma}[Weighted stopped one-step estimate]
+  \label{lem:stopped-condexp-step}
+  \lean{AbsorptionCutoff.stoppedValue, AbsorptionCutoff.stoppedValue_eq_stoppedProcess_coe,
+    AbsorptionCutoff.stoppedValue_succ_decomposition,
+    AbsorptionCutoff.stoppedValue_succ_sq_decomposition,
+    AbsorptionCutoff.condExp_indicator_add_sq_le, AbsorptionCutoff.stopped_condExp_step,
+    AbsorptionCutoff.integral_le_of_condExp_add_const, AbsorptionCutoff.stopped_moment_recursion,
+    AbsorptionCutoff.sum_recursion_bound, AbsorptionCutoff.stopped_moment_telescope,
+    AbsorptionCutoff.sum_weighted_noise_le, AbsorptionCutoff.stopped_moment_uniform_bound,
+    AbsorptionCutoff.trackingAmplification, AbsorptionCutoff.tracking_product_le,
+    AbsorptionCutoff.tracking_noise_product_le,
+    AbsorptionCutoff.backWeight_zero_le_trackingAmplification_sq,
+    AbsorptionCutoff.backWeight_mul_sigma_sq_le_trackingAmplification_sq,
+    AbsorptionCutoff.stopped_moment_backWeight_endpoints,
+    AbsorptionCutoff.stopped_moment_tracking_bound,
+    AbsorptionCutoff.exit_indicator_sq_le_stopped,
+    AbsorptionCutoff.exit_prob_mul_sq_le_stopped_moment,
+    AbsorptionCutoff.exit_prob_le_stopped_moment_div,
+    AbsorptionCutoff.exit_prob_le_stopped_moment_div_of_le,
+    AbsorptionCutoff.orbit_exit_prob_bound}
+  \leanok
+  \uses{lem:back-weight}
+  For backward weights satisfying $0\le W_{t+1}\le W_t$ and
+  $\alpha_t^2W_{t+1}\le W_t$, the stopped recursion obeys
+  \[
+    \Ee[W_{t+1}\overline{\mathcal R}_{t+1}^2\mid\mathcal F_t]
+    \le W_t\overline{\mathcal R}_t^2+W_{t+1}C\sigma_t^2/N.
+  \]
+  The $\{\tau\le t\}$ branch is already stopped and is
+  $\mathcal F_t$-measurable; on $\{t<\tau\}$ the martingale-difference cross term
+  vanishes after conditioning. Summing the scalar recursion telescopes. The finite-horizon
+  amplification scalar $K$ bounds both $W_0^{1/2}$ and
+  $\sigma_tW_{t+1}^{1/2}$, yielding
+  $\Ee\overline{\mathcal R}_T^2\le CK^2(\Ee\mathcal R_0^2+T/N)$. If $\tau$ is the
+  first exit from $[-\delta,\delta]$, then
+  $\delta^2\mathbf 1_{\{\tau\le T\}}\le\overline{\mathcal R}_T^2$ pointwise;
+  integration gives
+  $\Pp(\tau\le T)\le CK^2\delta^{-2}(\Ee\mathcal R_0^2+T/N)$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:back-weight}\end{proof}
+
+\section{Total-variation cutoff and mixing time}
+
+\begin{definition}[Total-variation distance]
+  \label{def:tvdist}
+  \lean{AbsorptionCutoff.tvDist}
+  \leanok
+  $\|\mu-\nu\|_{\mathrm{TV}} = \sup_{B}|\mu(B)-\nu(B)|$ over measurable $B$.
+\end{definition}
+
+\begin{definition}[Distance to equilibrium]
+  \label{def:dseq}
+  \lean{AbsorptionCutoff.dSeq}
+  \leanok
+  \uses{def:tvdist}
+  $d(t) = \|\kappa^t(x,\cdot) - \pi\|_{\mathrm{TV}}$, using the Mathlib kernel
+  power $\kappa^t$.
+\end{definition}
+
+\begin{definition}[Total-variation cutoff]
+  \label{def:cutoff}
+  \lean{AbsorptionCutoff.HasCutoff}
+  \leanok
+  \uses{def:dseq}
+  For a family indexed by $n\to\infty$ with cutoff time $t_n$ and window $a_n$,
+  the windowed-convention cutoff of the paper's Definition.
+\end{definition}
+
+\begin{definition}[Mixing time]
+  \label{def:mixing}
+  \lean{AbsorptionCutoff.mixingTime}
+  \leanok
+  \uses{def:dseq}
+  $t_{\mathrm{mix}}(\varepsilon) = \inf\{t : d(t)\le\varepsilon\}$, with value
+  $\top$ if no such $t$ exists.
+\end{definition}
+
+\section{The absorption identity}
+
+\begin{definition}[Absorbing state]
+  \label{def:absorbing}
+  \lean{AbsorptionCutoff.IsAbsorbing}
+  \leanok
+  A point $a$ is absorbing for a kernel $\kappa$ if $\kappa(a,\cdot)=\delta_a$; the
+  rounded chain's origin is absorbing.
+\end{definition}
+
+\begin{lemma}[Absorption time and canonical Markov trajectory]
+  \label{lem:absorption-time}
+  \lean{AbsorptionCutoff.absorptionTime, AbsorptionCutoff.Adapted.isStoppingTime_absorptionTime,
+    AbsorptionCutoff.absorptionTime_gt_iff, AbsorptionCutoff.zero_persists, AbsorptionCutoff.zero_persists',
+    AbsorptionCutoff.absorptionTime_gt_iff_value_ne_zero,
+    AbsorptionCutoff.measure_absorptionTime_gt_eq,
+    AbsorptionCutoff.measure_absorptionTime_gt_eq_of_ae,
+    AbsorptionCutoff.measure_absorptionTime_gt_eq_of_map,
+    AbsorptionCutoff.measure_absorptionTime_gt_eq_kernel_pow,
+    AbsorptionCutoff.measure_absorptionTime_gt_eq_of_ae_map,
+    AbsorptionCutoff.measure_absorptionTime_gt_eq_of_ae_kernel_pow,
+    AbsorptionCutoff.markovHistoryKernel, AbsorptionCutoff.markovPathMeasure,
+    AbsorptionCutoff.markovPathMeasure_map_zero, AbsorptionCutoff.markovPathMeasure_map_eval_succ,
+    AbsorptionCutoff.markovPathMeasure_map_eval, AbsorptionCutoff.markovPathMeasure_dirac_map_eval,
+    AbsorptionCutoff.markovPathMeasure_ae_absorbing}
+  \leanok
+  \uses{def:absorbing}
+  The first hitting time of zero is a stopping time for an adapted process. If zero is
+  pathwise absorbing, then $\{\tau>t\}=\{X_t\ne0\}$, so any path law whose time-$t$
+  marginal is $\kappa^t(x,\cdot)$ satisfies
+  $\Pp(\tau>t)=\kappa^t(x,\{0\}^c)$. The canonical homogeneous path law is built from
+  Mathlib's Ionescu--Tulcea \texttt{trajMeasure}; its time-$t$ coordinate marginal is
+  identified with the kernel power, $(\text{\texttt{markovPathMeasure}}\,\delta_x\,\kappa)
+  \circ (\cdot_t)^{-1} = \kappa^t(x,\cdot)$, by induction from the time-zero marginal and
+  the one-step recursion obtained from the Ionescu--Tulcea joint law. On the raw canonical
+  path space pathwise absorption fails, so the survival bridge is used in its
+  almost-everywhere form: from $\kappa(0,\cdot)=\delta_0$ the coordinate process is
+  absorbing $\Pp$-a.e. (\texttt{markovPathMeasure\_ae\_absorbing}, via the Ionescu--Tulcea
+  joint law), whence $\{\tau>t\}=\{X_t\ne0\}$ a.e.\ and the same marginal-law identity
+  $\Pp(\tau>t)=\kappa^t(x,\{0\}^c)$ holds.
+\end{lemma}
+\begin{proof}\leanok\uses{def:absorbing}\end{proof}
+
+\begin{lemma}[TV to a point mass is the survival mass]
+  \label{lem:tv-dirac}
+  \lean{AbsorptionCutoff.tvDist_dirac}
+  \leanok
+  \uses{def:tvdist}
+  For a probability measure $\mu$, $\|\mu-\delta_a\|_{\mathrm{TV}} = \mu(\{a\}^c)$.
+  Applied to $\mu = P^t(x,\cdot)$ with $a$ the absorbing origin, this is the core of
+  the paper's identity $\|P^t(x,\cdot)-\delta_0\|_{\mathrm{TV}} = \mathbb{P}(\tau > t)$.
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{def:tvdist}
+  Both bounds are attained at $B=\{a\}^c$: every measurable $B$ gives
+  $|\mu(B)-\delta_a(B)| \le \mu(\{a\}^c)$, with equality there.
+\end{proof}
+
+\begin{lemma}[Absorption mass is monotone]
+  \label{lem:absorb-mono}
+  \lean{AbsorptionCutoff.absorb_mass_mono}
+  \leanok
+  \uses{def:absorbing, def:dseq}
+  For an absorbing state, $\kappa^t(x,\{a\})$ is nondecreasing in $t$; hence the
+  survival mass and $d(t)$ are nonincreasing (paper `rem:intro-profile-mixing`).
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{def:absorbing}
+  Since $\kappa(y,\{a\})\geq\mathbf 1_{\{a\}}(y)$,
+  \[
+    \kappa^{t+1}(x,\{a\})
+      =\int \kappa(y,\{a\})\,\kappa^t(x,\mathrm dy)
+      \geq\int \mathbf 1_{\{a\}}(y)\,\kappa^t(x,\mathrm dy)
+      =\kappa^t(x,\{a\}).
+  \]
+\end{proof}
+
+\begin{lemma}[Kernel form of the absorption identity]
+  \label{lem:tv-pow-dirac}
+  \lean{AbsorptionCutoff.tvDist_pow_dirac}
+  \leanok
+  \uses{lem:tv-dirac, def:dseq}
+  For a Markov kernel and an absorbing origin,
+  $\|\kappa^t(x,\cdot)-\delta_a\|_{\mathrm{TV}} = \kappa^t(x,\{a\}^c) = \mathbb{P}(\tau>t)$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:tv-dirac}\end{proof}
+
+\begin{lemma}[Distance to equilibrium is nonincreasing]
+  \label{lem:dseq-antitone}
+  \lean{AbsorptionCutoff.dSeq_dirac_antitone}
+  \leanok
+  \uses{lem:tv-pow-dirac, lem:absorb-mono}
+  For an absorbing state, $t\mapsto d(t)$ is nonincreasing, so the mixing times of
+  Definition~\ref{def:mixing} are well behaved.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:absorb-mono}\end{proof}
+
+\begin{lemma}[TV metric facts for probability measures]
+  \label{lem:tv-metric}
+  \lean{AbsorptionCutoff.tvDist_comm, AbsorptionCutoff.tvDist_le_one, AbsorptionCutoff.tvDist_bddAbove}
+  \leanok
+  \uses{def:tvdist}
+  $\|\cdot\|_{\mathrm{TV}}$ is symmetric, and for probability measures it is bounded
+  by $1$ (so the defining supremum is $\mathrm{BddAbove}$).
+\end{lemma}
+\begin{proof}\leanok\uses{def:tvdist}\end{proof}
+
+\chapter{The squared-radius Markov chains}
+
+This chapter realizes the paper's §2 squared-radius chains as Mathlib Markov kernels
+and connects the rounded chain to the abstract absorption identity of the previous
+chapter. The step maps act on the squared radius $q\in[0,1]$; the driving randomness
+is a standard Gaussian vector.
+
+\begin{definition}[Gaussian driving noise]
+  \label{def:gaussianVec}
+  \lean{AbsorptionCutoff.gaussianVec}
+  \leanok
+  $\mathcal G_N = \mathcal N(0,1)^{\otimes N}$ on $\mathbb R^N$, the product of $N$
+  standard Gaussians (a probability measure).
+\end{definition}
+
+\begin{definition}[Unrounded step map]
+  \label{def:Fmap}
+  \lean{AbsorptionCutoff.Fmap}
+  \leanok
+  \uses{def:gaussianVec}
+  $F_{A,N}(q,g) = \tfrac1N\sum_{i<N}\tanh^2\!\big(A\sqrt q\,g_i\big)$, the empirical
+  squared radius after one Gaussian step.
+\end{definition}
+
+\begin{lemma}[Step map takes values in $[0,1)$]
+  \label{lem:Fmap-range}
+  \lean{AbsorptionCutoff.Fmap_nonneg, AbsorptionCutoff.Fmap_lt_one}
+  \leanok
+  \uses{def:Fmap}
+  $0 \le F_{A,N}(q,g)$, and $F_{A,N}(q,g) < 1$ for $N>0$ (each $\tanh^2 < 1$).
+\end{lemma}
+\begin{proof}\leanok\uses{def:Fmap}\end{proof}
+
+\begin{definition}[Unrounded squared-radius kernel]
+  \label{def:Kchain}
+  \lean{AbsorptionCutoff.Kchain}
+  \leanok
+  \uses{def:Fmap}
+  $K_{A,N}(q,\cdot) = (F_{A,N}(q,\cdot))_\#\mathcal G_N$, the Markov kernel pushing the
+  Gaussian noise through the step map. (\texttt{measurable\_Fmap} supplies
+  measurability; the kernel is Markov since $\mathcal G_N$ is a probability measure.)
+\end{definition}
+
+\begin{lemma}[Mean of the unrounded step is $V_A$]
+  \label{lem:integral-Fmap}
+  \lean{AbsorptionCutoff.integral_Fmap}
+  \leanok
+  \uses{def:Fmap, def:V}
+  $\displaystyle\int F_{A,N}(q,g)\,\mathrm d\mathcal G_N(g) = V_A(q)$ for $N\neq0$
+  (the paper's \texttt{eq:gaussian-q-moments}). Each coordinate marginal of
+  $\mathcal G_N$ is $\mathcal N(0,1)$, so the $N$ identical terms average to
+  $\mathbb E[\tanh^2(A\sqrt q\,G)] = V_A(q)$.
+\end{lemma}
+\begin{proof}\leanok\uses{def:V}\end{proof}
+
+\begin{lemma}[Unrounded one-step Hoeffding bound]
+  \label{lem:Fmap-hoeffding}
+  \lean{AbsorptionCutoff.FmapSubgaussianParameter,
+    AbsorptionCutoff.coe_FmapSubgaussianParameter,
+    AbsorptionCutoff.hasSubgaussianMGF_Fmap_sub_V,
+    AbsorptionCutoff.measureReal_abs_Fmap_sub_V_gt_le,
+    AbsorptionCutoff.Kchain_measureReal_abs_sub_V_gt_le,
+    AbsorptionCutoff.markovPathMeasure_ae_eval_succ_mem_Kchain_Icc,
+    AbsorptionCutoff.markovPathMeasure_dirac_ae_eval_mem_Kchain_Icc,
+    AbsorptionCutoff.markovPathMeasure_dirac_ae_forall_le_mem_Kchain_Icc,
+    AbsorptionCutoff.markovPathMeasure_measureReal_abs_next_sub_V_gt_le,
+    AbsorptionCutoff.finiteHorizonKchainStepDeviationEvent,
+    AbsorptionCutoff.markovPathMeasure_measureReal_finiteHorizonKchainStepDeviationEvent_le,
+    AbsorptionCutoff.exists_pos_markovPathMeasure_measureReal_abs_sub_iterate_V_ge_le}
+  \leanok
+  \uses{def:Fmap, lem:integral-Fmap}
+  The centered empirical update is sub-Gaussian with exact proxy
+  $1/(4N)$. Consequently, uniformly in the current radius $q$,
+  \[
+    \mathbb P\!\left(\left|F_{A,N}(q,G)-V_A(q)\right|>\varepsilon\right)
+    \leq 2e^{-2N\varepsilon^2}.
+  \]
+\end{lemma}
+\begin{proof}\leanok\uses{lem:integral-Fmap}\end{proof}
+
+\begin{definition}[Rounded step map]
+  \label{def:Hmap}
+  \lean{AbsorptionCutoff.Hmap}
+  \leanok
+  \uses{def:Q1, def:gaussianVec}
+  The rounded analogue of $F_{A,N}$ is
+  \[
+    H_{A,\varrho,N}(h,g)
+      =\frac1N\sum_{i<N}
+        \left(\varrho^{-1}Q_1\!\left(
+          \varrho^{-1}\tanh(\varrho A\sqrt h\,g_i)
+        \right)\right)^2.
+  \]
+\end{definition}
+
+\begin{lemma}[Rounded step vanishes at the origin]
+  \label{lem:Hmap-zero}
+  \lean{AbsorptionCutoff.Hmap_zero, AbsorptionCutoff.Hmap_nonneg}
+  \leanok
+  \uses{def:Hmap, lem:Q1-zero}
+  $H_{A,\varrho,N}(0,g)=0$ (since $\tanh 0 = 0$ lands in the zero bin, $Q_1(0)=0$),
+  and $H_{A,\varrho,N}\ge0$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:Q1-zero}\end{proof}
+
+\begin{definition}[Rounded squared-radius kernel]
+  \label{def:Hkernel}
+  \lean{AbsorptionCutoff.Hkernel}
+  \leanok
+  \uses{def:Hmap}
+  $H_{A,\varrho,N}(h,\cdot) = (H_{A,\varrho,N}(h,\cdot))_\#\mathcal G_N$, the rounded
+  Markov kernel (\texttt{measurable\_Hmap}, via measurability of $Q_1$).
+\end{definition}
+
+\begin{lemma}[The origin is absorbing for the rounded chain]
+  \label{lem:Hkernel-absorbing}
+  \lean{AbsorptionCutoff.isAbsorbing_Hkernel}
+  \leanok
+  \uses{def:Hkernel, def:absorbing, lem:Hmap-zero}
+  $H_{A,\varrho,N}(0,\cdot) = \delta_0$: the rounded step map is identically $0$ at
+  $h=0$, so its pushforward of any probability measure is $\delta_0$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:Hmap-zero}\end{proof}
+
+\begin{lemma}[Concrete rounded absorption identities and decay]
+  \label{lem:Hkernel-tv}
+  \lean{AbsorptionCutoff.tvDist_Hkernel_pow_dirac, AbsorptionCutoff.dSeq_Hkernel_dirac_antitone,
+    AbsorptionCutoff.measure_roundedAbsorptionTime_gt_eq, AbsorptionCutoff.tvDist_Hkernel_pow_eq_survival,
+    AbsorptionCutoff.isAbsorbing_roundedPkernel,
+    AbsorptionCutoff.measure_roundedVectorAbsorptionTime_gt_eq,
+    AbsorptionCutoff.tvDist_roundedPkernel_pow_dirac,
+    AbsorptionCutoff.tvDist_roundedPkernel_pow_eq_survival,
+    AbsorptionCutoff.tvDist_roundedPkernel_pow_eq_Hkernel_pow}
+  \leanok
+  \uses{lem:Hkernel-absorbing, lem:tv-pow-dirac, lem:dseq-antitone, lem:absorption-time}
+  For the rounded chain,
+  $\|H^t_{A,\varrho,N}(x,\cdot)-\delta_0\|_{\mathrm{TV}} = H^t_{A,\varrho,N}(x,\{0\}^c)
+  = \mathbb P(\tau_\varrho > t)$, and $t\mapsto d(t)$ is nonincreasing — the paper's
+  \texttt{eq:tv-absorption} instantiated for the concrete chain. Running the chain on its
+  canonical Ionescu--Tulcea path law (\Cref{lem:absorption-time}) makes $\tau_\varrho$ the
+  first hitting time of $0$ by the coordinate process, and the a.e.\ survival bridge gives
+  $\mathbb P(\tau_\varrho > t)=H^t_{A,\varrho,N}(x,\{0\}^c)$ literally on that space, whence
+  $\|H^t_{A,\varrho,N}(x,\cdot)-\delta_0\|_{\mathrm{TV}} = \mathbb P(\tau_\varrho > t)$.
+  The same identities hold for the rounded vector kernel $P_{\varrho,A,N}$ on its
+  canonical path space.  Moreover, its normalized rounded squared-radius pushforward is
+  exactly the $H_{A,\varrho,N}$ law, so the vector and scalar TV distances from their
+  absorbing origins agree at every time.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:Hkernel-absorbing, lem:tv-pow-dirac, lem:absorption-time}\end{proof}
+
+\begin{lemma}[Lattice-subcritical contraction]
+  \label{lem:subcritical-lattice-regimes}
+  \lean{AbsorptionCutoff.latticeProfile, AbsorptionCutoff.latticeMap, AbsorptionCutoff.roundedMeanMap,
+    AbsorptionCutoff.latticeProfile_ratio_tendsto_zero,
+    AbsorptionCutoff.latticeProfile_ratio_tendsto_one,
+    AbsorptionCutoff.latticeThreshold, AbsorptionCutoff.latticeThreshold_pos,
+    AbsorptionCutoff.latticeThreshold_lt_one, AbsorptionCutoff.abs_Q₁_mono,
+    AbsorptionCutoff.exists_latticeMap_le_mul, AbsorptionCutoff.roundedMeanMap_le_latticeMap,
+    AbsorptionCutoff.exists_roundedMeanMap_le_mul}
+  \leanok
+  \uses{lem:Q1-zero, lem:Q1-err}
+  Let $m(\alpha)=\mathbb E[Q_1(\alpha G)^2]$,
+  $L_A(h)=m(A\sqrt h)$, and
+  $A_{\mathrm{lat}}^2=\inf_{\alpha>0}\alpha^2/m(\alpha)$.
+  The endpoint limits $m(\alpha)/\alpha^2\to0$ as $\alpha\downarrow0$ and
+  $m(\alpha)/\alpha^2\to1$ as $\alpha\to\infty$, together with the paper's
+  positive lower bound and strict test at $\alpha=1/2$, give
+  $A_{\mathrm{lat}}\in(0,1)$. If $0<A<A_{\mathrm{lat}}$, compact-middle
+  maximization and the endpoint limits yield
+  $L_A(h)\leq\theta_Ah$ for all $h>0$, for some $\theta_A\in(0,1)$.
+  Finally, $|Q_1|$ is monotone in the magnitude of its argument and
+  $|\tanh x|\leq|x|$, hence
+  $V_{A,\varrho}(h)\leq L_A(h)\leq\theta_Ah$ for every $h\geq0$ and $\varrho>0$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:Q1-zero, lem:Q1-err}\end{proof}
+
+\begin{lemma}[Exact fixed-precision layer formulas]
+  \label{lem:subcritical-layer-formulas-exact}
+  \lean{AbsorptionCutoff.roundedLayerThreshold, AbsorptionCutoff.roundedLayerIndices,
+    AbsorptionCutoff.roundedMeanMap_eq_sum_upperTail,
+    AbsorptionCutoff.hasDerivAt_gaussianUpperTail,
+    AbsorptionCutoff.hasDerivAt_two_mul_gaussianUpperTail_div_sqrt,
+    AbsorptionCutoff.hasDerivAt_roundedMeanMap}
+  \leanok
+  \uses{lem:subcritical-lattice-regimes}
+  For $h>0$, the rounded mean map is the finite sum of Gaussian upper tails over the
+  admissible thresholds $b_{\varrho,k}$, and its derivative is obtained term by term:
+  \[
+    V'_{A,\varrho}(h)=\sum_{k\in\mathcal K_\varrho}(2k+1)
+    \frac{b_{\varrho,k}}{Ah^{3/2}}
+    \phi\!\left(\frac{b_{\varrho,k}}{A\sqrt h}\right).
+  \]
+\end{lemma}
+\begin{proof}\leanok\uses{lem:subcritical-lattice-regimes}\end{proof}
+
+\begin{lemma}[Fixed-precision map estimates]
+  \label{lem:subcritical-fixed-precision-map-estimates}
+  \lean{AbsorptionCutoff.exists_roundedMeanMap_compact_bounds,
+    AbsorptionCutoff.gaussianUpperTail_le_exp_neg_sq_div_two,
+    AbsorptionCutoff.roundedMeanMap_le_weight_mul_exp,
+    AbsorptionCutoff.gaussianPDFReal_layer_le_common_exp,
+    AbsorptionCutoff.roundedMeanMapDerivative_le_weight_mul_rpow_exp,
+    AbsorptionCutoff.exists_roundedMeanMap_small_radius_bounds}
+  \leanok
+  \uses{lem:subcritical-layer-formulas-exact}
+  On every compact interval $[r,R]\subset(0,\infty)$, the rounded mean map has a
+  positive lower bound and its derivative has a finite upper bound.  Moreover, for
+  every $r\in(0,1)$ there are $c,C>0$ such that, for $0<h\leq r$,
+  \[
+    V_{A,\varrho}(h)\leq C e^{-c/h},
+    \qquad
+    V'_{A,\varrho}(h)\leq C h^{-2}e^{-c/h}.
+  \]
+\end{lemma}
+\begin{proof}\leanok\uses{lem:subcritical-layer-formulas-exact}\end{proof}
+
+\begin{lemma}[Normalized amplification along rounded deterministic orbits]
+  \label{lem:subcritical-normalized-lattice-amplification}
+  \lean{AbsorptionCutoff.roundedOrbit, AbsorptionCutoff.roundedLocalDerivativeSup,
+    AbsorptionCutoff.roundedBeta, AbsorptionCutoff.roundedAlpha,
+    AbsorptionCutoff.roundedAmplificationProduct,
+    AbsorptionCutoff.roundedAmplificationCombination,
+    AbsorptionCutoff.exists_eventually_roundedAmplificationCombination_le_exp_sq,
+    AbsorptionCutoff.trackingAmplification_le_of_combination_le,
+    AbsorptionCutoff.exists_eventually_uniform_subcritical_tail_length_le_mul_log_log,
+    AbsorptionCutoff.exists_eventually_roundedAlpha_le_mul_log,
+    AbsorptionCutoff.exists_eventually_uniform_amplificationProduct_le_exp_sq,
+    AbsorptionCutoff.exists_eventually_uniform_roundedAmplificationCombination_le_exp_sq,
+    AbsorptionCutoff.exists_eventually_uniform_trackingAmplification_le_exp_sq,
+    AbsorptionCutoff.tendsto_inv_nat_mul_exp_log_log_sq_zero,
+    AbsorptionCutoff.tendsto_succ_nat_div_mul_exp_log_log_sq_zero}
+  \leanok
+  \uses{lem:subcritical-lattice-regimes,
+    lem:subcritical-fixed-precision-map-estimates}
+  For every lattice-subcritical rounded orbit starting in a fixed compact
+  interval, the product-plus-radius-ratio expression in
+  \texttt{eq:subcritical-global-amplification} is bounded, uniformly over all
+  nonempty time intervals, by
+  $\exp\{C(\log\log N)^2\}$ for all sufficiently large $N$.
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{lem:subcritical-lattice-regimes,
+    lem:subcritical-fixed-precision-map-estimates}
+\end{proof}
+
+\begin{lemma}[Fixed-precision coordinate moment bound]
+  \label{lem:subcritical-fixed-moment-bound}
+  \lean{AbsorptionCutoff.roundedCoordinateObservable,
+    AbsorptionCutoff.integral_roundedCoordinateObservable,
+    AbsorptionCutoff.measureReal_roundedCoordinateObservable_ne_zero_le,
+    AbsorptionCutoff.integral_pow_roundedCoordinateObservable_le_exp,
+    AbsorptionCutoff.roundedSupportExponent_eq,
+    AbsorptionCutoff.exists_pos_exp_neg_div_le_mul_pow,
+    AbsorptionCutoff.exists_pos_integral_pow_roundedCoordinateObservable_le_mul_pow}
+  \leanok
+  \uses{lem:subcritical-fixed-precision-map-estimates}
+  For every integer $p\geq1$, there is $C_p>0$ such that the one-coordinate
+  rounded squared-radius observable satisfies
+  \[
+    \mathbb E\!\left[U_{A,\varrho}(h,G)^p\right]\leq C_p h^p,
+    \qquad h\geq0.
+  \]
+  Indeed, nonzero rounded output forces $|G|$ beyond the first admissible layer,
+  whose Gaussian probability is exponentially small in $1/h$.  The resulting
+  exponential moment bound dominates $h^p$ near zero; boundedness of the rounded
+  observable handles $h\geq1$.
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{lem:subcritical-fixed-precision-map-estimates}
+\end{proof}
+
+\begin{lemma}[One-step rounded radius variance]
+  \label{lem:subcritical-fixed-noise-variance}
+  \lean{AbsorptionCutoff.integral_Hmap_eq_roundedMeanMap,
+    AbsorptionCutoff.integral_sq_Hmap_sub_roundedMeanMap_le,
+    AbsorptionCutoff.exists_pos_integral_sq_Hmap_sub_roundedMeanMap_le}
+  \leanok
+  \uses{lem:subcritical-fixed-moment-bound}
+  Under the standard Gaussian product law, the rounded radius step has mean
+  $V_{A,\varrho}(h)$ and satisfies
+  \[
+    \mathbb E\!\left[
+      \bigl(H_{A,\varrho,N}(h,G)-V_{A,\varrho}(h)\bigr)^2
+    \right]
+    \leq \frac{C h^2}{N}.
+  \]
+  This follows from independence of the $N$ coordinate observables, the
+  finite-product variance identity, and the $p=2$ coordinate moment bound.
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{lem:subcritical-fixed-moment-bound}
+\end{proof}
+
+\begin{lemma}[Canonical conditional rounded-noise bound]
+  \label{lem:subcritical-fixed-conditional-noise}
+  \lean{AbsorptionCutoff.condDistrib_markovPathMeasure_eval_succ,
+    AbsorptionCutoff.condExp_markovPathMeasure_prefix_eval_succ,
+    AbsorptionCutoff.condExp_markovPathMeasure_prefix_eval_succ_piLE,
+    AbsorptionCutoff.continuous_roundedMeanMap,
+    AbsorptionCutoff.measurable_Hmap_right, AbsorptionCutoff.integrable_Hmap,
+    AbsorptionCutoff.Hkernel_apply,
+    AbsorptionCutoff.integral_Hkernel_sub_roundedMeanMap_eq_zero,
+    AbsorptionCutoff.Hkernel_apply_Icc_compl,
+    AbsorptionCutoff.markovPathMeasure_ae_eval_succ_mem_Icc,
+    AbsorptionCutoff.integral_sq_Hkernel_sub_roundedMeanMap,
+    AbsorptionCutoff.integrable_next_sub_roundedMeanMap,
+    AbsorptionCutoff.condExp_next_sub_roundedMeanMap_eq_zero,
+    AbsorptionCutoff.integrable_sq_next_sub_roundedMeanMap,
+    AbsorptionCutoff.condExp_sq_next_sub_roundedMeanMap_eq,
+    AbsorptionCutoff.exists_pos_condExp_sq_next_sub_roundedMeanMap_le,
+    AbsorptionCutoff.exists_pos_condExp_sq_next_sub_roundedMeanMap_le_of_tracking}
+  \leanok
+  \uses{lem:subcritical-fixed-noise-variance}
+  On the canonical path space for the rounded radius kernel, conditioning on
+  the coordinate-prefix filtration gives
+  \[
+    \mathbb E\!\left[
+      \bigl(\mathscr H_{t+1}^{(N)}
+        -V_{A,\varrho}(\mathscr H_t^{(N)})\bigr)^2
+      \,\middle|\,\mathcal F_t
+    \right]
+    \leq
+    \frac{C}{N}\bigl(\mathscr H_t^{(N)}\bigr)^2
+    \quad\text{a.s.}
+  \]
+  The Ionescu--Tulcea conditional-distribution identity supplies the conditional
+  kernel, compact support discharges integrability, and the Gaussian pushforward
+  formula reduces the conditional second moment to
+  \Cref{lem:subcritical-fixed-noise-variance}.  On the tracking event
+  $|\mathscr H_t^{(N)}-\bar h_t|\leq
+  \delta(\bar h_t+a_N)$, the same bound and deterministic localization give
+  \[
+    \mathbb E[\xi_{t+1}^2\mid\mathcal F_t]
+    \leq \frac{C(1+\delta)^2}{N}(\bar h_t+a_N)^2
+    \quad\text{a.s.}
+  \]
+\end{lemma}
+\begin{proof}
+  \leanok
+  \uses{lem:subcritical-fixed-noise-variance}
+\end{proof}
+
+\begin{lemma}[Canonical rounded-radius tracking recursion]
+  \label{lem:subcritical-radius-tracking-recursion}
+  \lean{AbsorptionCutoff.radiusTrackingError, AbsorptionCutoff.radiusNoise,
+    AbsorptionCutoff.normalizedRadiusError,
+    AbsorptionCutoff.radiusDifferenceQuotient,
+    AbsorptionCutoff.normalizedRadiusNoise,
+    AbsorptionCutoff.radiusNormalizedMultiplier,
+    AbsorptionCutoff.radiusTrackingGood, AbsorptionCutoff.radiusTrackingExitTime,
+    AbsorptionCutoff.radiusTrackingExitTime_le_sentinel,
+    AbsorptionCutoff.lt_radiusTrackingExitTime_iff,
+    AbsorptionCutoff.radiusTrackingGood_iff_abs_normalizedRadiusError_le,
+    AbsorptionCutoff.radiusTrackingExitTime_le_iff_exists_abs_normalizedRadiusError_gt,
+    AbsorptionCutoff.radiusTrackingGood_of_lt_exit,
+    AbsorptionCutoff.delta_lt_abs_normalizedRadiusError_at_exit,
+    AbsorptionCutoff.eval_mem_roundedOrbitWindow_of_lt_exit,
+    AbsorptionCutoff.deriv_roundedMeanMap_nonneg_of_nonneg,
+    AbsorptionCutoff.exists_deriv_roundedMeanMap_le_on_Icc_zero,
+    AbsorptionCutoff.bddAbove_deriv_roundedMeanMap_image_roundedOrbitWindow,
+    AbsorptionCutoff.uIcc_subset_roundedOrbitWindow_of_mem,
+    AbsorptionCutoff.exists_deriv_eq_secant_roundedMeanMap,
+    AbsorptionCutoff.exists_mem_roundedOrbitWindow_deriv_eq_radiusDifferenceQuotient,
+    AbsorptionCutoff.radiusDifferenceQuotient_le_roundedLocalDerivativeSup_of_bddAbove,
+    AbsorptionCutoff.radiusDifferenceQuotient_le_roundedLocalDerivativeSup,
+    AbsorptionCutoff.abs_radiusNormalizedMultiplier_le_roundedAlpha_of_mem,
+    AbsorptionCutoff.abs_radiusNormalizedMultiplier_le_roundedAlpha_of_lt_exit,
+    AbsorptionCutoff.measurable_piLE_eval,
+    AbsorptionCutoff.measurable_radiusTrackingError,
+    AbsorptionCutoff.measurable_normalizedRadiusError,
+    AbsorptionCutoff.measurable_radiusDifferenceQuotient,
+    AbsorptionCutoff.measurable_radiusNormalizedMultiplier,
+    AbsorptionCutoff.measurableSet_radiusTrackingGood,
+    AbsorptionCutoff.measurableSet_lt_radiusTrackingExitTime,
+    AbsorptionCutoff.measurableSet_radiusTrackingExitTime_le,
+    AbsorptionCutoff.isStoppingTime_radiusTrackingExitTime,
+    AbsorptionCutoff.radiusDifferenceQuotient_mul_trackingError,
+    AbsorptionCutoff.radiusTrackingError_zero_of_eval_zero_eq,
+    AbsorptionCutoff.radiusTrackingError_succ,
+    AbsorptionCutoff.radiusTrackingError_succ_eq_mul_add,
+    AbsorptionCutoff.normalizedRadiusError_succ,
+    AbsorptionCutoff.markovPathMeasure_dirac_ae_eval_zero_eq,
+    AbsorptionCutoff.markovPathMeasure_dirac_ae_eval_nonneg,
+    AbsorptionCutoff.stoppedRadiusMultiplier,
+    AbsorptionCutoff.measurable_stoppedRadiusMultiplier,
+    AbsorptionCutoff.stronglyMeasurable_stoppedRadiusMultiplier_mul_normalizedRadiusError,
+    AbsorptionCutoff.roundedBeta_nonneg, AbsorptionCutoff.roundedAlpha_nonneg,
+    AbsorptionCutoff.abs_radiusNormalizedMultiplier_le_roundedAlpha_of_lt_exit_ae,
+    AbsorptionCutoff.abs_stoppedRadiusMultiplier_le_roundedAlpha_ae,
+    AbsorptionCutoff.sq_stoppedRadiusMultiplier_le_roundedAlpha_sq_ae,
+    AbsorptionCutoff.stoppedNormalizedRadiusNoise,
+    AbsorptionCutoff.stoppedNormalizedRadiusNoise_succ,
+    AbsorptionCutoff.normalizedRadiusError_succ_eq_stopped_of_lt_exit,
+    AbsorptionCutoff.stronglyMeasurable_stoppedNormalizedRadiusError,
+    AbsorptionCutoff.integrable_sq_normalizedRadiusError,
+    AbsorptionCutoff.integrable_sq_stoppedNormalizedRadiusError,
+    AbsorptionCutoff.integrable_weighted_sq_stoppedNormalizedRadiusError,
+    AbsorptionCutoff.integrable_sq_stoppedRadiusMultiplier_mul_normalizedRadiusError,
+    AbsorptionCutoff.integrable_stoppedNormalizedRadiusNoise_succ,
+    AbsorptionCutoff.condExp_stoppedNormalizedRadiusNoise_succ_eq_zero,
+    AbsorptionCutoff.integrable_sq_stoppedNormalizedRadiusNoise_succ,
+    AbsorptionCutoff.integrable_stoppedRadiusDrift_mul_stoppedNormalizedRadiusNoise_succ,
+    AbsorptionCutoff.integrable_sq_stoppedRadiusDrift_add_stoppedNormalizedRadiusNoise_succ,
+    AbsorptionCutoff.condExp_sq_stoppedNormalizedRadiusNoise_succ,
+    AbsorptionCutoff.condExp_sq_stoppedNormalizedRadiusNoise_succ_le_of_raw,
+    AbsorptionCutoff.exists_pos_condExp_sq_stoppedNormalizedRadiusNoise_succ_le,
+    AbsorptionCutoff.exists_pos_uniform_condExp_sq_stoppedNormalizedRadiusNoise_succ_le,
+    AbsorptionCutoff.stoppedNormalizedRadiusError_condExp_step,
+    AbsorptionCutoff.exists_pos_stoppedNormalizedRadiusError_condExp_step,
+    AbsorptionCutoff.exists_pos_uniform_stoppedNormalizedRadiusError_condExp_step,
+    AbsorptionCutoff.exists_pos_stoppedNormalizedRadiusError_moment_recursion,
+    AbsorptionCutoff.exists_pos_uniform_stoppedNormalizedRadiusError_moment_recursion,
+    AbsorptionCutoff.exists_pos_stoppedNormalizedRadiusError_secondMoment_le,
+    AbsorptionCutoff.exists_pos_uniform_stoppedNormalizedRadiusError_secondMoment_le,
+    AbsorptionCutoff.exists_pos_radiusTrackingExitProbability_le,
+    AbsorptionCutoff.exists_pos_uniform_radiusTrackingExitProbability_le}
+  \leanok
+  \uses{lem:subcritical-fixed-conditional-noise,
+    lem:subcritical-normalized-lattice-amplification}
+  Along the deterministic orbit
+  $\bar h_{t+1}=V_{A,\varrho}(\bar h_t)$, define
+  \[
+    e_t=\mathscr H_t^{(N)}-\bar h_t,
+    \qquad
+    \xi_{t+1}=\mathscr H_{t+1}^{(N)}
+      -V_{A,\varrho}(\mathscr H_t^{(N)}),
+    \qquad
+    \mathcal R_t=\frac{e_t}{\bar h_t+a}.
+  \]
+  If $\mathscr H_0^{(N)}=\bar h_0$, then $e_0=0$ and the difference quotient
+  $D_{t,N}$ gives
+  \[
+    e_{t+1}=D_{t,N}e_t+\xi_{t+1},
+    \qquad
+    \mathcal R_{t+1}
+      =(D_{t,N}\beta_{t,N})\mathcal R_t
+        +\beta_{t,N}\frac{\xi_{t+1}}{\bar h_t+a}.
+  \]
+  Let $\tau_\delta\leq T+1$ be the first failure of the normalized tracking
+  bound, with $T+1$ as sentinel, and set
+  \[
+    A_{t,N}:=\mathbf 1_{\{t<\tau_\delta\}}D_{t,N}\beta_{t,N},
+    \qquad
+    \eta_{t+1,N}:=
+      \mathbf 1_{\{t<\tau_\delta\}}\beta_{t,N}
+      \frac{\xi_{t+1}}{\bar h_{t,N}+a}.
+  \]
+  Then $A_{t,N}$ is adapted, $A_{t,N}^2\leq\alpha_{t,N}^2$ almost surely, and
+  the stopped recursion has conditionally centered noise satisfying
+  \[
+    \overline{\mathcal R}_{t+1}
+      =A_{t,N}\overline{\mathcal R}_t+\eta_{t+1,N},
+    \qquad
+    \mathbb E[\eta_{t+1,N}^2\mid\mathcal F_t]
+      \leq \frac{C\beta_{t,N}^2}{N}
+      \quad\text{a.s.}
+  \]
+  Consequently,
+  \[
+    \mathbb E[\overline{\mathcal R}_{T+1}^2]
+      \leq \frac{C(T+1)}{N}
+        \operatorname{Amp}_{T+1}(\alpha,\beta)^2,
+    \qquad
+    \mathbb P(\tau_\delta\leq T)
+      \leq \frac{C(T+1)}{N\delta^2}
+        \operatorname{Amp}_{T+1}(\alpha,\beta)^2.
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:subcritical-fixed-conditional-noise,
+    lem:subcritical-normalized-lattice-amplification}
+  The difference-quotient identity gives the exact error recursion. Before
+  $\tau_\delta$, localization to the rounded orbit window bounds its normalized
+  multiplier by $\alpha_{t,N}$. All stopped quantities are measurable for the
+  coordinate-prefix filtration, and the one-step noise remains conditionally
+  centered after multiplication by the adapted stopping coefficient.
+
+  The conditional variance estimate follows from
+  \Cref{lem:subcritical-fixed-conditional-noise}. The abstract stopped-moment
+  estimate, with backward weights built from $\alpha_{t,N}$, then telescopes to
+  the bound at $T+1$. On $\{\tau_\delta\leq T\}$, the stopped normalized error
+  exceeds $\delta$ at the exit index. Chebyshev's inequality gives the stated
+  exit-probability estimate.
+\end{proof}
+
+\begin{proposition}[Fixed-precision radius concentration]
+  \label{prop:subcritical-exact-radius-concentration}
+  \lean{AbsorptionCutoff.subcritical_exact_radius_concentration}
+  \leanok
+  \uses{lem:subcritical-radius-tracking-recursion,
+    lem:subcritical-normalized-lattice-amplification}
+  Assume $0<A<A_{\mathrm{lat}}$, fix $\varrho\in(0,1)$, and let
+  $x_N\in[-1,1]^N$.  If
+  \[
+    \frac{\bar T_N}{N}\exp\{C(\log\log N)^2\}\longrightarrow0
+    \qquad\text{for every fixed }C\in\mathbb R,
+  \]
+  then, under the canonical rounded-radius path law started from the rounded
+  squared radius of $x_N$,
+  \[
+    \sup_{0\leq t\leq\bar T_N}
+    \frac{|\mathscr H_t^{(N)}-\bar h_{t,N}|}
+      {\bar h_{t,N}+(\log N)^{-1}}
+    \xrightarrow{\mathbb P}0.
+  \]
+  Formally, for every $\delta>0$, the probability that the displayed
+  normalized error exceeds $\delta$ at some $t\leq\bar T_N$ tends to zero.
+  The deterministic initial-radius estimate gives
+  $\bar h_{0,N}\leq(\varrho^{-1}+1/2)^2$ uniformly in $N$.  The uniform
+  amplification theorem and the uniform stopped-exit estimate then bound this
+  probability by a constant multiple of
+  \[
+    \frac{\bar T_N+1}{N}
+      \exp\{C'(\log\log N)^2\}.
+  \]
+  The hypothesis handles the $\bar T_N$ term, while
+  $N^{-1}\exp\{C'(\log\log N)^2\}\to0$ handles the sentinel correction.
+\end{proposition}
+\begin{proof}
+  \leanok
+  \uses{lem:subcritical-radius-tracking-recursion,
+    lem:subcritical-normalized-lattice-amplification}
+\end{proof}
+
+\begin{lemma}[Zero-bin criterion]
+  \label{lem:subcritical-exact-zero-bin}
+  \lean{AbsorptionCutoff.Hmap_eq_zero_iff, AbsorptionCutoff.Hmap_ne_zero_iff,
+    AbsorptionCutoff.Hmap_eq_zero_iff_forall_observable,
+    AbsorptionCutoff.Hmap_ne_zero_iff_exists_observable}
+  \leanok
+  \uses{def:Hmap, lem:Q1-zero, lem:subcritical-layer-formulas-exact}
+  Fix $\varrho\in(0,1)$ and write
+  $b_\varrho:=\varrho^{-1}\operatorname{arctanh}(\varrho/2)=
+  b_{\varrho,0}$ (the first admissible layer threshold
+  $\texttt{roundedLayerThreshold}\ \varrho\ 0$).  One rounded Gaussian step lands in
+  the absorbing zero bin, $H_{A,\varrho,N}(h,g)=0$, exactly when every rescaled
+  coordinate stays within that threshold:
+  \[
+    H_{A,\varrho,N}(h,g)=0
+    \iff
+    \max_{1\leq i\leq N}|A\sqrt h\,g_i|\leq b_\varrho .
+  \]
+  Indeed, the nonnegative empirical average vanishes iff each squared rounded
+  coordinate does, i.e.\ $Q_1(\varrho^{-1}\tanh(\varrho A\sqrt h\,g_i))=0$; by
+  \Cref{lem:Q1-zero} this is
+  $|\varrho^{-1}\tanh(\varrho A\sqrt h\,g_i)|\leq\tfrac12$, and the monotone layer
+  preimage of \Cref{lem:subcritical-layer-formulas-exact} converts it to
+  $|A\sqrt h\,g_i|\leq b_\varrho$.  Negating gives the survival form
+  ($\texttt{Hmap\_ne\_zero\_iff}$): $H_{A,\varrho,N}(h,g)\neq0$ iff some coordinate
+  satisfies $b_\varrho<|A\sqrt h\,g_i|$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:Q1-zero, lem:subcritical-layer-formulas-exact}\end{proof}
+
+\begin{lemma}[One-step escape probability]
+  \label{lem:subcritical-exact-escape-probability}
+  \lean{AbsorptionCutoff.measureReal_Hmap_ne_zero_le,
+    AbsorptionCutoff.measureReal_Hkernel_compl_singleton_zero_le,
+    AbsorptionCutoff.tendsto_escape_at_eta_atTop}
+  \leanok
+  \uses{lem:subcritical-exact-zero-bin, lem:subcritical-fixed-moment-bound, def:Hkernel}
+  Fix $0<A$, $\varrho\in(0,1)$, and $h>0$.  Under the product Gaussian
+  $\mathcal G_N$, the probability that one rounded step escapes the absorbing zero
+  bin obeys the Gaussian union bound
+  \[
+    \mathcal G_N\{g : H_{A,\varrho,N}(h,g)\neq0\}
+    \leq
+    2N\exp\!\left(
+      -\tfrac12\Big(\tfrac{b_\varrho}{A\sqrt h}\Big)^2
+    \right).
+  \]
+  By the survival criterion the escape event is
+  $\bigcup_{i<N}\{g_i:U_{A,\varrho}(h,g_i)\neq0\}$; each coordinate marginal of
+  $\mathcal G_N$ is the standard Gaussian, so the union bound and the one-coordinate
+  support estimate of \Cref{lem:subcritical-fixed-moment-bound} give the claim.
+  Transferring through the Gaussian pushforward $H_{A,\varrho,N}(h,\cdot)_\#\mathcal
+  G_N$ (\Cref{def:Hkernel}) gives the kernel form: the non-absorption mass
+  $H_{A,\varrho,N}(h,\{0\}^c)$ satisfies the same bound.  Finally, evaluating at the
+  terminal radius scale $h=\eta/\log N$ with $0<\eta<b_\varrho^2/(2A^2)$, the bound
+  equals $2N^{1-b_\varrho^2/(2A^2\eta)}$ and tends to $0$ (the exponent is negative) --
+  the paper's final-absorption rate.
+\end{lemma}
+\begin{proof}\leanok
+  \uses{lem:subcritical-exact-zero-bin, lem:subcritical-fixed-moment-bound}
+\end{proof}
+
+\begin{lemma}[Terminal small-radius decay]
+  \label{lem:subcritical-exact-terminal-decay}
+  \lean{AbsorptionCutoff.exists_roundedMeanMap_le_rpow_atTop,
+    AbsorptionCutoff.tendsto_roundedMeanMap_mul_log_of_le_fixedPrecisionScale,
+    AbsorptionCutoff.fixedPrecisionScale_mul_log,
+    AbsorptionCutoff.tendsto_add_fixedPrecisionScale_mul_log_of_le,
+    AbsorptionCutoff.tendsto_roundedOrbit_terminal_mul_log,
+    AbsorptionCutoff.tendsto_roundedOrbit_terminal_add_scale_mul_log}
+  \leanok
+  \uses{lem:subcritical-fixed-precision-map-estimates,
+    lem:subcritical-normalized-lattice-amplification}
+  There are constants $c,C>0$ such that, for all sufficiently large $N$, every radius
+  $h$ at or below the terminal scale $a_N=1/\log N$ already satisfies
+  \[
+    V_{A,\varrho}(h)\leq C\,N^{-c}.
+  \]
+  Compose the small-radius map bound $V_{A,\varrho}(h)\leq C\exp(-c/h)$
+  (\Cref{lem:subcritical-fixed-precision-map-estimates}) with $1/h\geq\log N$, using
+  $\exp(-c\log N)=N^{-c}$; the case $h=0$ is immediate since $V_{A,\varrho}(0)=0$.  This
+  is the deterministic input behind the paper's terminal-entrance estimate
+  $\bar h_{s_N,N}\leq C N^{-c}$.  Consequently, for any pre-terminal radius sequence
+  $h_N$ with $0\leq h_N\leq a_N$ eventually, $V_{A,\varrho}(h_N)\log N\to0$ (since
+  $N^{-c}\log N\to0$); this is the paper's $\bar h_{s_N,N}\log N\to0$.  Since moreover
+  $a_N\log N=1$ exactly, the normalized denominator satisfies
+  $(V_{A,\varrho}(h_N)+a_N)\log N\to1$, the paper's $(\bar h_{s_N,N}+a_N)\log N\to1$.
+  Specializing $h_N$ to the deterministic orbit at its $a_N$-entrance
+  ($\bar t_N=\texttt{roundedOrbitEntrance}$, using the entrance bound
+  $\bar h_{\bar t_N,N}\leq a_N$) yields the paper's $\bar h_{s_N,N}\log N\to0$ with
+  $s_N=\bar t_N+1$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:subcritical-fixed-precision-map-estimates}\end{proof}
+
+\begin{theorem}[Fixed-precision subcritical dimension cutoff]
+  \label{thm:subcritical-dimension-cutoff}
+  \lean{AbsorptionCutoff.subcritical_dimension_cutoff,
+    AbsorptionCutoff.subcritical_dimension_cutoff_mixingTime_bounds,
+    AbsorptionCutoff.subcritical_dimension_cutoff_roundedVector,
+    AbsorptionCutoff.subcritical_dimension_cutoff_roundedVector_mixingTime_bounds}
+  \leanok
+  \uses{prop:subcritical-exact-radius-concentration,
+    lem:subcritical-exact-zero-bin,
+    lem:subcritical-exact-escape-probability,
+    lem:subcritical-exact-terminal-decay,
+    lem:Hkernel-tv}
+  Assume $0<A<A_{\mathrm{lat}}$, fix $\varrho\in(0,1)$, and let
+  $x_N\in[-1,1]^N$ be deterministic.  Write $\bar t_N$ for the first time at
+  which the rounded deterministic radius orbit reaches
+  $a_N=(\log N)^{-1}$, and suppose $\bar t_N\to\infty$.  Then, under the
+  canonical rounded-radius path law,
+  \[
+    \mathbb P(\tau_\varrho^{(N)}>\bar t_N-1)\longrightarrow1,
+    \qquad
+    \mathbb P(\tau_\varrho^{(N)}>\bar t_N+2)\longrightarrow0.
+  \]
+  Equivalently, the total-variation distances of both the scalar
+  squared-radius laws and the rounded vector laws
+  $P_{\varrho,A,N}^t(Q_\varrho x_N,\cdot)$ from their respective point masses
+  at zero tend respectively to $1$ and $0$.
+  Consequently, for every fixed $\varepsilon\in(0,1)$, eventually
+  \[
+    \bar t_N-1<t_{\mathrm{mix}}^{(N)}(\varepsilon)
+      \leq \bar t_N+2,
+  \]
+  and hence $t_{\mathrm{mix}}^{(N)}(\varepsilon)=\bar t_N+O(1)$, for both the
+  scalar and rounded vector chains.
+\end{theorem}
+\begin{proof}
+  The geometric deterministic contraction gives
+  $\bar t_N+1=O(\log\log N)$, hence the exact rate hypothesis of
+  \Cref{prop:subcritical-exact-radius-concentration}.  One step past the
+  terminal entrance, the deterministic radius times $\log N$ tends to zero
+  and its normalizing denominator tends to one, so concentration yields
+  $\mathscr H_{\bar t_N+1}^{(N)}\log N\to0$ in probability.
+  Splitting one further kernel step at $\eta/\log N$ and applying
+  \Cref{lem:subcritical-exact-escape-probability} proves the upper limit.
+  For the lower limit, the deterministic orbit at $\bar t_N-1$ is strictly
+  above $a_N$; an exact radius equal to zero therefore forces normalized
+  tracking error greater than $1/2$, whose probability vanishes by
+  concentration.  The path-space survival and total-variation forms follow
+  from \Cref{lem:Hkernel-tv}.
+  \leanok
+\end{proof}
+
+\begin{lemma}[Compact inward persistence margin]
+  \label{lem:metastable-inward-margin}
+  \lean{AbsorptionCutoff.exists_roundedPositiveDriftComponent_inward_margin,
+    AbsorptionCutoff.metastableExitEvent,
+    AbsorptionCutoff.measurableSet_metastableExitEvent,
+    AbsorptionCutoff.one_sub_measureReal_metastableExitEvent_le_survival,
+    AbsorptionCutoff.exists_preexit_step_deviation_gt_half,
+    AbsorptionCutoff.shiftedFiniteHorizonStepDeviationEvent,
+    AbsorptionCutoff.markovPathMeasure_measureReal_shiftedFiniteHorizonStepDeviationEvent_le,
+    AbsorptionCutoff.markovPathMeasure_measureReal_inter_start_metastableExitEvent_le,
+    AbsorptionCutoff.exists_uniform_markovPathMeasure_exit_exp_bound,
+    AbsorptionCutoff.tendsto_one_add_floor_exp_mul_exp_neg,
+    AbsorptionCutoff.exists_exponential_absorption_survival}
+  \leanok
+  Let $(h_-,h_+)$ be the rightmost positive-drift component of the rounded
+  mean map.  There is $\eta_0>0$ such that, whenever $0<\eta<\eta_0$ and
+  $J_\eta=[h_+-\eta,h_++\eta]$,
+  \[
+    V_{A,\varrho}(J_\eta)\subset J_\eta^\circ.
+  \]
+  More precisely, there is $d_\eta>0$ such that
+  \[
+    V_{A,\varrho}(h)\in
+    [h_+-\eta+d_\eta,h_++\eta-d_\eta]
+    \qquad (h\in J_\eta).
+  \]
+  There are also $T_\eta,C,c_0>0$ such that
+  \[
+    \mathbb P\!\left(
+      \max_{0\leq s\leq T}
+      |\mathscr H_{T_\eta+s}^{(N)}-h_+|>\eta
+    \right)
+    \leq C(1+T)e^{-c_0N}.
+  \]
+  Therefore, for $0<c_1<c_0$ and $T_N=\lfloor e^{c_1N}\rfloor$,
+  \[
+    \mathbb P(\tau>T_\eta+T_N)\longrightarrow1,
+  \]
+  uniformly for initial states in the prescribed compact set.
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  Positive drift at the left endpoint, right stability at the right endpoint,
+  and monotonicity give strict inward motion on $J_\eta$. Compactness supplies
+  the margin $d_\eta$.
+
+  If a path enters the half-sized well and later exits the full well, some
+  genuinely pre-exit step deviates from the mean map by more than
+  $d_\eta/2$. The one-step Hoeffding estimate and a stopped union bound give
+  an error of order $Te^{-cN}$. Combine this with finite-horizon stochastic
+  entrance. For $T=T_N$, the error tends to zero because $c_1<c_0$; remaining
+  in the well forces survival beyond $T_\eta+T_N$.
+\end{proof}
+
+\begin{lemma}[Uniform one-step absorption chance]
+  \label{lem:uniform-rounded-absorption-chance}
+  \lean{AbsorptionCutoff.exists_pos_le_measureReal_Hkernel_singleton_zero,
+    AbsorptionCutoff.exists_geometric_Hkernel_survival_bound,
+    AbsorptionCutoff.tendsto_Hkernel_survival_and_ae_absorption}
+  \leanok
+  For fixed $N$, there is $p_N>0$ such that every starting radius in the
+  canonical interval $[0,M_\varrho]$ hits zero in one step with probability
+  at least $p_N$. Indeed, a fixed coordinatewise Gaussian box of positive
+  product measure makes every rounded coordinate vanish, uniformly over the
+  starting radius. Absorption at zero then yields the geometric survival bound
+  \[
+    H_{A,\varrho,N}^t(q,\{0\}^{\mathsf c})\leq(1-p_N)^t.
+  \]
+  Hence survival tends to zero, and the event that the canonical absorption
+  time equals infinity has measure zero.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Deterministic affine-recursion entrance scaffold]
+  \label{lem:affine-entrance-scaffold}
+  \lean{AbsorptionCutoff.affineRecursion, AbsorptionCutoff.affineEntranceTime,
+    AbsorptionCutoff.lt_affineEntranceTime_iff,
+    AbsorptionCutoff.affineSurvivalSet_eq_lt_affineEntranceTime,
+    AbsorptionCutoff.affineRecursion_succ_le_mul_add, AbsorptionCutoff.affineRecursion_le_mul_prod,
+    AbsorptionCutoff.neg_log_div_lt_sum_log_of_affineRecursion,
+    AbsorptionCutoff.measure_sum_ge_le_exp_mul_prod_mgf,
+    AbsorptionCutoff.measure_sum_ge_le_exp_mul_mgf_pow, AbsorptionCutoff.affineSurvivalSet,
+    AbsorptionCutoff.affineSurvivalSet_subset_log_sum, AbsorptionCutoff.logAffineIncrement,
+    AbsorptionCutoff.measurable_logAffineIncrement, AbsorptionCutoff.iIndepFun_logAffineIncrement,
+    AbsorptionCutoff.identDistrib_logAffineIncrement,
+    AbsorptionCutoff.integrable_exp_mul_sum_logAffineIncrement,
+    AbsorptionCutoff.measurable_affineRecursion,
+    AbsorptionCutoff.measurableSet_affineSurvivalSet,
+    AbsorptionCutoff.measureReal_affineSurvivalSet_le,
+    AbsorptionCutoff.measureReal_affineSurvivalSet_le_exp_sub,
+    AbsorptionCutoff.measureReal_affineSurvivalSet_le_exp_mul_exp_neg,
+    AbsorptionCutoff.affineThreshold_sub_one_lt_floor,
+    AbsorptionCutoff.measureReal_affineSurvivalSet_floor_le,
+    AbsorptionCutoff.exists_pos_integral_log_add_neg_of_tendsto,
+    AbsorptionCutoff.tendsto_integral_log_add_inv_nat,
+    AbsorptionCutoff.exists_pos_integral_log_add_neg,
+    AbsorptionCutoff.exists_pos_lt_one_of_hasDerivAt_neg,
+    AbsorptionCutoff.hasDerivAt_mgf_zero_integral,
+    AbsorptionCutoff.exists_pos_mgf_lt_one,
+    AbsorptionCutoff.exists_pos_exp_neg_ge,
+    AbsorptionCutoff.exists_pos_mgf_le_exp_neg,
+    AbsorptionCutoff.exists_pos_mem_lt_one_of_hasDerivAt_neg,
+    AbsorptionCutoff.exists_pos_integrable_mgf_lt_one,
+    AbsorptionCutoff.exists_pos_integrable_mgf_le_exp_neg,
+    AbsorptionCutoff.measureReal_affineEntranceTime_gt_floor_le}
+  \leanok
+  Let
+  \[
+    U_0=K,
+    \qquad
+    U_{t+1}=M_{t+1}U_t+b,
+    \qquad
+    T=\inf\{t:U_t\leq K_\ast\}.
+  \]
+  If $b\leq\varepsilon K_\ast$, then on $\{T>n\}$,
+  \[
+    U_n\leq K\prod_{j<n}(M_{j+1}+\varepsilon),
+    \qquad
+    \sum_{j<n}\log(M_{j+1}+\varepsilon)
+      >-\log(K/K_\ast).
+  \]
+  Suppose that the shifted logarithmic increments are independent and
+  identically distributed, have negative mean, and admit an exponential
+  moment near the origin. Then there exist $s,c_3>0$ such that
+  $e^{sX_1}$ is integrable and
+  $\operatorname{mgf}_{X_1}(s)\leq e^{-c_3}$. With
+  \[
+    c_1=s/c_3,
+    \qquad
+    c_2=\max\{e^{-s\log K_\ast+c_3},1\},
+  \]
+  one has, uniformly in $K$ and $r\geq0$,
+  \[
+    \mathbb P\!\left(T>\lfloor c_1\log K+r\rfloor\right)
+      \leq c_2e^{-c_3r}.
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  Iterating $U_{t+1}\leq(M_{t+1}+\varepsilon)U_t$ before $T$ gives the
+  pathwise product bound and the logarithmic event inclusion. Independence
+  factors the exponential moment of the finite sum, and the iid Chernoff
+  bound reduces it to the $n$-th power of one moment-generating function.
+
+  Dominated convergence selects $\varepsilon>0$ with
+  $\Ee\log(M_1+\varepsilon)<0$. The derivative of the moment-generating
+  function at zero is this negative mean, so an integrable parameter $s>0$
+  may be chosen with subunit mgf. Writing this value as at most $e^{-c_3}$
+  and choosing the displayed $c_1,c_2$ gives the floored survival estimate.
+\end{proof}
+
+\begin{lemma}[Logarithmic entrance for contractive affine recursions]
+  \label{lem:negative-drift-affine-entrance}
+  \lean{AbsorptionCutoff.exists_affineEntrance_bound}
+  \leanok
+  \uses{lem:affine-entrance-scaffold}
+  Let $(M_j)_{j\ge1}$ be independent, identically distributed, nonnegative multipliers with
+  $\Ee\log M_1<0$, and assume that for every $\varepsilon>0$ the shifted increment
+  $\log(M_1+\varepsilon)$ has an exponential moment in a neighborhood of the origin. For every
+  $b$ there exist $K_\ast,c_1,c_2,c_3>0$, depending only on $b$ and the law of $M_1$ (uniform in
+  the start $K$ and excess $r$), such that the affine recursion $U_0=K$,
+  $U_{t+1}=M_{t+1}U_t+b$ satisfies
+  \[
+    \mathbb P\!\left(\inf\{t:U_t\le K_\ast\} > \lfloor c_1\log K + r\rfloor\right)
+    \le c_2\,e^{-c_3 r}.
+  \]
+  This is \texttt{eq:negative-drift-affine-entrance}: choose $\varepsilon$ with
+  $\Ee\log(M_1+\varepsilon)<0$, set $K_\ast=\max(b/\varepsilon,1)$ (so $b\le\varepsilon K_\ast$),
+  and apply the scaffold's parametrized capstone uniformly in $K,r$. Since the entrance time
+  is $\mathbb N\cup\{\infty\}$-valued, the floored threshold $\lfloor c_1\log K+r\rfloor$ agrees
+  with the paper's real threshold $c_1\log K+r$.
+\end{lemma}
+\begin{proof}\leanok\uses{lem:affine-entrance-scaffold}\end{proof}
+
+\section{Reduction to the squared-radius chain}
+\label{sec:vector-radius-reduction}
+
+This section begins the paper's \texttt{prop:gaussian-tv-reduction}: after one Gaussian
+step the vector law depends on the previous state only through its normalized squared
+radius $r_N(x)=N^{-1}\|x\|_2^2$, factorizing the vector kernel $P_{A,N}$ through the scalar
+squared-radius kernel $K_{A,N}$ and a reconstruction kernel $J_{A,N}$.
+
+\begin{lemma}[Gaussian radial Gamma law and negative moments]
+  \label{lem:gaussian-squared-norm-gamma}
+  \lean{AbsorptionCutoff.gaussianSquaredNorm, AbsorptionCutoff.gaussianEuclideanNorm,
+    AbsorptionCutoff.map_gaussianSquaredNorm_gaussianVec,
+    AbsorptionCutoff.mgf_id_gammaMeasure_of_lt,
+    AbsorptionCutoff.map_eq_of_mgf_eq_on_Ioo,
+    AbsorptionCutoff.map_gaussianSquaredNorm_eq_gammaMeasure,
+    AbsorptionCutoff.integral_neg_rpow_gaussianSquaredNorm,
+    AbsorptionCutoff.integral_neg_rpow_gaussianEuclideanNorm,
+    AbsorptionCutoff.integral_neg_two_gaussianEuclideanNorm,
+    AbsorptionCutoff.integral_neg_two_normalized_gaussianEuclideanNorm,
+    AbsorptionCutoff.integral_neg_two_normalized_gaussianEuclideanNorm_le_two,
+    AbsorptionCutoff.integral_neg_two_scaled_gaussianEuclideanNorm,
+    AbsorptionCutoff.integral_neg_two_scaled_gaussianEuclideanNorm_le,
+    AbsorptionCutoff.integral_neg_two_scaled_gaussianEuclideanNorm_lt_one_of_dimension,
+    AbsorptionCutoff.exists_dimension_threshold_for_reciprocal_moment,
+    AbsorptionCutoff.eventually_integral_neg_two_scaled_gaussianEuclideanNorm_lt_one,
+    AbsorptionCutoff.Fmap_div_tendsto_gaussianSquaredNorm,
+    AbsorptionCutoff.antitoneOn_Fmap_div,
+    AbsorptionCutoff.Fmap_div_ge_of_pos_of_le,
+    AbsorptionCutoff.tanh_one_sq_mul_min_sq_one_le,
+    AbsorptionCutoff.sum_tanh_sq_lower_gaussianSquaredNorm,
+    AbsorptionCutoff.inv_Fmap_div_le_one_add_inv_gaussianSquaredNorm,
+    AbsorptionCutoff.integrable_inv_Fmap_div,
+    AbsorptionCutoff.integrable_inv_Kchain,
+    AbsorptionCutoff.exists_integral_inv_Fmap_le_on_Icc,
+    AbsorptionCutoff.integral_inv_Fmap_div_tendsto,
+    AbsorptionCutoff.exists_small_radius_integral_inv_Fmap_div_lt,
+    AbsorptionCutoff.exists_small_radius_integral_inv_Fmap_div_lt_one,
+    AbsorptionCutoff.exists_Kchain_inv_foster_bound,
+    AbsorptionCutoff.exists_uniform_integral_inv_Kchain_pow_le,
+    AbsorptionCutoff.exists_uniform_integral_inv_cesaroMeasure_le}
+  \leanok
+  For $N>0$, the squared norm of a standard Gaussian vector in $\mathbb R^N$
+  has Gamma law
+  \[
+    (\texttt{gaussianSquaredNorm}\ N)_\#\mathcal G_N
+    =\operatorname{Gamma}(N/2,1/2).
+  \]
+  Hence, for $p<N/2$ and $q<N$,
+  \[
+    \mathbb E[(\chi_N^2)^{-p}]
+      =(1/2)^p\frac{\Gamma(N/2-p)}{\Gamma(N/2)},
+    \qquad
+    \mathbb E[\|G\|_2^{-q}]
+      =(1/2)^{q/2}\frac{\Gamma((N-q)/2)}{\Gamma(N/2)}.
+  \]
+  In particular, if $N>2$ and $A\ne0$, then
+  \[
+    \mathbb E[\|G\|_2^{-2}]=\frac1{N-2},
+    \qquad
+    \lim_{q\downarrow0}
+    \mathbb E\!\left[\left(\frac{F_{A,N}(q,G)}q\right)^{-1}\right]
+    =\frac{N}{A^2(N-2)}.
+  \]
+  If $2A^2<(A^2-1)N$, there are $a<1$ and $B<\infty$ such that
+  \[
+    K_{A,N}(q,y^{-1})\le a q^{-1}+B,\qquad 0<q\le1.
+  \]
+  Consequently the reciprocal radius is integrable, with a bound uniform over
+  all iterated laws and positive-length Cesàro averages started from
+  $q\in(0,1]$.
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  The one-coordinate squared-Gaussian and Gamma moment-generating functions,
+  independence, and uniqueness of the complex MGF identify the Gamma law. The
+  density integral gives the two negative-moment formulas.
+
+  The map $q\mapsto F_{A,N}(q,g)/q$ is nonincreasing, and
+  \[
+    \tanh^2(1)\min\{A^2R,1\}\frac{S}{1+S}
+      \leq \sum_i\tanh^2(A\sqrt R\,g_i),
+    \qquad S=\|g\|_2^2,
+  \]
+  provides an integrable reciprocal dominator when $N>2$. Dominated
+  convergence gives the limit at zero. Under the dimension criterion this
+  limit is below one, giving the drift estimate near zero; compactness gives
+  the finite bound away from zero. Iterating the affine drift inequality
+  yields the uniform power and Cesàro bounds.
+\end{proof}
+
+\begin{lemma}[One-coordinate truncated Gaussian Laplace decay]
+  \label{lem:gaussian-truncated-coordinate-laplace}
+  \lean{AbsorptionCutoff.truncatedGaussianSquare,
+    AbsorptionCutoff.measurable_truncatedGaussianSquare,
+    AbsorptionCutoff.truncatedGaussianSquare_nonneg,
+    AbsorptionCutoff.tendsto_integral_truncatedGaussianSquare_atTop,
+    AbsorptionCutoff.exists_one_le_integral_truncatedGaussianSquare_gt_inv_sq,
+    AbsorptionCutoff.exists_truncatedGaussianSquare_parameters,
+    AbsorptionCutoff.truncatedGaussianSquareMean,
+    AbsorptionCutoff.integral_gaussianVec_truncatedGaussianSquare_eval_eq_mean,
+    AbsorptionCutoff.hasSubgaussianMGF_truncatedGaussianSquare_eval_sub_mean,
+    AbsorptionCutoff.iIndepFun_truncatedGaussianSquare_eval_sub_mean,
+    AbsorptionCutoff.measureReal_truncatedGaussianAverage_le_mean_sub_le,
+    AbsorptionCutoff.truncatedGaussianSum,
+    AbsorptionCutoff.truncatedGaussianAverage,
+    AbsorptionCutoff.measurable_truncatedGaussianSum,
+    AbsorptionCutoff.truncatedGaussianSum_nonneg,
+    AbsorptionCutoff.measurable_truncatedGaussianAverage,
+    AbsorptionCutoff.truncatedGaussianAverage_nonneg,
+    AbsorptionCutoff.ae_truncatedGaussianAverage_one_pos,
+    AbsorptionCutoff.iIndepFun_gaussian_coordinate_truncatedSquare,
+    AbsorptionCutoff.integral_exp_neg_truncatedGaussianSum,
+    AbsorptionCutoff.integral_exp_neg_truncatedGaussianSum_one_le,
+    AbsorptionCutoff.integral_exp_neg_truncatedGaussianSquare_one_le_add,
+    AbsorptionCutoff.integral_exp_neg_truncatedGaussianSquare_one_le}
+  \leanok
+  \uses{lem:gaussian-squared-norm-gamma}
+  For a standard Gaussian coordinate $G$, set
+  $U_L=\min\{G^2,L^2\}$. Then $\mathbb E U_L\to1$ as $L\to\infty$, and for
+  $t\geq1$,
+  \[
+    \mathbb E e^{-tU_1}\leq \frac2{\sqrt t}.
+  \]
+  For every $A>1$, one may therefore choose $L\geq1$,
+  $\varepsilon\in(0,1)$ and $\delta>0$ so that
+  $(1-\varepsilon)A^2(\mathbb E U_L-\delta)>1$.
+  If $U_{L,1},\ldots,U_{L,N}$ are independent copies and
+  $\mu_L=\mathbb E U_L$, then
+  \[
+    \mathbb P\!\left(
+      \frac1N\sum_{i=1}^N U_{L,i}\le\mu_L-\varepsilon
+    \right)
+    \le \exp\!\left(-\frac{2N\varepsilon^2}{L^4}\right).
+  \]
+  Moreover, for $t\geq1$,
+  \[
+    \mathbb E\exp\!\left(-t\sum_{i=1}^N\min\{G_i^2,1\}\right)
+    \le \left(\frac{2}{\sqrt t}\right)^N.
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:gaussian-squared-norm-gamma}
+  Split the one-coordinate integral at $G^2=1$ and use the exact Gaussian
+  square transform to obtain the Laplace bound. Dominated convergence gives
+  $\mathbb E U_L\to1$. Hoeffding's inequality applies because
+  $0\leq U_L\leq L^2$, while independence factors the finite-dimensional
+  Laplace transform into the $N$-th power of its one-coordinate counterpart.
+\end{proof}
+
+\begin{lemma}[Truncated Gaussian negative moments]
+  \label{lem:gaussian-truncated-negative-moment}
+  \lean{AbsorptionCutoff.integrable_neg_rpow_truncatedGaussianAverage_one_and_integral_le,
+    AbsorptionCutoff.integrable_neg_rpow_truncatedGaussianAverage_one_and_integral_le_exp,
+    AbsorptionCutoff.integrable_neg_rpow_truncatedGaussianAverage_one_mul_dimension_and_integral_le,
+    AbsorptionCutoff.integrable_neg_rpow_truncatedGaussianAverage_mul_dimension_and_integral_le}
+  \leanok
+  \uses{lem:gaussian-truncated-coordinate-laplace,
+    lem:laplace-envelope-negative-moment}
+  Let $S_N=N^{-1}\sum_{i=1}^N\min\{G_i^2,1\}$. For
+  $0<p<N/2$, the random variable $S_N^{-p}$ is integrable and
+  \[
+    \mathbb E S_N^{-p}
+    \leq \Gamma(p)^{-1}
+      \left[
+        \frac{N^p}{p}
+        +2^N N^{N/2}\frac{N^{p-N/2}}{N/2-p}
+      \right].
+  \]
+  Equivalently,
+  \[
+    \mathbb E S_N^{-p}
+    \le e^{p+1}(N/p)^p
+      \left(1+\frac{p\,2^N}{N/2-p}\right).
+  \]
+  In particular, for $0<\alpha<1/2$,
+  \[
+    \mathbb E S_N^{-\alpha N}
+    \le \frac{e}{1-2\alpha}
+      \left(2e^\alpha\alpha^{-\alpha}\right)^N.
+  \]
+  These bounds remain valid when the truncation level $1$ is replaced by any
+  $L\geq1$.
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:gaussian-truncated-coordinate-laplace,
+    lem:laplace-envelope-negative-moment}
+  Split the Mellin integral at $t=N$. Below the breakpoint the Laplace
+  transform is at most one; above it, tensorization gives the integrable
+  power-law envelope. The Gamma quotient bound yields the exponential form.
+  Increasing $L$ only increases the empirical average, so its negative power
+  decreases.
+\end{proof}
+
+\begin{lemma}[Truncated Gaussian bad-event negative moment]
+  \label{lem:gaussian-truncated-bad-event-moment}
+  \lean{AbsorptionCutoff.integrableOn_neg_rpow_truncatedGaussianAverage_badEvent_and_integral_le,
+    AbsorptionCutoff.integrableOn_neg_rpow_scaled_truncatedGaussianAverage_badEvent_and_integral_le,
+    AbsorptionCutoff.integrableOn_neg_rpow_scaled_truncatedGaussianAverage_goodEvent_and_integral_le,
+    AbsorptionCutoff.integrable_neg_rpow_scaled_truncatedGaussianAverage_and_integral_le,
+    AbsorptionCutoff.exists_fractional_exponent_and_rate_for_scaled_truncatedGaussianAverage,
+    AbsorptionCutoff.exists_eventually_integrable_neg_rpow_scaled_truncatedGaussianAverage,
+    AbsorptionCutoff.exists_truncatedGaussianAverage_cramer_bound}
+  \leanok
+  \uses{lem:gaussian-truncated-coordinate-laplace,
+    lem:gaussian-truncated-negative-moment,
+    lem:set-negative-moment-holder}
+  Let $0<\gamma<\alpha<1/2$, $L\ge1$, $\delta\ge0$, and $N>0$.
+  On the bad event
+  $S=\{\overline W_{L,N}\le\mu_L-\delta\}$, the lower negative moment is
+  integrable and satisfies
+  \[
+    \mathbb E\!\left[
+      \overline W_{L,N}^{-\gamma N}\mathbf 1_S
+    \right]
+    \le
+    \left(\frac{e}{1-2\alpha}\right)^{\gamma/\alpha}
+    \left[
+      \left(2e^\alpha\alpha^{-\alpha}\right)^{\gamma/\alpha}
+      \exp\!\left(
+        -\frac{2\delta^2}{L^4}
+        \left(1-\frac{\gamma}{\alpha}\right)
+      \right)
+    \right]^N.
+  \]
+  Consequently, for every $A>1$ there are
+  $\gamma\in(0,1/2)$, $\kappa>0$, $L\ge1$, and
+  $\varepsilon\in(0,1)$ such that, for all sufficiently large $N$,
+  \[
+    \mathbb E\!\left[
+      \bigl((1-\varepsilon)A^2\overline W_{L,N}\bigr)^{-\gamma N}
+    \right]
+    \leq e^{-\kappa N}.
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:gaussian-truncated-coordinate-laplace,
+    lem:gaussian-truncated-negative-moment,
+    lem:set-negative-moment-holder}
+  Hölder interpolation combines the higher negative moment with the
+  exponential lower-tail estimate to give the displayed bad-event bound. On
+  the complementary event, the scaled average is bounded below by
+  $(1-\varepsilon)A^2(\mu_L-\delta)>1$.
+
+  The bad-event exponential base is continuous in $\gamma$ and is below one
+  at $\gamma=0$; the good-event base is below one for every $\gamma>0$.
+  Choose $\gamma$ small enough that both decay exponentially, then absorb the
+  dimension-free prefactor by reducing the rate. Taking $\alpha=1/4$ and the
+  truncation parameters from $A>1$ gives the final estimate.
+\end{proof}
+
+\begin{lemma}[Uniform small-argument hyperbolic tangent linearization]
+  \label{lem:gaussian-uniform-small-tanh-ratio}
+  \lean{AbsorptionCutoff.exists_pos_forall_tanh_div_self_sq_ge_one_sub,
+    AbsorptionCutoff.exists_radius_truncatedGaussianSquare_le_tanh_sq_div,
+    AbsorptionCutoff.scaled_truncatedGaussianAverage_le_Fmap_div_of_forall,
+    AbsorptionCutoff.exists_radius_scaled_truncatedGaussianAverage_le_Fmap_div,
+    AbsorptionCutoff.exists_radius_eventually_integrable_neg_rpow_Fmap_div,
+    AbsorptionCutoff.exists_radius_lt_eventually_integrable_neg_rpow_Fmap_div,
+    AbsorptionCutoff.exists_radius_below_stableInterval_eventually_integrable_neg_rpow_Fmap_div}
+  \leanok
+  \uses{lem:gaussian-truncated-bad-event-moment}
+  For every $\varepsilon\in(0,1)$ there is $\eta>0$ such that
+  \[
+    1-\varepsilon
+    \leq \left(\frac{\tanh x}{x}\right)^2
+  \]
+  whenever $0<|x|\leq\eta$. For fixed $A>1$ and $L\ge1$, set
+  $R_0=\min\{1,\eta/(AL)\}^2$. Then, for every $g\in\mathbb R$,
+  \[
+    (1-\varepsilon)A^2\min\{g^2,L^2\}
+    \leq \frac{\tanh^2(A\sqrt{R_0}\,g)}{R_0}
+  \]
+  and hence
+  \[
+    (1-\varepsilon)A^2\overline W_{L,N}(g)
+    \leq \frac{F_{A,N}(R_0,g)}{R_0}.
+  \]
+  Consequently there are constants
+  $\gamma\in(0,1/2)$ and $\kappa>0$ such that, for all sufficiently large
+  $N$ and uniformly over $0<q\leq R_0$,
+  \[
+    \mathbb E\left[
+      \left(\frac{F_{A,N}(q,G)}q\right)^{-\gamma N}
+    \right]\leq e^{-\kappa N}.
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  The first estimate follows uniformly from $\tanh x/x\to1$ near zero. Inside
+  $|g|\leq L$, it gives the coordinatewise bound;
+  outside this interval, monotonicity of $\tanh$ in $|g|$ gives the same
+  conclusion. Sum over coordinates and apply the truncated Cramér estimate.
+  Finally use that
+  $q\mapsto F_{A,N}(q,g)/q$ is nonincreasing.
+\end{proof}
+
+\begin{lemma}[Negative-moment bound away from zero]
+  \label{lem:gaussian-outside-coordinate-lower}
+  \lean{AbsorptionCutoff.exists_pos_forall_truncatedGaussianSquare_one_le_tanh_sq,
+    AbsorptionCutoff.exists_pos_forall_scaled_truncatedGaussianAverage_one_le_Fmap,
+    AbsorptionCutoff.exists_pos_forall_integrable_neg_rpow_Fmap_and_integral_le,
+    AbsorptionCutoff.exists_forall_integrable_neg_rpow_Fmap_and_integral_le_exp,
+    AbsorptionCutoff.integrable_rpow_Fmap_and_integral_eq_mul}
+  \leanok
+  \uses{lem:gaussian-squared-norm-gamma}
+  For every $A>1$ and $R_0\in(0,1)$ there is $c_{A,R_0}>0$ such that,
+  uniformly over $q\in[R_0,1]$ and $g\in\mathbb R$,
+  \[
+    c_{A,R_0}\min\{g^2,1\}
+    \leq \tanh^2(A\sqrt q\,g).
+  \]
+  One may take
+  $c_{A,R_0}=\tanh^2(1)\min\{A^2R_0,1\}$; the global two-regime
+  hyperbolic-tangent bound and $q\geq R_0$ give the claim.
+  Summing and normalizing gives
+  $c_{A,R_0}\overline W_{1,N}\leq F_{A,N}(q,\cdot)$, so the explicit
+  level-one truncated negative-moment estimate transfers uniformly to
+  $F_{A,N}(q,\cdot)^{-\gamma N}$ for every $\gamma\in(0,1/2)$.
+  Absorbing the fixed prefactor and the coefficient
+  $c_{A,R_0}^{-\gamma N}$ into one exponential rate gives a real $b$ such
+  that the moment is at most $e^{bN}$ for every $N\geq1$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{proposition}[Stationary negative-moment drift]
+  \label{prop:gaussian-stationary-negative-moment-drift}
+  \lean{AbsorptionCutoff.exists_eventually_integrable_neg_rpow_Fmap_foster,
+    AbsorptionCutoff.exists_eventually_integrable_neg_rpow_Kchain_foster,
+    AbsorptionCutoff.integrable_neg_rpow_Kchain_pow_of_foster,
+    AbsorptionCutoff.exists_uniform_integral_neg_rpow_Kchain_pow_le_of_foster,
+    AbsorptionCutoff.exists_uniform_integral_neg_rpow_cesaroMeasure_le_of_foster,
+    AbsorptionCutoff.exists_eventually_uniform_integral_neg_rpow_Kchain_pow_and_cesaroMeasure_le,
+    AbsorptionCutoff.negativeMomentTruncation,
+    AbsorptionCutoff.negativeMomentTruncation_apply,
+    AbsorptionCutoff.negativeMomentTruncation_nonneg,
+    AbsorptionCutoff.negativeMomentTruncation_le,
+    AbsorptionCutoff.negativeMomentTruncation_mono,
+    AbsorptionCutoff.tendsto_negativeMomentTruncation,
+    AbsorptionCutoff.integrable_neg_rpow_of_tendsto_of_uniform_integral,
+    AbsorptionCutoff.exists_invariant_Kchain_integrable_neg_rpow_of_uniform_cesaro,
+    AbsorptionCutoff.measureReal_Ioc_le_rpow_mul_integral_neg_rpow,
+    AbsorptionCutoff.exists_pos_lt_and_add_mul_log_neg,
+    AbsorptionCutoff.exists_exponential_envelope_invariant_moment_max,
+    AbsorptionCutoff.exists_eventually_invariant_Kchain_integrable_neg_rpow,
+    AbsorptionCutoff.exists_eventually_invariant_Kchain_small_ball_le_exp,
+    AbsorptionCutoff.invariant_measureReal_le_add_of_ae_kernel_pow_measureReal_le,
+    AbsorptionCutoff.add_mul_exp_neg_le_mul_add_exp_neg_min,
+    AbsorptionCutoff.exists_eventually_invariant_Kchain_stable_interval_le_exp_add,
+    AbsorptionCutoff.exists_eventually_invariant_Kchain_stable_interval_le_exp,
+    AbsorptionCutoff.exists_eventually_invariant_Kchain_stable_interval_le_inv_nat,
+    AbsorptionCutoff.integral_sq_Fmap_sub_V_le,
+    AbsorptionCutoff.integral_sq_Fmap_sub_fixed_eq,
+    AbsorptionCutoff.invariant_integral_sq_sub_fixed_eq_integral_integral_Fmap,
+    AbsorptionCutoff.invariant_integral_sq_sub_fixed_eq_integral_add_noise,
+    AbsorptionCutoff.invariant_integral_sq_sub_fixed_le_integral_sq_V_add,
+    AbsorptionCutoff.abs_V_sub_fixed_le_mul_abs_sub_fixed_of_deriv_le,
+    AbsorptionCutoff.integral_sq_V_sub_fixed_le_sq_mul_integral_add_measureReal,
+    AbsorptionCutoff.exists_eventually_invariant_Kchain_integral_sq_sub_fixed_le_inv_nat}
+  \leanok
+  \uses{lem:gaussian-uniform-small-tanh-ratio,
+    lem:gaussian-outside-coordinate-lower}
+  For the exponent and rates selected above, and every sufficiently large
+  positive dimension, the Lyapunov function
+  $V_N(q)=q^{-\gamma N}$ satisfies on $(0,1]$
+  \[
+    K_{A,N}V_N(q)
+    \leq e^{-\kappa N}V_N(q)+e^{bN}.
+  \]
+  The small-radius case factors out $q^{-\gamma N}$ and uses the ratio
+  contraction; the complementary case uses the away-from-zero bound.
+\end{proposition}
+\begin{proof}\leanok\end{proof}
+
+\begin{theorem}[Power singularity in fixed dimension]
+  \label{thm:nd-power-singularity}
+  \lean{AbsorptionCutoff.invariant_powerSingularity}
+  \leanok
+  \uses{lem:nd-gaussian-renewal,prop:nd-forcing-admissibility}
+  For every origin-free invariant vector law in the supercritical regime, the
+  Cram\'er exponent is the radial singularity exponent and the coefficient is
+  strictly positive.  After multiplication by $s^{-\beta_{A,N}}$, directional
+  small-ball masses converge on every measurable angular continuity set to the
+  corresponding normalized surface mass times this coefficient; the full-ball
+  tail converges to the coefficient itself.
+\end{theorem}
+\begin{proof}\leanok\end{proof}
+
+\begin{definition}[Reduction kernels]
+  \label{def:reduction-kernels}
+  \lean{AbsorptionCutoff.radiusSq, AbsorptionCutoff.radiusSq_eq_zero_iff,
+    AbsorptionCutoff.map_radiusSq_apply_singleton_zero, AbsorptionCutoff.Jmap,
+    AbsorptionCutoff.Jkernel, AbsorptionCutoff.weightVar, AbsorptionCutoff.gaussianMat,
+    AbsorptionCutoff.Pstep, AbsorptionCutoff.Pkernel}
+  \leanok
+  \uses{def:gaussianVec}
+  The normalized squared radius $r_N(x)=N^{-1}\sum_i x_i^2$
+  (\texttt{radiusSq}); in positive dimension its zero fiber is exactly the
+  zero vector, so radius pushforward preserves the atom at the origin. The
+  reconstruction map $(\tanh(A\sqrt q\,g_i))_i$ (\texttt{Jmap})
+  and the Markov \emph{reconstruction kernel} $J_{A,N}(q,\cdot)$, the law of
+  $(\tanh(A\sqrt q\,G_i))_i$ with $G\sim\mathcal G_N$ (\texttt{Jkernel}); and the vector
+  chain of \texttt{eq:unrounded-chain}: the weight variance $A^2/N$ (\texttt{weightVar}),
+  the $N\times N$ i.i.d.\ Gaussian weight law (\texttt{gaussianMat}), the step map
+  $\tanh(\mathsf Wx)$ (\texttt{Pstep}), and the Markov \emph{unrounded vector kernel}
+  $P_{A,N}(x,\cdot)$, the law of $\tanh(\mathsf Wx)$ (\texttt{Pkernel}).
+\end{definition}
+
+\begin{lemma}[Radius factorization of the reconstruction kernel]
+  \label{lem:radius-factorization}
+  \lean{AbsorptionCutoff.radiusSq_Jmap, AbsorptionCutoff.Jkernel_apply, AbsorptionCutoff.Kchain_apply,
+    AbsorptionCutoff.Pkernel_apply, AbsorptionCutoff.radiusSq_map_Jkernel}
+  \leanok
+  \uses{def:reduction-kernels, def:Kchain, def:Fmap}
+  For every $q\geq0$,
+  \[
+    (r_N)_\# J_{A,N}(q,\cdot)=K_{A,N}(q,\cdot).
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{def:reduction-kernels, def:Kchain}
+  The pointwise identity $r_N(J_{A,N}(q,g))=F_{A,N}(q,g)$ intertwines the two
+  Gaussian pushforward formulas.
+\end{proof}
+
+\begin{lemma}[Finite sums of independent real Gaussians]
+  \label{lem:gaussian-sum}
+  \lean{AbsorptionCutoff.map_finsetSum_gaussianReal, AbsorptionCutoff.map_sum_mul_gaussianPi}
+  \leanok
+  If $(X_i)$ are independent and $X_i\sim\mathcal N(m_i,v_i)$, then
+  \[
+    \sum_{i\in s}X_i
+      \sim\mathcal N\!\left(\sum_{i\in s}m_i,\sum_{i\in s}v_i\right).
+  \]
+  In particular, under $\bigotimes_i\mathcal N(0,v)$ on $\mathbb R^N$,
+  \[
+    \sum_j w_jx_j\sim\mathcal N\!\left(0,v\sum_jx_j^2\right).
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  Induct over the finite index set using the two-variable Gaussian addition
+  law; the second assertion is the corresponding linear-form specialization.
+\end{proof}
+
+\begin{lemma}[Gaussian isotropy / vector kernel factorization]
+  \label{lem:gaussian-isotropy}
+  \lean{AbsorptionCutoff.map_rowMap_gaussianMat, AbsorptionCutoff.map_tanh_scale_gaussian,
+    AbsorptionCutoff.Jkernel_apply_pi, AbsorptionCutoff.radiusSq_nonneg,
+    AbsorptionCutoff.Pkernel_eq_Jkernel_radiusSq}
+  \leanok
+  \uses{def:reduction-kernels, lem:gaussian-sum, lem:radius-factorization}
+  The unrounded vector kernel depends on $x$ only through its normalized
+  squared radius:
+  \[
+    P_{A,N}(x,\cdot)=J_{A,N}(r_N(x),\cdot).
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:gaussian-sum, lem:radius-factorization}
+  By \Cref{lem:gaussian-sum}, the rows of $\mathsf Wx$ are independent
+  $\mathcal N(0,A^2r_N(x))$ variables. Apply $\tanh$ coordinatewise and use
+  Gaussian scaling to identify the resulting product law with $J_{A,N}$.
+\end{proof}
+
+\begin{lemma}[Vector and radius laws at arbitrary times]
+  \label{lem:gaussian-vector-radius-laws}
+  \lean{AbsorptionCutoff.radiusSq_map_Pkernel_pow,
+    AbsorptionCutoff.Pkernel_pow_succ_eq_Jkernel_comp_Kchain_pow}
+  \leanok
+  \uses{lem:gaussian-isotropy, lem:radius-factorization}
+  For every $t\geq0$,
+  \[
+    (r_N)_\#P_{A,N}^t(x,\cdot)=K_{A,N}^t(r_N(x),\cdot),
+    \qquad
+    P_{A,N}^{t+1}(x,\cdot)=K_{A,N}^{t}(r_N(x),\cdot)J_{A,N}.
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:gaussian-isotropy, lem:radius-factorization}
+  Induct the radius identity from the one-step intertwining. For the second
+  identity, expose the final vector step, factor it through the radius
+  pushforward, and apply the first identity.
+\end{proof}
+
+\begin{lemma}[Invariant-law transfer]
+  \label{lem:gaussian-invariant-transfer}
+  \lean{AbsorptionCutoff.invariant_Pkernel_of_invariant_Kchain,
+    AbsorptionCutoff.eq_Jkernel_comp_map_radiusSq_of_invariant_Pkernel,
+    AbsorptionCutoff.invariant_Kchain_map_radiusSq_of_invariant_Pkernel}
+  \leanok
+  \uses{lem:gaussian-vector-radius-laws}
+  If $\nu K_{A,N}=\nu$, then $\pi:=\nu J_{A,N}$ satisfies
+  $\pi P_{A,N}=\pi$. Conversely, if $\pi P_{A,N}=\pi$, then
+  \[
+    \pi=((r_N)_\#\pi)J_{A,N},
+    \qquad
+    ((r_N)_\#\pi)K_{A,N}=(r_N)_\#\pi.
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:gaussian-vector-radius-laws}
+  Apply the two identities of \Cref{lem:gaussian-vector-radius-laws} and the
+  assumed stationarity.
+\end{proof}
+
+\begin{lemma}[Weak stationary equation for the Gaussian vector chain]
+  \label{lem:gaussian-vector-weak-stationary-equation}
+  \lean{AbsorptionCutoff.integral_Pkernel, AbsorptionCutoff.vector_stationary_equation}
+  \leanok
+  \uses{def:reduction-kernels}
+  If $\pi$ is invariant for $P_{A,N}$, then every bounded measurable test function
+  $\varphi$ satisfies
+  \[
+    \int \varphi(x)\,\pi(dx)
+    =
+    \int\!\!\int \varphi\bigl(\operatorname{Pstep}_N(x,\mathsf W)\bigr)\,
+      \operatorname{gaussianMat}_{A,N}(d\mathsf W)\,\pi(dx).
+  \]
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{def:reduction-kernels}
+  Use the pushforward formula for $P_{A,N}(x,\cdot)$, invariance, and the
+  kernel--measure Fubini identity.
+\end{proof}
+
+\begin{lemma}[Gaussian vector--radius total-variation bracket]
+  \label{lem:gaussian-tv-bracket}
+  \lean{AbsorptionCutoff.tvDist_Kchain_pow_le_Pkernel_pow,
+    AbsorptionCutoff.tvDist_Pkernel_pow_succ_le_Kchain_pow}
+  \leanok
+  \uses{lem:gaussian-vector-radius-laws, lem:gaussian-invariant-transfer}
+  For $\pi=\nu J_{A,N}$ with $\nu$ invariant for $K_{A,N}$, the scalar radius
+  observation gives the lower total-variation bound, while contraction through the
+  reconstruction kernel $J_{A,N}$ gives the upper bound at positive times:
+  \[
+    \|K_{A,N}^t(r_Nx,\cdot)-\nu\|_{\mathrm{TV}}
+    \le \|P_{A,N}^t(x,\cdot)-\pi\|_{\mathrm{TV}}
+    \le \|K_{A,N}^{t-1}(r_Nx,\cdot)-\nu\|_{\mathrm{TV}}.
+  \]
+\end{lemma}
+\begin{proof}\leanok\uses{lem:gaussian-vector-radius-laws, lem:gaussian-invariant-transfer}\end{proof}
+
+\begin{lemma}[Interior transition density and invariant-law uniqueness]
+  \label{lem:gaussian-one-coordinate-density}
+  \lean{AbsorptionCutoff.gaussianOneCoordinateScore,
+    AbsorptionCutoff.measurable_gaussianOneCoordinateScore,
+    AbsorptionCutoff.gaussianOneCoordinateScore_map,
+    AbsorptionCutoff.hasDerivAt_gaussianOneCoordinateDensityFormula_q,
+    AbsorptionCutoff.integrable_gaussianOneCoordinateScore_map,
+    AbsorptionCutoff.integral_gaussianOneCoordinateScore_map_eq_zero,
+    AbsorptionCutoff.integral_fourth_gaussian,
+    AbsorptionCutoff.integral_sq_gaussianOneCoordinateScore_map,
+    AbsorptionCutoff.integral_pow_four_gaussianReal,
+    AbsorptionCutoff.integrable_pow_four_gaussianReal,
+    AbsorptionCutoff.integrable_sq_gaussianOneCoordinateScore_map_and_integral_eq,
+    AbsorptionCutoff.gaussianCoordinateScoreSum,
+    AbsorptionCutoff.integrable_gaussianOneCoordinateScore_map_eval,
+    AbsorptionCutoff.integral_gaussianOneCoordinateScore_map_eval_eq_zero,
+    AbsorptionCutoff.integrable_gaussianCoordinateScoreSum,
+    AbsorptionCutoff.integral_gaussianCoordinateScoreSum_eq_zero,
+    AbsorptionCutoff.integrable_sq_gaussianOneCoordinateScore_map_eval,
+    AbsorptionCutoff.memLp_two_gaussianOneCoordinateScore_map,
+    AbsorptionCutoff.variance_gaussianOneCoordinateScore_map,
+    AbsorptionCutoff.integrable_sq_gaussianCoordinateScoreSum,
+    AbsorptionCutoff.integral_sq_gaussianCoordinateScoreSum,
+    AbsorptionCutoff.integrable_abs_gaussianCoordinateScoreSum,
+    AbsorptionCutoff.integral_abs_gaussianCoordinateScoreSum_le,
+    AbsorptionCutoff.gaussianProductDensity,
+    AbsorptionCutoff.gaussianProductScore,
+    AbsorptionCutoff.measurable_gaussianProductDensity,
+    AbsorptionCutoff.measurable_gaussianProductScore,
+    AbsorptionCutoff.measurable_gaussianProductScore_mul_density,
+    AbsorptionCutoff.hasDerivAt_gaussianOneCoordinateDensity_q,
+    AbsorptionCutoff.hasDerivAt_gaussianProductDensity_q,
+    AbsorptionCutoff.deriv_gaussianProductDensity_q,
+    AbsorptionCutoff.continuousAt_gaussianProductScore_mul_density_q,
+    AbsorptionCutoff.gaussianProductObservationMap,
+    AbsorptionCutoff.gaussianProductObservationMeasure,
+    AbsorptionCutoff.measurable_gaussianProductObservationMap,
+    AbsorptionCutoff.map_gaussianProductObservationMap_eq,
+    AbsorptionCutoff.gaussianProductScore_observationMap,
+    AbsorptionCutoff.integral_abs_gaussianProductScore_eq,
+    AbsorptionCutoff.integral_abs_gaussianProductScore_le,
+    AbsorptionCutoff.integrable_gaussianOneCoordinateDensity,
+    AbsorptionCutoff.integrable_gaussianProductDensity,
+    AbsorptionCutoff.gaussianProductObservationMeasure_eq_withDensity,
+    AbsorptionCutoff.gaussianProductDensity_nonneg,
+    AbsorptionCutoff.gaussianProductObservationMeasure_apply_toReal,
+    AbsorptionCutoff.integrable_gaussianProductScore_observationMeasure,
+    AbsorptionCutoff.integrable_gaussianProductScore_mul_density,
+    AbsorptionCutoff.intervalIntegral_gaussianProductScore_mul_density_eq_sub,
+    AbsorptionCutoff.abs_gaussianProductDensity_sub_le_integral_abs,
+    AbsorptionCutoff.integral_abs_gaussianProductScore_mul_density_eq,
+    AbsorptionCutoff.integral_abs_gaussianProductScore_mul_density_le,
+    AbsorptionCutoff.integral_abs_gaussianProductScore_mul_density_le_uIcc,
+    AbsorptionCutoff.integrable_gaussianProductScore_mul_density_prod,
+    AbsorptionCutoff.integral_abs_gaussianProductDensity_sub_le,
+    AbsorptionCutoff.tvDist_gaussianProductObservationMeasure_le,
+    AbsorptionCutoff.gaussianProductAverage,
+    AbsorptionCutoff.measurable_gaussianProductAverage,
+    AbsorptionCutoff.gaussianProductAverage_observationMap,
+    AbsorptionCutoff.map_gaussianProductAverage_observationMeasure_eq_Kchain,
+    AbsorptionCutoff.tvDist_Kchain_apply_le_of_pos,
+    AbsorptionCutoff.tanh_sq_sqrt_mul_mono,
+    AbsorptionCutoff.monotoneOn_Fmap,
+    AbsorptionCutoff.integral_abs_Fmap_sub_eq_abs_V_sub,
+    AbsorptionCutoff.synchronousFmap,
+    AbsorptionCutoff.measurable_synchronousFmap,
+    AbsorptionCutoff.synchronousKchain,
+    AbsorptionCutoff.synchronousKchain_apply,
+    AbsorptionCutoff.synchronousKchain_map_fst,
+    AbsorptionCutoff.synchronousKchain_map_snd,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_synchronousKchain,
+    AbsorptionCutoff.synchronousKchain_apply_prod_Icc_compl,
+    AbsorptionCutoff.markovPathMeasure_ae_eval_succ_mem_synchronousKchain_prod_Icc,
+    AbsorptionCutoff.markovPathMeasure_dirac_ae_eval_mem_synchronousKchain_prod_Icc,
+    AbsorptionCutoff.condExp_abs_fst_sub_snd_eval_succ_eq_abs_V_sub,
+    AbsorptionCutoff.markovPathMeasure_map_eval_synchronousKchain_map_fst,
+    AbsorptionCutoff.markovPathMeasure_map_eval_synchronousKchain_map_snd,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_not_mem_prod_le,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_not_mem_stableInterval_prod_le_add,
+    AbsorptionCutoff.integral_sq_sub_V_Kchain_le,
+    AbsorptionCutoff.integral_sq_sub_Kchain_eq,
+    AbsorptionCutoff.integral_sq_sub_Kchain_le,
+    AbsorptionCutoff.integral_sq_sub_V_Kchain_le_of_abs_V_sub_le,
+    AbsorptionCutoff.integrable_sq_sub_of_ae_mem_Icc,
+    AbsorptionCutoff.condExp_sq_eval_succ_sub_eq_integral_Kchain,
+    AbsorptionCutoff.condExp_sq_eval_succ_sub_V_le_of_abs_V_sub_le,
+    AbsorptionCutoff.integral_sq_eval_succ_sub_V_le_of_abs_V_sub_le,
+    AbsorptionCutoff.integral_sq_eval_sub_V_iterate_le_of_forall_abs_V_sub_le,
+    AbsorptionCutoff.stableIntervalExitTime,
+    AbsorptionCutoff.stableIntervalExitTime_le_sentinel,
+    AbsorptionCutoff.lt_stableIntervalExitTime_iff,
+    AbsorptionCutoff.eval_mem_stableInterval_of_lt_stableIntervalExitTime,
+    AbsorptionCutoff.abs_V_sub_le_mul_abs_sub_of_mem_stableInterval,
+    AbsorptionCutoff.condExp_abs_fst_sub_snd_eval_succ_le_mul_add_indicator,
+    AbsorptionCutoff.integrable_abs_fst_sub_snd_eval_synchronousKchain,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_succ_le_mul_add_measureReal,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_le_pow_mul_add,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_le_pow_mul_add_of_scalar_localization,
+    AbsorptionCutoff.markovPathMeasure_map_eval_synchronousKchain_map_fst_of_measure,
+    AbsorptionCutoff.markovPathMeasure_map_eval_synchronousKchain_map_snd_of_measure,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_not_mem_prod_le_of_measure,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_not_mem_stableInterval_prod_le_add_of_measure,
+    AbsorptionCutoff.markovPathMeasure_ae_eval_mem_synchronousKchain_prod_Icc_of_measure,
+    AbsorptionCutoff.integrable_abs_fst_sub_snd_eval_synchronousKchain_of_measure,
+    AbsorptionCutoff.condExp_abs_fst_sub_snd_eval_succ_eq_abs_V_sub_of_measure,
+    AbsorptionCutoff.condExp_abs_fst_sub_snd_eval_succ_le_mul_add_indicator_of_measure,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_succ_le_mul_add_measureReal_of_measure,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_le_pow_mul_add_of_measure,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_le_pow_mul_add_of_measure_of_scalar_localization,
+    AbsorptionCutoff.Measure.prod_apply_compl_prod_Icc_eq_zero,
+    AbsorptionCutoff.integral_abs_sub_le_sqrt_integral_sq,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_prod_le_add_sqrt_integral_sq,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_prod_le_add_sqrt_div_sqrt_nat,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_prod_le_sqrt_add_abs_add_sqrt,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_prod_le_sqrt_add_const_add_sqrt_div_sqrt_nat,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_map_eval_prod_le_sqrt_add_const_add_sqrt_div_sqrt_nat,
+    AbsorptionCutoff.eventually_integral_abs_fst_sub_snd_blockStart_prod_le_inv_sqrt_nat,
+    AbsorptionCutoff.exists_eventually_invariant_Kchain_family_integral_sq_sub_fixed_le_inv_nat,
+    AbsorptionCutoff.exists_stationary_family_eventually_blockStart_prod_le_inv_sqrt_nat,
+    AbsorptionCutoff.measureReal_abs_sub_gt_le_integral_sq_div,
+    AbsorptionCutoff.measureReal_abs_sub_gt_le_div_sq_div_nat,
+    AbsorptionCutoff.markovPathMeasure_map_eval_eq_of_invariant,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_mem_eq_of_invariant,
+    AbsorptionCutoff.markovPathMeasure_measureReal_abs_eval_sub_gt_le_div_sq_div_nat,
+    AbsorptionCutoff.eventually_forall_markovPathMeasure_measureReal_abs_eval_sub_gt_le_div_sq_div_nat,
+    AbsorptionCutoff.markovPathMeasure_map_eval_of_map_eval,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_mem_of_map_eval,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_not_mem_stableInterval_le_exp,
+    AbsorptionCutoff.eventually_forall_markovPathMeasure_measureReal_eval_not_mem_stableInterval_le_inv_nat,
+    AbsorptionCutoff.eventually_forall_markovPathMeasure_shifted_measureReal_eval_not_mem_stableInterval_le_inv_nat,
+    AbsorptionCutoff.markovPathMeasure_dirac_map_eval_apply_compl_Icc_eq_zero,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_blockStart_prod_le_pow_mul_add_of_localization,
+    AbsorptionCutoff.integral_abs_fst_sub_snd_eval_blockStart_prod_le_terminalContraction_pow_mul_add_of_localization,
+    AbsorptionCutoff.measureReal_not_mem_stableInterval_le_four_mul_div_sq_div_nat_of_center,
+    AbsorptionCutoff.markovPathMeasure_measureReal_eval_not_mem_stableInterval_le_four_mul_div_sq_div_nat_of_center,
+    AbsorptionCutoff.eventually_forall_shifted_eval_not_mem_terminalInterval_le_of_center,
+    AbsorptionCutoff.eventually_forall_integral_sq_eval_sub_V_iterate_le_inv_nat,
+    AbsorptionCutoff.eventually_forall_integral_sq_eval_blockStart_add_le_inv_nat,
+    AbsorptionCutoff.tendsto_mul_rpow_sub_terminalBlockLength_div_sqrt_div_terminalRadius_zero,
+    AbsorptionCutoff.eventually_abs_V_iterate_terminalBlockStart_sub_fixed_le_half_terminalRadius,
+    AbsorptionCutoff.forall_abs_V_iterate_sub_fixed_le_half_radius,
+    AbsorptionCutoff.eventually_forall_abs_V_iterate_terminalBlockStart_add_sub_fixed_le_half_terminalRadius,
+    AbsorptionCutoff.eventually_forall_shifted_eval_not_mem_terminalInterval_le_of_cutoff,
+    AbsorptionCutoff.eventually_forall_stationary_eval_not_mem_terminalInterval_le_inv_nat,
+    AbsorptionCutoff.eventually_integral_abs_fst_sub_snd_eval_blockStart_le_terminalContraction_pow_mul_add,
+    AbsorptionCutoff.exists_eventually_integral_abs_fst_sub_snd_eval_terminalBlock_le_terminalContraction_pow_mul_add,
+    AbsorptionCutoff.exists_eventually_terminalBlock_distance_le_terminalContraction_pow_mul_inv_sqrt_add,
+    AbsorptionCutoff.exists_eventually_terminalBlock_distance_le_multiplier_pow_mul_inv_sqrt_add,
+    AbsorptionCutoff.abs_V_sub_le_sq_mul_abs_sub_of_mem_Icc,
+    AbsorptionCutoff.integral_sq_eval_succ_sub_V_iterate_le_global,
+    AbsorptionCutoff.exists_nonneg_integral_sq_eval_sub_V_iterate_le_div_nat,
+    AbsorptionCutoff.exists_eventually_markovPathMeasure_stable_entrance_exp_bound_of_tendsto,
+    AbsorptionCutoff.markovPathMeasure_ae_eval_mem_Kchain_Icc_of_measure,
+    AbsorptionCutoff.integral_sq_eval_succ_sub_V_le_of_abs_V_sub_le_of_measure,
+    AbsorptionCutoff.condExp_sq_eval_succ_sub_V_iterate_le_on_lt_stableIntervalExitTime_of_measure,
+    AbsorptionCutoff.condExp_indicator_sq_eval_succ_sub_V_iterate_le_of_measure,
+    AbsorptionCutoff.stableIntervalKilledErrorMomentOfMeasure,
+    AbsorptionCutoff.stableIntervalKilledErrorMomentOfMeasure_succ_le,
+    AbsorptionCutoff.stableIntervalKilledErrorMomentOfMeasure_le,
+    AbsorptionCutoff.markovPathMeasure_measureReal_abs_next_sub_V_gt_le_of_measure,
+    AbsorptionCutoff.markovPathMeasure_measureReal_finiteHorizonKchainStepDeviationEvent_le_of_measure,
+    AbsorptionCutoff.stableIntervalExitTime_eq_sentinel_of_initial_mem_of_step_deviation_le,
+    AbsorptionCutoff.markovPathMeasure_measureReal_stableIntervalExitTime_le_of_measure,
+    AbsorptionCutoff.integral_sq_eval_sub_V_iterate_le_killed_add_exit_of_measure,
+    AbsorptionCutoff.integral_sq_eval_sub_V_iterate_le_initial_add_inv_add_exp_of_measure,
+    AbsorptionCutoff.integral_sq_eval_add_sub_V_iterate_le_initial_add_inv_add_exp,
+    AbsorptionCutoff.exists_uniform_markovPathMeasure_stable_entrance_exp_bound_with_margin,
+    AbsorptionCutoff.exists_eventually_markovPathMeasure_stable_entrance_exp_bound_with_margin_of_tendsto,
+    AbsorptionCutoff.exists_eventually_forall_integral_sq_eval_sub_V_iterate_le_inv_nat_of_tendsto,
+    AbsorptionCutoff.exists_eventually_forall_shifted_eval_not_mem_terminalInterval_le_of_tendsto,
+    AbsorptionCutoff.exists_eventually_integral_abs_fst_sub_snd_terminalBlockStart_prod_le_rpow_div_sqrt_of_tendsto,
+    AbsorptionCutoff.exists_eventually_terminalBlock_distance_le_contraction_pow_mul_rpow_add_of_tendsto,
+    AbsorptionCutoff.exists_eventually_terminalBlock_distance_le_multiplier_pow_mul_rpow_add_of_tendsto,
+    AbsorptionCutoff.pow_mul_rpow_sub_natCast,
+    AbsorptionCutoff.tendsto_pow_supercriticalTerminalBlockLength_zero,
+    AbsorptionCutoff.tendsto_sqrt_nat_mul_terminalLocalizationError_zero,
+    AbsorptionCutoff.tendsto_inv_nat_div_supercriticalTerminalRadius_sq_zero,
+    AbsorptionCutoff.tvDist_kernel_comp_map_fst_snd_le_integral_add_measureReal,
+    AbsorptionCutoff.tvDist_Kchain_comp_map_fst_snd_le_integral_add_stableInterval,
+    AbsorptionCutoff.tvDist_Kchain_comp_map_eval_fst_snd_le_integral_add_stableInterval,
+    AbsorptionCutoff.exists_eventually_shifted_eval_terminalBlockLength_not_mem_terminalInterval_le_of_tendsto,
+    AbsorptionCutoff.exists_eventually_terminalBlock_endpoint_not_mem_prod_le_of_tendsto,
+    AbsorptionCutoff.exists_eventually_sqrt_nat_mul_terminalBlock_distance_le_rpow_add,
+    AbsorptionCutoff.exists_eventually_terminalBlock_smoothed_tvDist_le_rpow_add_of_tendsto,
+    AbsorptionCutoff.eventually_terminalBlock_smoothed_fst_eq_cutoff_marginal,
+    AbsorptionCutoff.terminalBlock_smoothed_snd_eq_of_invariant,
+    AbsorptionCutoff.exists_eventually_tvDist_cutoff_marginal_invariant_le_rpow_add_of_tendsto,
+    AbsorptionCutoff.exists_stationary_family_eventually_tvDist_cutoff_marginal_le_rpow_add_of_tendsto,
+    AbsorptionCutoff.tvDist_Pkernel_pow_succ_le_markovPathMeasure_radius_marginal,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_eventually_tvDist_cutoff_succ_le_rpow_add,
+    AbsorptionCutoff.tendsto_normalized_V_orbit_sub_fixed_of_tendsto,
+    AbsorptionCutoff.exists_eventually_rpow_le_sqrt_nat_mul_abs_V_iterate_integerCutoffTime_sub_fixed,
+    AbsorptionCutoff.one_sub_four_mul_add_div_sq_le_tvDist_of_integral_sq,
+    AbsorptionCutoff.eventually_one_sub_four_mul_add_div_sq_rpow_le_tvDist_of_inv_nat_moments,
+    AbsorptionCutoff.exists_stationary_family_eventually_one_sub_mul_rpow_le_tvDist_cutoff_marginal,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_eventually_one_sub_mul_rpow_le_tvDist_cutoff,
+    AbsorptionCutoff.exists_forall_eventually_supercriticalIntegerCutoffTime_le_mul_log_nat,
+    AbsorptionCutoff.forall_eventually_supercriticalIntegerCutoffTime_le_nat,
+    AbsorptionCutoff.exists_forall_eventually_forall_integral_sq_eval_sub_V_iterate_le_inv_nat_cutoff,
+    AbsorptionCutoff.exists_forall_eventually_rpow_le_sqrt_nat_mul_abs_V_iterate_integerCutoffTime_sub_fixed,
+    AbsorptionCutoff.exists_forall_eventually_integrable_integral_sq_cutoffTime_sub_V_iterate_le_inv_nat,
+    AbsorptionCutoff.exists_stationary_family_forall_eventually_one_sub_mul_rpow_le_tvDist_cutoff_marginal,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_forall_eventually_one_sub_mul_rpow_le_tvDist_cutoff,
+    AbsorptionCutoff.exists_forall_eventually_abs_V_iterate_sub_fixed_le_mul_pow_of_tendsto,
+    AbsorptionCutoff.exists_forall_eventually_abs_V_iterate_terminalBlockStart_sub_fixed_le_mul_rpow_div_sqrt,
+    AbsorptionCutoff.exists_forall_eventually_integrable_integral_sq_terminalBlockStart_sub_V_iterate_le_inv_nat,
+    AbsorptionCutoff.exists_forall_eventually_integral_abs_fst_sub_snd_terminalBlockStart_prod_le_rpow_div_sqrt,
+    AbsorptionCutoff.exists_forall_eventually_shifted_eval_not_mem_terminalInterval_le,
+    AbsorptionCutoff.exists_forall_eventually_terminalBlock_distance_le_contraction_pow_mul_rpow_add,
+    AbsorptionCutoff.exists_forall_eventually_terminalBlock_distance_le_multiplier_pow_mul_rpow_add,
+    AbsorptionCutoff.exists_forall_eventually_sqrt_nat_mul_terminalBlock_distance_le_rpow_add,
+    AbsorptionCutoff.exists_forall_eventually_shifted_eval_terminalBlockLength_not_mem_terminalInterval_le,
+    AbsorptionCutoff.exists_forall_eventually_terminalBlock_endpoint_not_mem_prod_le,
+    AbsorptionCutoff.exists_forall_eventually_terminalBlock_smoothed_tvDist_le_rpow_add_of_tendsto,
+    AbsorptionCutoff.exists_forall_eventually_tvDist_cutoff_marginal_invariant_le_rpow_add_of_tendsto,
+    AbsorptionCutoff.exists_stationary_family_forall_eventually_tvDist_cutoff_marginal_le_rpow_add_of_tendsto,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_forall_eventually_tvDist_cutoff_succ_le_rpow_add,
+    AbsorptionCutoff.eventually_supercriticalIntegerCutoffTime_sub_one_add_one_eq,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_forall_eventually_tvDist_cutoff_le_rpow_add,
+    AbsorptionCutoff.eventually_eq_of_invariant_Kchain_family_apply_singleton_zero,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_forall_eventually_two_sided_tvDist_cutoff_profile,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_forall_liminf_limsup_tvDist_cutoff_profile,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_tendsto_outer_tvDist_cutoff_profile,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_hasCutoff,
+    AbsorptionCutoff.radiusSq_le_one_of_forall_mem_Icc,
+    AbsorptionCutoff.eventually_radiusSq_mem_Ioc_of_tendsto_of_forall_mem_Icc,
+    AbsorptionCutoff.exists_reconstructed_invariant_vector_family_hasCutoff_of_forall_mem_Icc,
+    AbsorptionCutoff.exists_stationary_family_forall_eventually_two_sided_tvDist_cutoff_profile,
+    AbsorptionCutoff.exists_stationary_family_tendsto_outer_tvDist_cutoff_profile,
+    AbsorptionCutoff.exists_stationary_family_hasCutoff,
+    AbsorptionCutoff.exists_stationary_family_hasCutoff_of_forall_mem_Icc,
+    AbsorptionCutoff.eventually_integral_abs_fst_sub_snd_eval_blockStart_prod_le_pow_mul_add_inv_nat,
+    AbsorptionCutoff.eventually_integral_abs_fst_sub_snd_eval_blockStart_prod_le_pow_mul_inv_sqrt_add_inv_nat,
+    AbsorptionCutoff.exists_stationary_family_eventually_terminal_distance_le_pow_mul_inv_sqrt_add_inv_nat,
+    AbsorptionCutoff.supercriticalCutoffTime,
+    AbsorptionCutoff.supercriticalCutoffTime_eq,
+    AbsorptionCutoff.tendsto_supercriticalCutoffTime_atTop,
+    AbsorptionCutoff.supercriticalIntegerCutoffTime,
+    AbsorptionCutoff.supercriticalIntegerCutoffTime_eq,
+    AbsorptionCutoff.rpow_supercriticalCutoffTime_eq_inv_sqrt_mul_abs_koenigsCoefficient,
+    AbsorptionCutoff.supercriticalTerminalBlockLength,
+    AbsorptionCutoff.supercriticalTerminalBlockLength_eq,
+    AbsorptionCutoff.tendsto_supercriticalTerminalBlockLength_atTop,
+    AbsorptionCutoff.tendsto_supercriticalTerminalBlockLength_div_log_nat_zero,
+    AbsorptionCutoff.tendsto_supercriticalTerminalBlockLength_mul_terminalRadius_zero,
+    AbsorptionCutoff.tendsto_supercriticalTerminalContraction_div_multiplier_pow_blockLength_one,
+    AbsorptionCutoff.exists_abs_deriv_V_le_multiplier_add_mul_abs_sub_fixed,
+    AbsorptionCutoff.exists_abs_V_sub_le_multiplier_add_mul_radius,
+    AbsorptionCutoff.exists_eventually_supercriticalTerminal_contraction_data,
+    AbsorptionCutoff.supercriticalTerminalBlockStart,
+    AbsorptionCutoff.supercriticalTerminalBlockStart_eq,
+    AbsorptionCutoff.supercriticalTerminalRadius,
+    AbsorptionCutoff.supercriticalTerminalRadius_eq,
+    AbsorptionCutoff.supercriticalTerminalRadius_pos,
+    AbsorptionCutoff.tendsto_supercriticalTerminalRadius_zero,
+    AbsorptionCutoff.supercriticalTerminalContraction,
+    AbsorptionCutoff.supercriticalTerminalContraction_eq,
+    AbsorptionCutoff.supercriticalTerminalContraction_nonneg,
+    AbsorptionCutoff.tendsto_supercriticalTerminalContraction,
+    AbsorptionCutoff.eventually_supercriticalTerminalContraction_lt_one,
+    AbsorptionCutoff.tendsto_sqrt_nat_mul_inv_nat_div_supercriticalTerminalRadius_sq_zero,
+    AbsorptionCutoff.tendsto_supercriticalIntegerCutoffTime_atTop,
+    AbsorptionCutoff.tendsto_supercriticalCutoffTime_div_log_nat,
+    AbsorptionCutoff.tendsto_supercriticalIntegerCutoffTime_div_log_nat,
+    AbsorptionCutoff.eventually_supercriticalTerminalBlockLength_add_one_le_integerCutoffTime,
+    AbsorptionCutoff.eventually_supercriticalTerminalBlockStart_add_length_eq_integerCutoffTime_sub_one,
+    AbsorptionCutoff.eventually_pow_terminalBlockStart_le_cutoff_rpow,
+    AbsorptionCutoff.tendsto_supercriticalTerminalBlockStart_div_log_nat,
+    AbsorptionCutoff.tendsto_supercriticalTerminalBlockStart_atTop,
+    AbsorptionCutoff.exists_eventually_abs_V_iterate_terminalBlockStart_sub_fixed_le_mul_pow,
+    AbsorptionCutoff.exists_eventually_abs_V_iterate_terminalBlockStart_sub_fixed_le_mul_rpow_div_sqrt,
+    AbsorptionCutoff.exists_eventually_supercriticalIntegerCutoffTime_le_mul_log_nat,
+    AbsorptionCutoff.exists_eventually_supercriticalCutoff_block_horizon,
+    AbsorptionCutoff.abs_V_eval_sub_V_iterate_le_of_lt_stableIntervalExitTime,
+    AbsorptionCutoff.indicator_sq_succ_lt_stableIntervalExitTime_le,
+    AbsorptionCutoff.measurableSet_eval_mem_stableInterval,
+    AbsorptionCutoff.measurableSet_lt_stableIntervalExitTime,
+    AbsorptionCutoff.measurableSet_stableIntervalExitTime_le,
+    AbsorptionCutoff.condExp_sq_eval_succ_sub_V_iterate_le_on_lt_stableIntervalExitTime,
+    AbsorptionCutoff.condExp_indicator_sq_eval_succ_sub_V_iterate_le,
+    AbsorptionCutoff.stableIntervalKilledErrorMoment,
+    AbsorptionCutoff.stableIntervalKilledErrorMoment_succ_le,
+    AbsorptionCutoff.stableIntervalKilledErrorMoment_le,
+    AbsorptionCutoff.stableIntervalExitTime_eq_sentinel_of_step_deviation_le,
+    AbsorptionCutoff.markovPathMeasure_measureReal_stableIntervalExitTime_le,
+    AbsorptionCutoff.integral_sq_eval_sub_V_iterate_le_killed_add_exit,
+    AbsorptionCutoff.integral_sq_eval_sub_V_iterate_le_inv_add_exp,
+    AbsorptionCutoff.eventually_integral_sq_eval_sub_V_iterate_le_inv_nat,
+    AbsorptionCutoff.map_gaussianOneCoordinateInverse_gaussianWeight,
+    AbsorptionCutoff.gaussianOneCoordinate_positiveBranch_weight,
+    AbsorptionCutoff.map_gaussianOneCoordinateMap_restrict_Ioi,
+    AbsorptionCutoff.map_gaussianOneCoordinateMap_restrict_Iio_eq_Ioi,
+    AbsorptionCutoff.map_gaussianOneCoordinateMap_eq_withDensity,
+    AbsorptionCutoff.gaussianTwoCoordinateDensity,
+    AbsorptionCutoff.measurable_gaussianTwoCoordinateDensity,
+    AbsorptionCutoff.conv_gaussianOneCoordinateMeasure_eq_withDensity,
+    AbsorptionCutoff.gaussianTwoCoordinateDensity_nonneg,
+    AbsorptionCutoff.gaussianTwoCoordinateDensity_pos,
+    AbsorptionCutoff.gaussianCoordinateSumDensity,
+    AbsorptionCutoff.gaussianCoordinateSumDensity_zero,
+    AbsorptionCutoff.gaussianCoordinateSumDensity_succ,
+    AbsorptionCutoff.gaussianCoordinateSumDensity_one,
+    AbsorptionCutoff.measurable_gaussianCoordinateSumDensity,
+    AbsorptionCutoff.gaussianCoordinateSumDensity_nonneg,
+    AbsorptionCutoff.conv_gaussianCoordinateSumMeasure_succ_eq_withDensity,
+    AbsorptionCutoff.gaussianCoordinateSumDensity_pos,
+    AbsorptionCutoff.gaussianCoordinateSumLaw,
+    AbsorptionCutoff.gaussianCoordinateSumLaw_zero,
+    AbsorptionCutoff.gaussianCoordinateSumLaw_succ,
+    AbsorptionCutoff.gaussianCoordinateSumLaw_eq_withDensity,
+    AbsorptionCutoff.gaussianCoordinateSumMap,
+    AbsorptionCutoff.measurable_gaussianCoordinateSumMap,
+    AbsorptionCutoff.map_gaussianCoordinateSumMap_gaussianVec_succ,
+    AbsorptionCutoff.map_gaussianCoordinateSumMap_gaussianVec,
+    AbsorptionCutoff.gaussianAverageDensity,
+    AbsorptionCutoff.measurable_gaussianAverageDensity,
+    AbsorptionCutoff.Kchain_apply_eq_withDensity_gaussianAverageDensity,
+    AbsorptionCutoff.Kchain_apply_absolutelyContinuous_volume,
+    AbsorptionCutoff.volume_restrict_Ioo_absolutelyContinuous_Kchain_apply,
+    AbsorptionCutoff.Kchain_apply_restrict_Ioo_absolutelyContinuous_volume_restrict_Ioo,
+    AbsorptionCutoff.volume_restrict_Ioo_absolutelyContinuous_Kchain_apply_restrict_Ioo,
+    AbsorptionCutoff.gaussianAverageDensity_pos,
+    AbsorptionCutoff.Kchain_apply_pos_of_volume_pos,
+    AbsorptionCutoff.Kchain_apply_Ioo_eq_one,
+    AbsorptionCutoff.KchainInterior,
+    AbsorptionCutoff.KchainInterior_apply,
+    AbsorptionCutoff.KchainInterior_map_subtype_val,
+    AbsorptionCutoff.map_subtype_val_apply_Ioo,
+    AbsorptionCutoff.invariant_Kchain_map_subtype_val_of_invariant_KchainInterior,
+    AbsorptionCutoff.map_comap_subtype_val_eq_of_apply_Ioo_eq_one,
+    AbsorptionCutoff.isProbabilityMeasure_comap_subtype_val_of_apply_Ioo_eq_one,
+    AbsorptionCutoff.invariant_KchainInterior_comap_subtype_val_of_invariant_Kchain,
+    AbsorptionCutoff.invariant_pow,
+    AbsorptionCutoff.irreducibleMeasure_absolutelyContinuous_invariant,
+    AbsorptionCutoff.invariant_probability_unique,
+    AbsorptionCutoff.KchainInteriorVolume,
+    AbsorptionCutoff.KchainInteriorVolume_apply,
+    AbsorptionCutoff.KchainInteriorVolume_ne_zero,
+    AbsorptionCutoff.invariant_probability_unique_KchainInterior,
+    AbsorptionCutoff.invariant_probability_unique_Kchain_of_apply_Ioo_eq_one,
+    AbsorptionCutoff.invariant_Kchain_apply_Ioo_eq_one_of_Ioc_compl,
+    AbsorptionCutoff.nonzeroPart_apply_Ioo_eq_one,
+    AbsorptionCutoff.nonzeroPart_eq_of_invariant_Kchain}
+  \leanok
+  Let $A,q>0$. For a standard Gaussian $G$,
+  \[
+    (\tanh^2(A\sqrt q\,\cdot))_\#\mathcal N(0,1)
+    =
+    \mathrm{volume.withDensity}
+      (\texttt{gaussianOneCoordinateDensity}\ A\ q).
+  \]
+  For $N>0$, the one-step radius kernel has density
+  \[
+    r\longmapsto
+    N\,\texttt{gaussianCoordinateSumDensity}(A,q,N-1)(Nr),
+  \]
+  which is measurable and strictly positive on $(0,1)$. Hence the transition
+  law and Lebesgue measure are mutually absolutely continuous on $(0,1)$, and
+  the restricted kernel \texttt{KchainInterior} is irreducible with respect
+  to the nonzero interior Lebesgue measure.
+
+  The interior kernel has at most one invariant probability. Consequently,
+  any two invariant probabilities for the full radius kernel that give mass
+  one to $(0,1)$ coincide. More generally, any two invariant probabilities
+  carried by $[0,1]$ and not concentrated at the absorbing origin have the
+  same normalized nonzero component.
+\end{lemma}
+\begin{proof}[Proof outline]
+  \leanok
+  Apply the inverse-branch Jacobian formula on the positive half-line and use
+  Gaussian symmetry for the negative branch. Recursive convolution gives the
+  coordinate-sum densities and proves their strict positivity on the interior
+  of the support. Scaling by $1/N$ yields the stated kernel density and mutual
+  absolute continuity.
+
+  Restriction to $(0,1)$ gives irreducibility in one step. A general
+  measure-infimum argument shows that a kernel irreducible with respect to a
+  nonzero measure has at most one invariant probability. Invariant measures
+  are transported between the interior subtype and the full radius space by
+  the inclusion map. Stationarity moves all nonzero mass into $(0,1)$, so the
+  uniqueness result applies to normalized nonzero components.
+\end{proof}
+
+\begin{proposition}[Compactness selection and nonzero-component decomposition]
+  \label{prop:gaussian-compactness-selection}
+  \lean{AbsorptionCutoff.cesaroMeasure, AbsorptionCutoff.invariant_of_cesaro_weakLimit,
+    AbsorptionCutoff.exists_invariant_of_cesaro_with_subseq,
+    AbsorptionCutoff.exists_invariant_of_cesaro, AbsorptionCutoff.stationary_equation,
+    AbsorptionCutoff.Kchain_zero, AbsorptionCutoff.Kchain_singleton_zero,
+    AbsorptionCutoff.invariant_Kchain_apply_Icc_compl,
+    AbsorptionCutoff.exists_invariant_Pkernel_of_cesaro,
+    AbsorptionCutoff.measure_eq_atom_zero_add_restrict_compl,
+    AbsorptionCutoff.invariant_restrict_compl_zero, AbsorptionCutoff.nonzeroPart,
+    AbsorptionCutoff.nonzeroPart_eq_self_of_apply_singleton_zero,
+    AbsorptionCutoff.inverseMomentTruncation,
+    AbsorptionCutoff.inverseMomentTruncation_apply,
+    AbsorptionCutoff.inverseMomentTruncation_zero,
+    AbsorptionCutoff.inverseMomentTruncation_nonneg,
+    AbsorptionCutoff.inverseMomentTruncation_le_one,
+    AbsorptionCutoff.inverseMomentTruncation_le_scaled_inv,
+    AbsorptionCutoff.apply_singleton_zero_of_tendsto_of_uniform_integral_inv,
+    AbsorptionCutoff.Kchain_pow_apply_Ioo_eq_one,
+    AbsorptionCutoff.cesaroPM_apply_Ioo_eq_one,
+    AbsorptionCutoff.exists_invariant_Kchain_apply_singleton_zero_of_dimension,
+    AbsorptionCutoff.exists_unique_invariant_probability_Kchain_of_apply_singleton_zero,
+    AbsorptionCutoff.nonzeroPart_isProbabilityMeasure, AbsorptionCutoff.invariant_nonzeroPart,
+    AbsorptionCutoff.nonzeroPart_Ioc_compl, AbsorptionCutoff.invariant_Pkernel_nonzeroPart,
+    AbsorptionCutoff.invariant_Pkernel_nonzeroPart_unique,
+    AbsorptionCutoff.invariant_Pkernel_nonzeroPart_unique_of_invariant_Pkernel,
+    AbsorptionCutoff.invariant_probability_unique_Pkernel_of_apply_singleton_zero,
+    AbsorptionCutoff.exists_unique_invariant_probability_Pkernel_of_apply_singleton_zero}
+  \leanok
+  \uses{def:Kchain, def:reduction-kernels, lem:gaussian-invariant-transfer,
+    lem:gaussian-vector-weak-stationary-equation}
+  Cesàro averages of $K_{A,N}$ started in $[0,1]$ are supported there and tight.
+  They admit a weakly convergent subsequence whose limit $\nu$ is invariant
+  and carried by $[0,1]$. Reconstruction through $J_{A,N}$ gives an invariant
+  vector law.
+
+  Every finite invariant radius measure splits as
+  \[
+    \nu=\nu\{0\}\delta_0+\nu|_{\{0\}^{c}},
+  \]
+  where the second summand is invariant. If $\nu\{0\}<1$, then
+  \[
+    \nu^+=(1-\nu\{0\})^{-1}\nu|_{\{0\}^{c}}
+  \]
+  is an invariant probability carried by $(0,1]$.
+
+  If the approximating laws have uniformly bounded reciprocal moments, the
+  weak limit satisfies $\nu\{0\}=0$. Under the explicit supercritical
+  dimension criterion, there is therefore a unique origin-free invariant
+  scalar probability and a unique origin-free invariant vector probability.
+\end{proposition}
+\begin{proof}[Proof outline]
+  \leanok
+  \uses{lem:gaussian-invariant-transfer, lem:gaussian-vector-weak-stationary-equation}
+  Prokhorov compactness gives the weak limit; portmanteau preserves its support,
+  and the Feller--Cesàro argument proves invariance. Absorption at zero permits
+  cancellation of the atomic summand in the stationary equation.
+
+  To exclude an atom at zero, use the bounded continuous truncations
+  \[
+    \tau_k(q)=\frac{1}{1+(k+1)|q|}
+  \]
+  which retain value one at the origin and, for $q>0$, satisfy
+  $0\le\tau_k(q)\le(k+1)^{-1}q^{-1}$. Consequently, a weak limit of positive
+  probability laws with uniformly bounded integrable reciprocal moments has
+  no atom at zero. The interior irreducibility result gives uniqueness of the
+  normalized nonzero component. Reconstruction transfers this uniqueness to
+  the vector chain.
+\end{proof}
+
+\begin{theorem}[Supercritical dimension cutoff]
+  \label{thm:gaussian-process-cutoff}
+  \lean{AbsorptionCutoff.exists_stationary_family_hasCutoff_of_forall_mem_Icc,
+    AbsorptionCutoff.exists_unique_invariant_probability_Kchain_of_apply_singleton_zero}
+  \leanok
+  \uses{def:Kchain, prop:gaussian-compactness-selection,
+    lem:gaussian-vector-radius-laws}
+  Let $A>1$, let $q_\ast\in(0,1)$ be the attracting nonzero fixed point of
+  $V_A$, and let deterministic $x_N\in[-1,1]^N$ satisfy
+  $N^{-1}\lVert x_N\rVert_2^2\to q_0\in(0,1]$, where $q_0\ne q_\ast$.
+  Then the origin-free invariant scalar laws selected for $K_{A,N}$ satisfy
+  the paper's two iterated total-variation limits at the cutoff center
+  $t_N(q_0)$ with constant window one.  The interior irreducibility theorem
+  identifies each selected law with the unique nonzero invariant law for all
+  sufficiently large $N$.
+\end{theorem}
+\begin{proof}\leanok\end{proof}
+
+\begin{corollary}[Vector supercritical cutoff]
+  \label{cor:gaussian-vector-cutoff}
+  \lean{AbsorptionCutoff.exists_reconstructed_invariant_vector_family_hasCutoff_of_forall_mem_Icc,
+    AbsorptionCutoff.exists_unique_invariant_probability_Pkernel_of_apply_singleton_zero}
+  \leanok
+  \uses{thm:gaussian-process-cutoff, lem:gaussian-vector-radius-laws,
+    lem:gaussian-invariant-transfer}
+  Under the same assumptions, reconstructing the scalar stationary law
+  through $J_{A,N}$ gives the unique origin-free invariant vector law.  The
+  vector chain has the same cutoff center and constant window one.
+\end{corollary}
+\begin{proof}\leanok\end{proof}
+
+\chapter{Fixed-width cutoff}
+
+This chapter records the fixed-dimension, vanishing-mesh cutoff route of paper
+§3.  A positive-drift first-passage profile controls entrance to the rounding
+scale; synchronous comparison and post-entrance absorption transfer that profile
+to the rounded vector chain.
+
+\begin{theorem}[Positive-drift first-passage profile]
+  \label{thm:positive-drift-first-passage-profile}
+  \lean{AbsorptionCutoff.tendsto_measureReal_firstPassageTime_gt,
+    AbsorptionCutoff.tendsto_measureReal_firstPassageTime_gt_canonicalTime,
+    AbsorptionCutoff.tendsto_measureReal_firstPassageTime_gt_postFloorTime}
+  \leanok
+  For an integrable iid increment process with positive mean and nonzero finite
+  variance, the probability that the first-passage time above a diverging level
+  exceeds its centered square-root-window observation time converges to the
+  corresponding standard Gaussian distribution function.  The canonical-floor
+  and post-floor forms allow any perturbation negligible on the square-root
+  scale.
+\end{theorem}
+\begin{proof}\leanok\end{proof}
+
+\begin{theorem}[Rounded fixed-width survival profile]
+  \label{thm:fixed-width-rounded-survival}
+  \lean{AbsorptionCutoff.tendsto_measureReal_fixedWidthRoundedSurvival_postFloorTime}
+  \leanok
+  \uses{thm:positive-drift-first-passage-profile}
+  In the fixed-width subcritical regime, the rounded Gaussian recursion started
+  from a nonzero vector survives through its post-floor cutoff observation time
+  with probability converging to $\Phi(-a)$.  The proof combines the unrounded
+  first-passage profile with synchronous coupling, a polylogarithmic entrance
+  buffer, and uniform absorption after entrance.
+\end{theorem}
+\begin{proof}\leanok\uses{thm:positive-drift-first-passage-profile}\end{proof}
+
+\begin{theorem}[Fixed-width total-variation profile]
+  \label{thm:fixed-width-tv-profile}
+  \lean{AbsorptionCutoff.tendsto_tvDist_roundedPkernel_postFloorTime,
+    AbsorptionCutoff.tendsto_tvDist_roundedPkernel_fixedWidthMesh}
+  \leanok
+  \uses{thm:fixed-width-rounded-survival, lem:Hkernel-tv}
+  Total variation from the absorbing origin equals the canonical rounded-chain
+  survival probability.  Hence every diverging exponential mesh scale has
+  Gaussian profile $\Phi(-a)$.  Equivalently, for every positive mesh sequence
+  $\rho_r\to0$, the same limit holds at the manuscript's exact natural-floor
+  time with
+  \[
+    L_{\rho_r}=\log\!\left(\frac{\lVert x_0\rVert_2}{\rho_r}\right).
+  \]
+\end{theorem}
+\begin{proof}
+  \leanok
+  \uses{thm:fixed-width-rounded-survival, lem:Hkernel-tv}
+\end{proof}
+
+\begin{theorem}[Fixed-width cutoff and mixing times]
+  \label{thm:fixed-width-cutoff}
+  \lean{AbsorptionCutoff.hasCutoff_roundedPkernel_fixedWidth,
+    AbsorptionCutoff.exists_eventually_fixedWidth_mixingTime_bounds}
+  \leanok
+  \uses{thm:fixed-width-tv-profile, def:cutoff, def:mixing}
+  The rounded vector kernels have total-variation cutoff at center $L/\mu$ and
+  window $\sigma\mu^{-3/2}\sqrt L$.  For every fixed
+  $\varepsilon\in(0,1)$, two constant Gaussian-profile offsets eventually
+  bracket the mixing time, giving
+  $t_{\mathrm{mix}}(\varepsilon)=L/\mu+O_\varepsilon(\sqrt L)$ with the stated
+  variance prefactor.
+\end{theorem}
+\begin{proof}
+  \leanok
+  \uses{thm:fixed-width-tv-profile, def:cutoff, def:mixing}
+\end{proof}
+
+\chapter{The \texorpdfstring{$N$}{N}-dimensional supercritical stationary equation}
+
+This chapter records paper §7.  In log-polar coordinates the stationary equation
+becomes a Markov additive renewal problem; exponential tilting at the Cram\'er
+root turns it into an ordinary renewal equation on the line, and the key renewal
+theorem identifies the limit.
+
+Mathlib has no renewal theory, so the linear-renewal input is proved in a
+dedicated family of project modules. \emph{Deviation, deliberate and recorded:} the key
+renewal theorem below is proved by approximation in the directly-Riemann-integrable
+norm rather than through Feller's interval theorem, and therefore assumes the
+kernel \emph{continuous} where the paper assumes only a.e.\ continuity.  Indicators
+are not approximable in $\lVert\cdot\rVert_{\mathrm{DRI}}$ by continuous functions,
+so the gap is real; it is harmless here because the chapter's forcing is
+Gaussian-driven, hence atomless.  Continuity of the forcing is an explicit
+obligation at each application.
+
+\section{The Gaussian transfer moment and the Cram\'er exponent}
+
+\begin{definition}[Gaussian transfer moment]
+  \label{def:nd-gaussian-transfer-moment}
+  \lean{AbsorptionCutoff.gaussianTransferMoment}
+  \leanok
+  $\mathcal M_{A,N}(\beta) = \mathbb E\lVert (A/\sqrt N)G\rVert_2^{-\beta}$, the
+  spectral quantity to which isotropy collapses the transfer operator
+  (\texttt{eq:nd-gaussian-negative-moment}).
+\end{definition}
+
+\begin{definition}[Log-radial increment]
+  \label{def:nd-log-radial-increment}
+  \lean{AbsorptionCutoff.logRadialIncrement}
+  \leanok
+  $Z = -\log\ell_{A,N}$, the logarithmic increment of the radial part.
+\end{definition}
+
+\begin{lemma}[Cram\'er exponent]
+  \label{lem:nd-gaussian-cramer-exponent}
+  \lean{AbsorptionCutoff.existsUnique_gaussianTransferMoment_eq_one,
+    AbsorptionCutoff.cramerExponent, AbsorptionCutoff.cramerExponent_mem}
+  \leanok
+  \uses{def:nd-gaussian-transfer-moment, def:nd-log-radial-increment}
+  For $A>A_c(N)$ there is a unique $\beta_{A,N}\in(0,N)$ with
+  $r_{A,N}(\beta_{A,N})=1$, by strict convexity of $\beta\mapsto\log\mathcal
+  M_{A,N}(\beta)$ together with $F(0)=0$, $F'(0)<0$ and $F\to\infty$ as
+  $\beta\uparrow N$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\section{The tilted increment law}
+
+\begin{definition}[Tilted increment law]
+  \label{def:nd-tilted-increment-law}
+  \lean{AbsorptionCutoff.tiltedIncrementLaw}
+  \leanok
+  \uses{lem:nd-gaussian-cramer-exponent}
+  $\widehat\mu_{A,N}$, the law of $Z$ after exponential tilting at
+  $\beta_{A,N}$ (\texttt{eq:nd-tilted-increment-law}).
+\end{definition}
+
+\begin{lemma}[Properties of the tilted law]
+  \label{lem:nd-tilted-increment-law-properties}
+  \lean{AbsorptionCutoff.isProbabilityMeasure_tiltedIncrementLaw,
+    AbsorptionCutoff.tiltedIncrementLaw_not_concentrated_on_lattice,
+    AbsorptionCutoff.integral_id_tiltedIncrementLaw_pos,
+    AbsorptionCutoff.memLp_id_two_tiltedIncrementLaw,
+    AbsorptionCutoff.expTransform_convPow_tiltedIncrementLaw}
+  \leanok
+  \uses{def:nd-tilted-increment-law}
+  $\widehat\mu_{A,N}$ is a nonlattice probability measure with drift
+  $\widehat m_{A,N}\in(0,\infty)$ and a finite second moment, and
+  $\mathbb E e^{-\beta_{A,N}S_n}=1$ for every $n$.  Nonlatticeness comes from
+  atomlessness: the radial law has a density, so every fibre of $Z$ is null and
+  every lattice, being countable, is null.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\section{The renewal mini-library}
+
+\begin{definition}[Renewal measure and the d.R.i.\ norm]
+  \label{def:nd-renewal-measure}
+  \lean{AbsorptionCutoff.Renewal.convPow, AbsorptionCutoff.Renewal.renewalMeasure,
+    AbsorptionCutoff.Renewal.driNorm, AbsorptionCutoff.Renewal.expTransform}
+  \leanok
+  $U=\sum_{n\ge0}\mu^{*n}$, and the directly-Riemann-integrable norm
+  $\lVert z\rVert_{\mathrm{DRI}}=\sum_{k\in\mathbb Z}\sup_{[k,k+1]}|z|$ of
+  \texttt{eq:nd-dri-definition}.
+\end{definition}
+
+\begin{theorem}[Key renewal theorem]
+  \label{thm:nd-key-renewal}
+  \lean{AbsorptionCutoff.Renewal.tendsto_tsum_integral_comp_sub_of_driNorm,
+    AbsorptionCutoff.Renewal.tendsto_tsum_integral_comp_sub_of_driNorm_real}
+  \leanok
+  \uses{def:nd-renewal-measure}
+  For a nonlattice probability measure with a second moment, positive drift and
+  a finite exponential moment, and for continuous $z$ with
+  $\lVert z\rVert_{\mathrm{DRI}}<\infty$,
+  \[
+    \sum_n\int z(y-s)\,\mu^{*n}(\mathrm ds)\longrightarrow
+    \frac{1}{\widehat m}\int_{\mathbb R} z ,\qquad y\to\infty .
+  \]
+  Proved by Abel-regularized Fourier inversion against bandlimited kernels,
+  followed by approximation in $\lVert\cdot\rVert_{\mathrm{DRI}}$.
+\end{theorem}
+\begin{proof}\leanok\end{proof}
+
+\begin{theorem}[Key renewal theorem at $\widehat\mu_{A,N}$]
+  \label{thm:nd-key-renewal-tilted}
+  \lean{AbsorptionCutoff.tendsto_tsum_integral_comp_sub_tiltedIncrementLaw,
+    AbsorptionCutoff.tendsto_tsum_integral_comp_sub_tiltedIncrementLaw_real}
+  \leanok
+  \uses{thm:nd-key-renewal, lem:nd-tilted-increment-law-properties}
+  The instantiation of the previous theorem at the tilted increment law: all
+  four hypotheses are supplied by
+  \cref{lem:nd-tilted-increment-law-properties}.
+\end{theorem}
+\begin{proof}\leanok\end{proof}
+
+\section{Solving the renewal equation}
+
+\begin{lemma}[Iterating the renewal equation]
+  \label{lem:nd-renewal-iteration}
+  \lean{AbsorptionCutoff.Renewal.eq_integral_convPow_add_sum_of_renewalEquation}
+  \leanok
+  \uses{def:nd-renewal-measure}
+  If $h_y=\int h_{y-z}\,\mu(\mathrm dz)+\psi_y$ then
+  $h_y=\mathbb E h_{y-S_n}+\sum_{k<n}\mathbb E\psi_{y-S_k}$ for every $n$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[The terminal term vanishes]
+  \label{lem:nd-renewal-terminal}
+  \lean{AbsorptionCutoff.Renewal.tendsto_convPow_Icc_zero,
+    AbsorptionCutoff.Renewal.lintegral_enorm_comp_sub_le,
+    AbsorptionCutoff.Renewal.tendsto_integral_comp_sub_convPow_zero,
+    AbsorptionCutoff.Renewal.eq_tsum_integral_comp_sub_of_renewalEquation}
+  \leanok
+  \uses{lem:nd-renewal-iteration, lem:nd-tilted-increment-law-properties}
+  Under the left-boundary condition, local boundedness, and right-tail
+  minimality, $\mathbb E h_{y-S_n}\to0$, and therefore
+  $h_y=\sum_{k\ge0}\mathbb E\psi_{y-S_k}$.  The middle region of the three-way
+  split is controlled by $\mu^{*n}(I)\to0$ on bounded intervals, which here
+  comes from local finiteness of $U$ rather than from almost-sure divergence of
+  $S_n$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Key renewal limit for Gaussian increments]
+  \label{lem:nd-gaussian-renewal}
+  \lean{AbsorptionCutoff.Renewal.tendsto_of_renewalEquation_of_driNorm,
+    AbsorptionCutoff.Renewal.tendsto_atTop_zero_of_driNorm,
+    AbsorptionCutoff.Renewal.tendsto_angular_of_renewalEquation_of_driNorm,
+    AbsorptionCutoff.tendsto_of_renewalEquation_tiltedIncrementLaw,
+    AbsorptionCutoff.tendsto_angular_of_renewalEquation_tiltedIncrementLaw}
+  \leanok
+  \uses{thm:nd-key-renewal-tilted, lem:nd-renewal-terminal}
+  Let $\widehat P_{A,N}$ be the tilted kernel, and assume that the forcing has
+  finite directly-Riemann-integrable norm. Then
+  \[
+    \mathcal H_y(\varphi)\longrightarrow
+    \frac{1}{\widehat m_{A,N}}
+    \Bigl(\int_{\mathbb R}\Psi_t(\mathbf 1)\,\mathrm dt\Bigr)
+    \int_{\mathbb S^{N-1}}\varphi\,\mathrm d\bar\sigma_N ,
+    \qquad y\to\infty .
+  \]
+  Angular reconstruction needs no measure on the sphere: the product form of the
+  tilted kernel factors the angular integral out as the constant
+  $\int\varphi\,\mathrm d\bar\sigma_N$, leaving the same scalar convolution for
+  every $\varphi$.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Exponential moments below the Cram\'er exponent]
+  \label{lem:nd-subcritical-exponential-moments}
+  \lean{AbsorptionCutoff.exists_invariant_Kchain_integrable_neg_rpow,
+    AbsorptionCutoff.integrable_neg_rpow_of_invariant_Kchain,
+    AbsorptionCutoff.integrable_neg_rpow_gaussianEuclideanNorm_of_invariant_Pkernel}
+  \leanok
+  \uses{lem:nd-gaussian-cramer-exponent}
+  Negative moments of the invariant law are finite strictly below the Cram\'er
+  exponent, by a Foster-type drift estimate on the squared-radius chain.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{lemma}[Nonlinear polar perturbation estimate]
+  \label{lem:nd-gaussian-polar-perturbation}
+  \lean{AbsorptionCutoff.exists_gaussianPolarPerturbation_bound}
+  \leanok
+  \uses{lem:nd-gaussian-cramer-exponent}
+  For every $\delta\in(0,2]$, the angular parts of the nonlinear Gaussian
+  update and its linearization, restricted at log-radius $t$, differ in total
+  variation by at most
+  \[
+    C r^\delta \min\{1,e^{-Nt}\},\qquad 0<r\le\sqrt N,
+  \]
+  where the exponentially weighted envelope has finite directly Riemann
+  integrable norm.  The proof formalizes the transformed density, its Taylor
+  estimate, Gaussian tails, the compact moderate-$r$ branch, and contraction
+  under ball restriction and angular projection.
+\end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{definition}[Nonlinear renewal forcing]
+  \label{def:nd-nonlinear-forcing}
+  \lean{AbsorptionCutoff.nonlinearForcing}
+  \leanok
+  For an invariant law $\pi_{A,N}$, the nonlinear renewal forcing
+  $\Psi_y^\pi(\varphi)$ is the exponentially tilted difference between the
+  nonlinear and linearized log-polar threshold integrals.
+\end{definition}
+
+\begin{proposition}[Admissibility of the nonlinear forcing]
+  \label{prop:nd-forcing-admissibility}
+  \lean{AbsorptionCutoff.driNorm_ofReal_abs_nonlinearForcing_ne_top,
+    AbsorptionCutoff.continuous_nonlinearForcing,
+    AbsorptionCutoff.nonlinearForcing_one_nonneg,
+    AbsorptionCutoff.integral_nonlinearForcing_one,
+    AbsorptionCutoff.integral_nonlinearForcing_one_pos}
+  \leanok
+  \uses{def:nd-nonlinear-forcing,lem:nd-gaussian-polar-perturbation,
+    lem:nd-subcritical-exponential-moments}
+  Every bounded measurable angular test has finite directly Riemann integrable
+  norm and continuous dependence on the log-radius level.  At the constant-one
+  test the forcing is nonnegative, its total mass has the paper's Tonelli
+  representation, and that mass is strictly positive.
+\end{proposition}
+\begin{proof}\leanok\end{proof}

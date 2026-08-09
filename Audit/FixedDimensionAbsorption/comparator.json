@@ -1,0 +1,9 @@
+{
+  "challenge_module": "Audit.FixedDimensionAbsorption.Challenge",
+  "solution_module": "Audit.FixedDimensionAbsorption.Solution",
+  "theorem_names": [
+    "AbsorptionCutoff.StatementAudit.FixedDimensionAbsorption.rounded_fixed_dimension_absorption"
+  ],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": false
+}

@@ -1,0 +1,9 @@
+{
+  "challenge_module": "Audit.Metastability.Challenge",
+  "solution_module": "Audit.Metastability.Solution",
+  "theorem_names": [
+    "AbsorptionCutoff.StatementAudit.Metastability.rounded_qualitative_metastability"
+  ],
+  "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+  "enable_nanoda": false
+}

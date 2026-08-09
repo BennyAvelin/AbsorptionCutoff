@@ -1,0 +1,6 @@
+# `docker/audit.Dockerfile` builds almost entirely from pinned upstream sources;
+# the only thing it needs from this repository is the landrun argv shim. So the
+# build context is emptied -- shipping the 8.6 GB `.lake` tree to the daemon
+# would be pure waste -- and that one file is re-included.
+*
+!docker/landrun-argv-shim.sh

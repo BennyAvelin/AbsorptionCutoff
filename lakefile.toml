@@ -1,0 +1,29 @@
+name = "AbsorptionCutoff"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["AbsorptionCutoff"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+relaxedAutoImplicit = false
+weak.linter.mathlibStandardSet = true
+maxSynthPendingDepth = 3
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.32.0"
+
+
+[[require]]
+name = "checkdecls"
+git = "https://github.com/PatrickMassot/checkdecls.git"
+[[lean_lib]]
+name = "AbsorptionCutoff"
+
+# Mathlib-only comparator surface. Kept out of `defaultTargets` so a plain
+# `lake build` never elaborates the intentional statement-level `sorry` that
+# each `Challenge.lean` ends with. Build it with `lake build Audit`.
+[[lean_lib]]
+name = "Audit"
+globs = ["Audit", "Audit.+"]

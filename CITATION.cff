@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this formalization, please cite it as below."
+title: "AbsorptionCutoff: a Lean 4 formalization of absorption cutoff and stationary singularities for rounded Gaussian random dynamical systems"
+abstract: >-
+  A machine-checked Lean 4 / Mathlib formalization of absorption cutoff and
+  stationary singularities for Gaussian random dynamical systems with
+  coordinatewise tanh nonlinearity and nearest-grid rounding. The development
+  contains no sorry and no custom axiom, and each of its seven headline theorems
+  is additionally checked by leanprover/comparator against a restatement written
+  in Mathlib vocabulary only.
+type: software
+authors:
+  - family-names: Avelin
+    given-names: Benny
+    affiliation: "Department of Mathematics, Uppsala University"
+    email: "benny.avelin@math.uu.se"
+keywords:
+  - Lean
+  - mathlib
+  - formal verification
+  - cutoff phenomenon
+  - random dynamical systems
+  - Markov chains
+  - probability
+license: Apache-2.0
+repository-code: "https://github.com/BennyAvelin/AbsorptionCutoff"
+references:
+  - type: article
+    title: "Absorption cutoff and stationary singularities for rounded Gaussian random dynamical systems"
+    authors:
+      - family-names: Avelin
+        given-names: Benny
+    year: 2026
+    # TODO: add the arXiv identifier (and DOI, if one is issued) once the
+    # manuscript is posted. Until then this entry deliberately carries no
+    # identifier rather than a guessed one.
+    notes: "The manuscript this project formalizes."
