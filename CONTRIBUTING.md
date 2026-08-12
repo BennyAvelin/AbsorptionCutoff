@@ -12,7 +12,7 @@ check but is largely serial and will not show the same CPU utilization.
 ```bash
 lake exe cache get   # prebuilt Mathlib oleans -- do not skip
 lake build           # the complete library (8,741 jobs in the current tree)
-lake build Audit     # library plus the audit surface (8,754 jobs)
+lake build Audit     # library plus the audit surface (8,755 jobs)
 ```
 
 The current checkout completes both native targets successfully. The audit

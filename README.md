@@ -123,7 +123,7 @@ permits only
 ```
 
 and sets `enable_nanoda: false`. All seven printed `Your solution is okay!` on
-2026-08-04.
+2026-08-12.
 
 For ordinary Lean development, build natively first:
 
@@ -191,7 +191,8 @@ The pinned local comparator audit was rerun on 2026-08-12 from the merged
 `main` branch with `scripts/audit-docker.sh`. All seven configurations printed
 `Your solution is okay!` and passed: fixed-width, dimension, metastability,
 fixed-dimensional absorption, scalar cutoff, vector cutoff, and power
-singularity. The full per-target record is in [`UPDATE_PLAN.md`](UPDATE_PLAN.md).
+singularity. The per-target configurations and comparator results are recorded
+in the `Audit/*/comparator.json` files.
 
 To use the library, `import AbsorptionCutoff` pulls in the whole development; the public
 results are in `import AbsorptionCutoff.MainTheorems`.
