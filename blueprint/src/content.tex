@@ -1330,6 +1330,7 @@ is a standard Gaussian vector.
 \begin{theorem}[Fixed-precision subcritical dimension cutoff]
   \label{thm:subcritical-dimension-cutoff}
   \lean{AbsorptionCutoff.subcritical_dimension_cutoff,
+    AbsorptionCutoff.subcritical_dimension_cutoff_roundedVector_paper,
     AbsorptionCutoff.subcritical_dimension_cutoff_mixingTime_bounds,
     AbsorptionCutoff.subcritical_dimension_cutoff_roundedVector,
     AbsorptionCutoff.subcritical_dimension_cutoff_roundedVector_mixingTime_bounds}
@@ -1449,6 +1450,21 @@ is a standard Gaussian vector.
   Hence survival tends to zero, and the event that the canonical absorption
   time equals infinity has measure zero.
 \end{lemma}
+\begin{proof}\leanok\end{proof}
+
+\begin{theorem}[Rounded qualitative metastability and absorption]
+  \label{thm:rounded-qualitative-metastability}
+  \lean{AbsorptionCutoff.rounded_qualitative_metastability_paper,
+    AbsorptionCutoff.ae_absorption_roundedPkernel_of_rounded_state}
+  \leanok
+  \uses{lem:metastable-inward-margin,lem:uniform-rounded-absorption-chance}
+  The rounded chain remains in a compact subset of the rightmost positive-drift
+  component for an exponentially long time with probability tending to one as
+  the dimension grows, uniformly over the prescribed compact initial set.
+  In each fixed dimension, the same chain is absorbed at zero almost surely,
+  and its survival probability tends to zero. These are the two clauses of the
+  paper's qualitative metastability theorem.
+\end{theorem}
 \begin{proof}\leanok\end{proof}
 
 \begin{lemma}[Deterministic affine-recursion entrance scaffold]
@@ -2558,6 +2574,7 @@ squared-radius kernel $K_{A,N}$ and a reconstruction kernel $J_{A,N}$.
 \begin{theorem}[Supercritical dimension cutoff]
   \label{thm:gaussian-process-cutoff}
   \lean{AbsorptionCutoff.exists_stationary_family_hasCutoff_of_forall_mem_Icc,
+    AbsorptionCutoff.exists_unique_nonzero_invariant_family_hasCutoff_of_forall_mem_Icc,
     AbsorptionCutoff.exists_unique_invariant_probability_Kchain_of_apply_singleton_zero}
   \leanok
   \uses{def:Kchain, prop:gaussian-compactness-selection,
@@ -2576,6 +2593,7 @@ squared-radius kernel $K_{A,N}$ and a reconstruction kernel $J_{A,N}$.
 \begin{corollary}[Vector supercritical cutoff]
   \label{cor:gaussian-vector-cutoff}
   \lean{AbsorptionCutoff.exists_reconstructed_invariant_vector_family_hasCutoff_of_forall_mem_Icc,
+    AbsorptionCutoff.exists_unique_nonzero_invariant_vector_family_cutoff_of_forall_mem_Icc,
     AbsorptionCutoff.exists_unique_invariant_probability_Pkernel_of_apply_singleton_zero}
   \leanok
   \uses{thm:gaussian-process-cutoff, lem:gaussian-vector-radius-laws,
@@ -2644,6 +2662,7 @@ to the rounded vector chain.
 \begin{theorem}[Fixed-width cutoff and mixing times]
   \label{thm:fixed-width-cutoff}
   \lean{AbsorptionCutoff.hasCutoff_roundedPkernel_fixedWidth,
+    AbsorptionCutoff.rounded_gaussian_nearest_cutoff_paper,
     AbsorptionCutoff.exists_eventually_fixedWidth_mixingTime_bounds}
   \leanok
   \uses{thm:fixed-width-tv-profile, def:cutoff, def:mixing}

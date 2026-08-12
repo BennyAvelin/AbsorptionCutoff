@@ -104,7 +104,7 @@ automation:
       cost:
         wall_time: >-
           About two weeks of calendar time: first Lean commit 2026-07-21,
-          release candidate finalized 2026-08-08, after roughly 2,870
+          release candidate finalized 2026-08-12, after roughly 2,870
           development commits. Machine hours were not tracked separately.
         # The standard names this field spend_usd; the amount below is reported
         # in EUR, the currency actually billed.
@@ -133,7 +133,7 @@ automation:
     files (Audit/*/Challenge.lean) each contain exactly one intentional
     statement-level sorry -- the body of the theorem being challenged -- which
     the corresponding Audit/*/Solution.lean fills and leanprover/comparator
-    confirms ("Your solution is okay!"). All seven passed on 2026-08-04.
+    confirms ("Your solution is okay!"). All seven passed on 2026-08-12.
 
     DISCLOSURE, tooling modification: the comparator is invoked through
     docker/landrun-argv-shim.sh rather than calling landrun directly. landrun
