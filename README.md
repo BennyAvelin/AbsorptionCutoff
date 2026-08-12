@@ -161,7 +161,7 @@ guarantee than the documented one.
 
 The formal dependency graph is maintained as a
 [`leanblueprint`](https://github.com/PatrickMassot/leanblueprint) under
-[`blueprint/`](blueprint/): **946 declarations**, each carrying its `\lean{}` name
+[`blueprint/`](blueprint/): **952 declarations**, each carrying its `\lean{}` name
 and `\leanok` status. The generated declaration list is committed, and after
 building the audit library all names resolve against the project via
 `lake exe checkdecls blueprint/lean_decls`. The build workflow runs this check

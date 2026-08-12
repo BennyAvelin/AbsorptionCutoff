@@ -4,7 +4,7 @@ A map from *Absorption cutoff and stationary singularities for rounded Gaussian
 random dynamical systems* (Benny Avelin) to this Lean development, together with
 an explicit ledger of every known place where the two differ.
 
-The full dependency graph — 946 declarations, each carrying its `\lean{}` name —
+The full dependency graph — 952 declarations, each carrying its `\lean{}` name —
 lives in the blueprint (`blueprint/src/content.tex`); this file records the
 paper-facing surface and the divergences.
 
