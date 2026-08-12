@@ -5,6 +5,7 @@ Authors: Benny Avelin
 -/
 import AbsorptionCutoff.RadiusConcentration
 import AbsorptionCutoff.RoundedAbsorption
+import Mathlib.Order.LiminfLimsup
 
 /-!
 # Terminal-layer absorption and the fixed-precision dimension cutoff
@@ -27,6 +28,93 @@ noncomputable def roundedDimensionCutoffTime
     (A ρ : ℝ) (N : ℕ) (x : Fin N → ℝ) : ℕ :=
   roundedOrbitEntrance A ρ (roundedInitialRadius ρ N x)
     (fixedPrecisionScale N)
+
+/-- The paper's macroscopic rounded-initial-radius hypothesis
+`liminf_{N → ∞} bar h_{0,N} > 0`. -/
+noncomputable def macroscopicRoundedInitialRadii
+    (ρ : ℝ) (x : ∀ N : ℕ, Fin N → ℝ) : Prop :=
+  0 < Filter.liminf
+    (fun N : ℕ => roundedInitialRadius ρ N (x N)) Filter.atTop
+
+/-- For boxed initial vectors, the paper's literal positive-`liminf` hypothesis
+is equivalent to an eventually uniform positive lower bound. -/
+lemma macroscopicRoundedInitialRadii_iff_exists_eventually_lowerBound
+    {ρ : ℝ} (hρ : 0 < ρ)
+    (x : ∀ N : ℕ, Fin N → ℝ)
+    (hx : ∀ N : ℕ, ∀ i : Fin N, |x N i| ≤ 1) :
+    macroscopicRoundedInitialRadii ρ x ↔
+      ∃ c : ℝ, 0 < c ∧
+        ∀ᶠ N : ℕ in Filter.atTop,
+          c ≤ roundedInitialRadius ρ N (x N) := by
+  let h₀ : ℕ → ℝ := fun N => roundedInitialRadius ρ N (x N)
+  have hnonneg : ∀ᶠ N : ℕ in Filter.atTop, 0 ≤ h₀ N :=
+    Filter.Eventually.of_forall fun N => roundedInitialRadius_nonneg ρ N (x N)
+  have hboundedBelow :
+      Filter.atTop.IsBoundedUnder (· ≥ ·) h₀ :=
+    Filter.isBoundedUnder_of_eventually_ge hnonneg
+  have hboundedAbove :
+      ∀ᶠ N : ℕ in Filter.atTop, h₀ N ≤ (ρ⁻¹ + 1 / 2) ^ 2 := by
+    filter_upwards [Filter.eventually_gt_atTop 0] with N hN
+    exact roundedInitialRadius_le_sq hρ hN (hx N)
+  constructor
+  · intro hmacro
+    let c := Filter.liminf h₀ Filter.atTop / 2
+    have hc : 0 < c := by
+      dsimp [c]
+      exact half_pos hmacro
+    refine ⟨c, hc, ?_⟩
+    exact (Filter.eventually_lt_of_lt_liminf (by
+      dsimp [c]
+      exact half_lt_self hmacro) hboundedBelow).mono
+      fun _ h => h.le
+  · rintro ⟨c, hc, hlower⟩
+    exact hc.trans_le
+      (Filter.le_liminf_of_le
+        (Filter.isCoboundedUnder_ge_of_eventually_le Filter.atTop hboundedAbove) hlower)
+
+/-- The paper's macroscopic rounded initial radii force the deterministic
+rounded-map cutoff locations to diverge. -/
+theorem tendsto_roundedDimensionCutoffTime_atTop_of_macroscopic
+    {A ρ : ℝ}
+    (hA : 0 < A) (hA_lt : A < latticeThreshold)
+    (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (x : ∀ N : ℕ, Fin N → ℝ)
+    (hx : ∀ N : ℕ, ∀ i : Fin N, |x N i| ≤ 1)
+    (hmacro : macroscopicRoundedInitialRadii ρ x) :
+    Filter.Tendsto
+      (fun N : ℕ => roundedDimensionCutoffTime A ρ N (x N))
+      Filter.atTop Filter.atTop := by
+  obtain ⟨c, hc, hlower⟩ :=
+    (macroscopicRoundedInitialRadii_iff_exists_eventually_lowerBound hρ x hx).mp hmacro
+  refine Filter.tendsto_atTop.2 fun k => ?_
+  have horbitPos : 0 < roundedOrbit A ρ c k := by
+    induction k with
+    | zero => simpa using hc
+    | succ k ih =>
+        rw [show k + 1 = Nat.succ k from rfl, roundedOrbit_succ]
+        exact roundedMeanMap_pos hA hρ hρ_lt ih
+  have hscale :
+      ∀ᶠ N : ℕ in Filter.atTop,
+        fixedPrecisionScale N < roundedOrbit A ρ c k :=
+    (tendsto_order.1 tendsto_fixedPrecisionScale_zero).2 _ horbitPos
+  filter_upwards [hlower, hscale, Filter.eventually_gt_atTop 1] with N hcN hscaleN hN
+  have hh₀ : 0 ≤ roundedInitialRadius ρ N (x N) :=
+    roundedInitialRadius_nonneg ρ N (x N)
+  have horbitMono :
+      roundedOrbit A ρ c k ≤
+        roundedOrbit A ρ (roundedInitialRadius ρ N (x N)) k := by
+    exact (monotone_roundedMeanMap hA hρ).iterate k hcN
+  change k ≤ roundedOrbitEntrance A ρ
+    (roundedInitialRadius ρ N (x N)) (fixedPrecisionScale N)
+  by_contra hk
+  have hentranceLe :
+      roundedOrbitEntrance A ρ (roundedInitialRadius ρ N (x N))
+          (fixedPrecisionScale N) ≤ k :=
+    (Nat.lt_of_not_ge hk).le
+  have horbitLe :=
+    roundedOrbit_mem_terminal_after_entrance
+      hA hA_lt hρ hh₀ (fixedPrecisionScale_pos hN) hentranceLe
+  exact (not_le_of_gt (hscaleN.trans_le horbitMono)) horbitLe
 
 /-- The horizon through which radius concentration is used in the cutoff proof,
 one step beyond the deterministic terminal-scale entrance. -/

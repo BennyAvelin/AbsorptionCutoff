@@ -5845,6 +5845,37 @@ noncomputable def fixedWidthInitialLogMeshScale
     (R₀ : ℝ) (ρ : ℕ → ℝ) (r : ℕ) : ℝ :=
   Real.log (R₀ / ρ r)
 
+/-- The manuscript's floored observation time `t_ρ(a)`, with its critical
+width, drift, and `N`-only variance normalization exposed in the type. -/
+noncomputable def fixedWidthPaperObservationTime
+    (A : ℝ) (N : ℕ) (R₀ : ℝ) (ρ : ℕ → ℝ) (a : ℝ) (r : ℕ) : ℕ :=
+  canonicalTime (fixedWidthGamma A N) (fixedWidthSigma N) a
+    (fixedWidthInitialLogMeshScale R₀ ρ) 0 r
+
+/-- The paper's cutoff center `L_ρ / gamma_{A,N}`. -/
+noncomputable def fixedWidthPaperCutoffTime
+    (A : ℝ) (N : ℕ) (R₀ : ℝ) (ρ : ℕ → ℝ) : ℕ → ℝ :=
+  fixedWidthCutoffTime (fixedWidthGamma A N)
+    (fixedWidthInitialLogMeshScale R₀ ρ)
+
+/-- The paper's cutoff window
+`sigma_N * gamma_{A,N}^{-3/2} * sqrt L_ρ`. -/
+noncomputable def fixedWidthPaperCutoffWindow
+    (A : ℝ) (N : ℕ) (R₀ : ℝ) (ρ : ℕ → ℝ) : ℕ → ℝ :=
+  fixedWidthCutoffWindow (fixedWidthGamma A N) (fixedWidthSigma N)
+    (fixedWidthInitialLogMeshScale R₀ ρ)
+
+lemma natFloor_fixedWidthCutoffTime_add_mul_window_eq_canonicalTime
+    (μ σ a : ℝ) (L : ℕ → ℝ) (r : ℕ) :
+    ⌊fixedWidthCutoffTime μ L r +
+        a * fixedWidthCutoffWindow μ σ L r⌋₊ =
+      canonicalTime μ σ a L 0 r := by
+  unfold fixedWidthCutoffTime fixedWidthCutoffWindow
+  unfold canonicalTime canonicalTimeArgument
+  simp only [Pi.zero_apply, add_zero]
+  congr 1
+  ring
+
 /-- The paper's initial-state logarithmic scale differs from the bare mesh
 scale by the constant `log R₀`. -/
 lemma fixedWidthInitialLogMeshScale_eq
@@ -6125,5 +6156,218 @@ theorem tendsto_tvDist_roundedPkernel_fixedWidthMesh
     exact postFloorTime_initialScalePerturbation
       μ σ a (gaussianEuclideanNorm N x0) ρ r
   simp only [μ, σ, hmesh, htime]
+
+/-- Compatibility wrapper giving cutoff on the same arbitrary positive mesh
+sequence and the same initial-state logarithmic scale as the manuscript. -/
+theorem hasCutoff_roundedPkernel_fixedWidthMesh
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsub : FixedWidthSubcritical A N)
+    (x0 : Fin N → ℝ) (hx0 : 0 < gaussianEuclideanNorm N x0)
+    (ρ : ℕ → ℝ) (hρpos : ∀ r, 0 < ρ r)
+    (hρ : Tendsto ρ atTop (nhdsWithin 0 (Set.Ioi 0))) :
+    HasCutoff
+      (fun r t ↦
+        tvDist
+          (((roundedPkernel A (ρ r) N) ^ t) (Qρ (ρ r) x0))
+          (Measure.dirac (0 : Fin N → ℝ)))
+      (fixedWidthCutoffTime
+        (∫ x, fixedWidthIncrementProcess A N 0 x
+          ∂fixedWidthGaussianMeasure N)
+        (fixedWidthInitialLogMeshScale
+          (gaussianEuclideanNorm N x0) ρ))
+      (fixedWidthCutoffWindow
+        (∫ x, fixedWidthIncrementProcess A N 0 x
+          ∂fixedWidthGaussianMeasure N)
+        (fixedWidthStdDev A N)
+        (fixedWidthInitialLogMeshScale
+          (gaussianEuclideanNorm N x0) ρ)) := by
+  let μ :=
+    ∫ x, fixedWidthIncrementProcess A N 0 x
+      ∂fixedWidthGaussianMeasure N
+  let σ := fixedWidthStdDev A N
+  let L := fixedWidthInitialLogMeshScale
+    (gaussianEuclideanNorm N x0) ρ
+  let d : ℕ → ℕ → ℝ := fun r t ↦
+    tvDist
+      (((roundedPkernel A (ρ r) N) ^ t) (Qρ (ρ r) x0))
+      (Measure.dirac (0 : Fin N → ℝ))
+  change HasCutoff d (fixedWidthCutoffTime μ L)
+    (fixedWidthCutoffWindow μ σ L)
+  rw [HasCutoff]
+  constructor
+  · have hpoint (c : ℝ) :
+        Tendsto
+          (fun r ↦ d r
+            ⌊fixedWidthCutoffTime μ L r -
+              c * fixedWidthCutoffWindow μ σ L r⌋₊)
+          atTop (nhds (ProbabilityTheory.cdf
+            (ProbabilityTheory.gaussianReal 0 1) c)) := by
+      have hprofile :=
+        tendsto_tvDist_roundedPkernel_fixedWidthMesh
+          hA hN hsub x0 hx0 ρ hρpos hρ (-c)
+      simpa only [d, μ, σ, L, neg_neg,
+        show ∀ r, ⌊fixedWidthCutoffTime μ L r -
+              c * fixedWidthCutoffWindow μ σ L r⌋₊ =
+            canonicalTime μ σ (-c) L 0 r from
+          fun r ↦ by
+            rw [show fixedWidthCutoffTime μ L r -
+                c * fixedWidthCutoffWindow μ σ L r =
+              fixedWidthCutoffTime μ L r +
+                (-c) * fixedWidthCutoffWindow μ σ L r by ring]
+            exact natFloor_fixedWidthCutoffTime_add_mul_window_eq_canonicalTime
+              μ σ (-c) L r]
+        using hprofile
+    have hinner :
+        (fun c : ℝ ↦ liminf
+          (fun r ↦ d r
+            ⌊fixedWidthCutoffTime μ L r -
+              c * fixedWidthCutoffWindow μ σ L r⌋₊) atTop) =
+          ProbabilityTheory.cdf
+            (ProbabilityTheory.gaussianReal 0 1) := by
+      funext c
+      exact (hpoint c).liminf_eq
+    rw [hinner]
+    exact ProbabilityTheory.tendsto_cdf_atTop _
+  · have hpoint (c : ℝ) :
+        Tendsto
+          (fun r ↦ d r
+            ⌊fixedWidthCutoffTime μ L r +
+              c * fixedWidthCutoffWindow μ σ L r⌋₊)
+          atTop (nhds (ProbabilityTheory.cdf
+            (ProbabilityTheory.gaussianReal 0 1) (-c))) := by
+      have hprofile :=
+        tendsto_tvDist_roundedPkernel_fixedWidthMesh
+          hA hN hsub x0 hx0 ρ hρpos hρ c
+      simpa only [d, μ, σ, L,
+        show ∀ r, ⌊fixedWidthCutoffTime μ L r +
+              c * fixedWidthCutoffWindow μ σ L r⌋₊ =
+            canonicalTime μ σ c L 0 r from
+          fun r ↦
+            natFloor_fixedWidthCutoffTime_add_mul_window_eq_canonicalTime
+              μ σ c L r]
+        using hprofile
+    have hinner :
+        (fun c : ℝ ↦ limsup
+          (fun r ↦ d r
+            ⌊fixedWidthCutoffTime μ L r +
+              c * fixedWidthCutoffWindow μ σ L r⌋₊) atTop) =
+          fun c ↦ ProbabilityTheory.cdf
+            (ProbabilityTheory.gaussianReal 0 1) (-c) := by
+      funext c
+      exact (hpoint c).limsup_eq
+    rw [hinner]
+    exact (ProbabilityTheory.tendsto_cdf_atBot _).comp
+      tendsto_neg_atTop_atBot
+
+/-- Full paper theorem `thm:rounded-gaussian-nearest-cutoff`: simultaneously
+for every fixed Gaussian offset, total variation at the exact floored
+manuscript time equals the canonical absorption-time survival probability and
+has the Gaussian profile.  In particular, the same mesh family has cutoff at
+the stated center and window. -/
+theorem rounded_gaussian_nearest_cutoff_paper
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hcritical : A < fixedWidthCriticalWidth N)
+    (x0 : Fin N → ℝ) (hx0 : 0 < gaussianEuclideanNorm N x0)
+    (ρ : ℕ → ℝ) (hρpos : ∀ r, 0 < ρ r)
+    (hρ : Tendsto ρ atTop (nhdsWithin 0 (Set.Ioi 0))) :
+    (∀ a : ℝ,
+      (∀ r,
+        tvDist
+            (((roundedPkernel A (ρ r) N) ^
+              (fixedWidthPaperObservationTime A N
+                (gaussianEuclideanNorm N x0) ρ a r))
+              (Qρ (ρ r) x0))
+            (Measure.dirac (0 : Fin N → ℝ)) =
+          ((markovPathMeasure (Measure.dirac (Qρ (ρ r) x0))
+              (roundedPkernel A (ρ r) N))
+            {ω | ((fixedWidthPaperObservationTime A N
+                (gaussianEuclideanNorm N x0) ρ a r : ℕ) : WithTop ℕ) <
+              absorptionTime
+                (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) ↦ ω s) ω}).toReal) ∧
+      Tendsto
+        (fun r ↦
+          tvDist
+            (((roundedPkernel A (ρ r) N) ^
+              (fixedWidthPaperObservationTime A N
+                (gaussianEuclideanNorm N x0) ρ a r))
+              (Qρ (ρ r) x0))
+            (Measure.dirac (0 : Fin N → ℝ)))
+        atTop (nhds (ProbabilityTheory.cdf
+          (ProbabilityTheory.gaussianReal 0 1) (-a)))) ∧
+    HasCutoff
+      (fun r t ↦
+        tvDist
+          (((roundedPkernel A (ρ r) N) ^ t) (Qρ (ρ r) x0))
+          (Measure.dirac (0 : Fin N → ℝ)))
+      (fixedWidthPaperCutoffTime A N
+        (gaussianEuclideanNorm N x0) ρ)
+      (fixedWidthPaperCutoffWindow A N
+        (gaussianEuclideanNorm N x0) ρ) := by
+  have hsub : FixedWidthSubcritical A N :=
+    (fixedWidthSubcritical_iff_lt_criticalWidth hA hN).2 hcritical
+  have hmean :=
+    integral_fixedWidthIncrementProcess_zero_eq_fixedWidthGamma hA hN
+  have hsigma := fixedWidthStdDev_eq_fixedWidthSigma hA hN
+  constructor
+  · intro a
+    constructor
+    · intro r
+      exact tvDist_roundedPkernel_pow_eq_survival
+        A (ρ r) N (Qρ (ρ r) x0)
+        (fixedWidthPaperObservationTime A N
+          (gaussianEuclideanNorm N x0) ρ a r)
+    · have hprofile := tendsto_tvDist_roundedPkernel_fixedWidthMesh
+        hA hN hsub x0 hx0 ρ hρpos hρ a
+      simpa only [fixedWidthPaperObservationTime, hmean, hsigma] using hprofile
+  · have hcutoff := hasCutoff_roundedPkernel_fixedWidthMesh
+      hA hN hsub x0 hx0 ρ hρpos hρ
+    simpa only [fixedWidthPaperCutoffTime, fixedWidthPaperCutoffWindow,
+      hmean, hsigma] using hcutoff
+
+/-- Compatibility wrapper for the first paper-alignment pass, which exposed
+one Gaussian offset at a time and repeated the cutoff conclusion at every
+offset. -/
+theorem rounded_gaussian_nearest_cutoff_paper_at
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hcritical : A < fixedWidthCriticalWidth N)
+    (x0 : Fin N → ℝ) (hx0 : 0 < gaussianEuclideanNorm N x0)
+    (ρ : ℕ → ℝ) (hρpos : ∀ r, 0 < ρ r)
+    (hρ : Tendsto ρ atTop (nhdsWithin 0 (Set.Ioi 0)))
+    (a : ℝ) :
+    (∀ r,
+      tvDist
+          (((roundedPkernel A (ρ r) N) ^
+            (fixedWidthPaperObservationTime A N
+              (gaussianEuclideanNorm N x0) ρ a r))
+            (Qρ (ρ r) x0))
+          (Measure.dirac (0 : Fin N → ℝ)) =
+        ((markovPathMeasure (Measure.dirac (Qρ (ρ r) x0))
+            (roundedPkernel A (ρ r) N))
+          {ω | ((fixedWidthPaperObservationTime A N
+              (gaussianEuclideanNorm N x0) ρ a r : ℕ) : WithTop ℕ) <
+            absorptionTime
+              (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) ↦ ω s) ω}).toReal) ∧
+    Tendsto
+      (fun r ↦
+        tvDist
+          (((roundedPkernel A (ρ r) N) ^
+            (fixedWidthPaperObservationTime A N
+              (gaussianEuclideanNorm N x0) ρ a r))
+            (Qρ (ρ r) x0))
+          (Measure.dirac (0 : Fin N → ℝ)))
+      atTop (nhds (ProbabilityTheory.cdf
+        (ProbabilityTheory.gaussianReal 0 1) (-a))) ∧
+    HasCutoff
+      (fun r t ↦
+        tvDist
+          (((roundedPkernel A (ρ r) N) ^ t) (Qρ (ρ r) x0))
+          (Measure.dirac (0 : Fin N → ℝ)))
+      (fixedWidthPaperCutoffTime A N
+        (gaussianEuclideanNorm N x0) ρ)
+      (fixedWidthPaperCutoffWindow A N
+        (gaussianEuclideanNorm N x0) ρ) := by
+  rcases rounded_gaussian_nearest_cutoff_paper
+      hA hN hcritical x0 hx0 ρ hρpos hρ with ⟨hprofile, hcutoff⟩
+  exact ⟨(hprofile a).1, (hprofile a).2, hcutoff⟩
 
 end AbsorptionCutoff

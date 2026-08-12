@@ -3,23 +3,17 @@ Copyright (c) 2026 Benny Avelin. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Benny Avelin
 -/
-import Mathlib
+import Audit.Metastability.Statement
 
 /-!
 # Mathlib-only challenge: rounded qualitative metastability
 
-This file is the comparator challenge surface for the exponential-persistence
-clause of the paper's rounded-metastability theorem
-`thm:rounded-qualitative-metastability`: started anywhere in a compact subset of
-a rightmost positive-drift component, the rounded squared-radius chain survives
-for a time exponential in the dimension, with probability tending to one.
+This file is the comparator challenge surface for the complete paper theorem
+`thm:rounded-qualitative-metastability`. Every object in the legacy copied
+vocabulary below remains available; the theorem itself uses the shared exact
+paper proposition from `Audit.Metastability.Statement`.
 
-It is the other clause of the theorem whose fixed-dimensional absorption half is
-audited in `Audit/FixedDimensionAbsorption/`; the two share most of their
-vocabulary.
-
-It imports only `Mathlib`. Every object the statement mentions is rebuilt below
-from Mathlib primitives. The source correspondences are:
+The source correspondences are:
 
 * `Q₁`: `AbsorptionCutoff/Rounding.lean`;
 * `gaussianVec`, `Hmap`, `Hkernel`: `AbsorptionCutoff/Chains.lean`;
@@ -153,38 +147,9 @@ def IsRightmostRoundedPositiveDriftComponent (A ρ h : ℝ) : Prop :=
 
 /-! ## The theorem under audit -/
 
-/-- **Rounded qualitative metastability** (paper
-`thm:rounded-qualitative-metastability`, exponential-persistence clause). Fix a
-mesh `ρ ∈ (0,1)` and a rightmost positive-drift component. Then there is a
-margin `η₀` such that for every smaller margin there are a burn-in time `Tη` and
-a rate `c₁ > 0` for which, uniformly over starting radii in any compact subset
-`B` of the component, the chain is still unabsorbed at time
-`Tη + ⌊exp (c₁ N)⌋` with probability tending to one as `N → ∞`. -/
-theorem rounded_qualitative_metastability
-    {A ρ h : ℝ} (hA : 0 < A) (hρ : 0 < ρ) (hρ_lt : ρ < 1)
-    (hh : h ∈ roundedPositiveDriftSet A ρ)
-    (hrightmost : IsRightmostRoundedPositiveDriftComponent A ρ h)
-    (B : Set ℝ) (hBCompact : IsCompact B)
-    (hBSub : B ⊆ Set.Ioc
-      (sInf (roundedPositiveDriftComponent A ρ h))
-      (sSup (roundedPositiveDriftComponent A ρ h))) :
-    let Ccomp := roundedPositiveDriftComponent A ρ h
-    ∃ η₀ : ℝ, 0 < η₀ ∧
-      sInf Ccomp < sSup Ccomp - η₀ ∧
-      sSup Ccomp + η₀ < roundedRadiusBound ρ ∧
-      ∀ η : ℝ, 0 < η → η < η₀ →
-        ∃ Tη : ℕ, ∃ c₁ : ℝ, 0 < c₁ ∧
-          ∀ q : ℕ → ℝ, (∀ N, q N ∈ B) →
-            Tendsto
-              (fun N : ℕ =>
-                (markovPathMeasure (Measure.dirac (q N))
-                    (Hkernel A ρ N)).real
-                  {ω |
-                    ((Tη + ⌊Real.exp (c₁ * N)⌋₊ : ℕ) :
-                        WithTop ℕ) <
-                      absorptionTime
-                        (fun (s : ℕ) (ω : ℕ → ℝ) => ω s) ω})
-              atTop (𝓝 1) := by
+/-- **Rounded qualitative metastability**, complete paper statement. -/
+theorem rounded_qualitative_metastability :
+    RoundedQualitativeMetastabilityStatement := by
   sorry
 
 end

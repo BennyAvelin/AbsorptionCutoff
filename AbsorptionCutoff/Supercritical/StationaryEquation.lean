@@ -62,6 +62,26 @@ lemma gaussianTransferMoment_eq {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
   rw [Real.rpow_neg (by positivity), ← Real.inv_rpow (by positivity),
     inv_div]
 
+/-- The same Gaussian transfer moment in the exact factorization used in the
+statement of `thm:nd-power-singularity:intro`. -/
+lemma gaussianTransferMoment_eq_paper {A : ℝ} (hA : 0 < A)
+    {N : ℕ} (hN : 0 < N) {β : ℝ} (hβ : β < N) :
+    gaussianTransferMoment A N β =
+      A ^ (-β) * (N : ℝ) ^ (β / 2) * 2 ^ (-β / 2) *
+        Real.Gamma (((N : ℝ) - β) / 2) / Real.Gamma ((N : ℝ) / 2) := by
+  rw [gaussianTransferMoment_eq hA hN hβ]
+  have hNR : (0 : ℝ) < N := by exact_mod_cast hN
+  have hsqrt : 0 ≤ Real.sqrt N := Real.sqrt_nonneg _
+  rw [Real.div_rpow hsqrt hA.le, Real.sqrt_eq_rpow,
+    ← Real.rpow_mul hNR.le, Real.rpow_neg hA.le,
+    show (1 / 2 : ℝ) = (2 : ℝ)⁻¹ by norm_num,
+    Real.inv_rpow (by norm_num : (0 : ℝ) ≤ 2)]
+  rw [show (2 ^ (β / 2))⁻¹ = (2 : ℝ) ^ (-β / 2) by
+    rw [← Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2)]
+    congr 1
+    ring]
+  ring
+
 /-- Pressure scaling of the transfer spectral radius (paper
 `eq:nd-pressure-scaling`): the amplitude `A` enters only through the prefactor
 `A^{-β}`, so `r_{A,N}(β) = ℳ_{A,N}(β) = A^{-β} · ℳ_{1,N}(β)`. -/
@@ -1638,26 +1658,22 @@ is the uniform bound itself
 (`exists_uniform_integral_neg_rpow_cesaroMeasure_le`), which is what the Cramér
 exponent buys.
 
-Note the two supercriticality encodings currently coexisting in the development:
-the drift form `Supercritical A N` used by the §7 machinery, and Chapter 6's
-explicit sufficient criterion `1 < A`, `2 < N`, `2A² < (A²−1)N`. The paper has a
-single condition `A > A_c(N)`; reconciling the two is an open task. -/
-theorem exists_invariant_Kchain_integrable_neg_rpow {A : ℝ} (hA1 : 1 < A) {N : ℕ}
-    (hN : 2 < N) (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N) (hsc : Supercritical A N)
+The same negative moment that gives tightness also rules out an atom at the
+origin, so no auxiliary dimension condition is needed. -/
+theorem exists_invariant_Kchain_integrable_neg_rpow {A : ℝ} (hA : 0 < A) {N : ℕ}
+    (hN : 0 < N) (hsc : Supercritical A N)
     {p : ℝ} (hp : 0 < p) (hpβ : 2 * p < cramerExponent A N) :
     ∃ ν : ProbabilityMeasure ℝ,
       Kernel.Invariant (Kchain A N) (ν : Measure ℝ) ∧
       (ν : Measure ℝ) ((Set.Icc (0 : ℝ) 1)ᶜ) = 0 ∧
       (ν : Measure ℝ) ({0} : Set ℝ) = 0 ∧
       Integrable (fun y : ℝ => y ^ (-p)) (ν : Measure ℝ) := by
-  have hA0 : 0 < A := zero_lt_one.trans hA1
-  have hNpos : 0 < N := by omega
   have hqIoo : (1 / 2 : ℝ) ∈ Set.Ioo (0 : ℝ) 1 := by norm_num
   obtain ⟨C, _hC, hces⟩ :=
-    exists_uniform_integral_neg_rpow_cesaroMeasure_le hA0 hNpos hsc hp hpβ
+    exists_uniform_integral_neg_rpow_cesaroMeasure_le hA hN hsc hp hpβ
       (⟨by norm_num, by norm_num⟩ : (1 / 2 : ℝ) ∈ Set.Ioc (0 : ℝ) 1)
   obtain ⟨ν, hinv, hsupp, hzero, hintegr, _hbound⟩ :=
-    exists_invariant_Kchain_integrable_neg_rpow_of_uniform_cesaro hA1 hN hdim hp.le
+    exists_invariant_Kchain_integrable_neg_rpow_of_uniform_cesaro hA hN hp
       hqIoo hces
   exact ⟨ν, hinv, hsupp, hzero, hintegr⟩
 
@@ -1668,19 +1684,18 @@ nonzero invariant law, `ν̄ = ν`"). Uniqueness
 (`exists_unique_invariant_probability_Kchain_of_apply_singleton_zero`) identifies
 the law produced by the Cesàro construction with the given one, transporting the
 moment bound. -/
-theorem integrable_neg_rpow_of_invariant_Kchain {A : ℝ} (hA1 : 1 < A) {N : ℕ}
-    (hN : 2 < N) (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N) (hsc : Supercritical A N)
+theorem integrable_neg_rpow_of_invariant_Kchain {A : ℝ} (hA : 0 < A) {N : ℕ}
+    (hN : 0 < N) (hsc : Supercritical A N)
     {p : ℝ} (hp : 0 < p) (hpβ : 2 * p < cramerExponent A N)
     (ν : ProbabilityMeasure ℝ) (hinv : Kernel.Invariant (Kchain A N) (ν : Measure ℝ))
     (hν0 : (ν : Measure ℝ) ({0} : Set ℝ) = 0) :
     Integrable (fun y : ℝ => y ^ (-p)) (ν : Measure ℝ) := by
   obtain ⟨ν₀, hinv₀, _hsupp₀, hzero₀, hintegr₀⟩ :=
-    exists_invariant_Kchain_integrable_neg_rpow hA1 hN hdim hsc hp hpβ
-  obtain ⟨μ, _hμ, huniq⟩ :=
-    exists_unique_invariant_probability_Kchain_of_apply_singleton_zero hA1 hN hdim
-  have h1 : ν = μ := huniq ν ⟨hinv, hν0⟩
-  have h2 : ν₀ = μ := huniq ν₀ ⟨hinv₀, hzero₀⟩
-  rw [h1, ← h2]
+    exists_invariant_Kchain_integrable_neg_rpow hA hN hsc hp hpβ
+  have huniq : ν = ν₀ :=
+    invariant_probability_unique_Kchain_of_apply_singleton_zero
+      hA hN ν ν₀ hinv hinv₀ hν0 hzero₀
+  rw [huniq]
   exact hintegr₀
 
 /-- **Subcritical exponential moments of the stationary law**
@@ -1694,14 +1709,13 @@ map `r_N` (`prop:gaussian-tv-reduction`), apply the Lyapunov/uniqueness argument
 on the scalar chain (`integrable_neg_rpow_of_invariant_Kchain`), and pull back
 through `‖x‖₂^{-2p} = N^{-p} r_N(x)^{-p}`. -/
 theorem integrable_neg_rpow_gaussianEuclideanNorm_of_invariant_Pkernel {A : ℝ}
-    (hA1 : 1 < A) {N : ℕ} (hN : 2 < N) (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {p : ℝ} (hp : 0 < p)
     (hpβ : 2 * p < cramerExponent A N) (μ : Measure (Fin N → ℝ))
     [IsProbabilityMeasure μ] (hmu : Kernel.Invariant (Pkernel A N) μ)
     (hmu0 : μ ({0} : Set (Fin N → ℝ)) = 0) :
     Integrable (fun x => (gaussianEuclideanNorm N x) ^ (-(2 * p))) μ := by
-  have hNpos : 0 < N := by omega
-  have hNreal : (0 : ℝ) < N := by exact_mod_cast hNpos
+  have hNreal : (0 : ℝ) < N := by exact_mod_cast hN
   haveI : IsProbabilityMeasure (μ.map (radiusSq N)) := by
     constructor
     rw [Measure.map_apply (measurable_radiusSq N) MeasurableSet.univ]
@@ -1710,10 +1724,10 @@ theorem integrable_neg_rpow_gaussianEuclideanNorm_of_invariant_Pkernel {A : ℝ}
   have hinvν : Kernel.Invariant (Kchain A N) (μ.map (radiusSq N)) :=
     invariant_Kchain_map_radiusSq_of_invariant_Pkernel A N μ hmu
   have hν0 : (μ.map (radiusSq N)) ({0} : Set ℝ) = 0 := by
-    rw [map_radiusSq_apply_singleton_zero hNpos μ]
+    rw [map_radiusSq_apply_singleton_zero hN μ]
     exact hmu0
   have hscalar : Integrable (fun y : ℝ => y ^ (-p)) (μ.map (radiusSq N)) :=
-    integrable_neg_rpow_of_invariant_Kchain hA1 hN hdim hsc hp hpβ
+    integrable_neg_rpow_of_invariant_Kchain hA hN hsc hp hpβ
       (⟨μ.map (radiusSq N), inferInstance⟩ : ProbabilityMeasure ℝ) hinvν hν0
   -- Pull back along `r_N`.
   have hpull : Integrable (fun x => (radiusSq N x) ^ (-p)) μ :=

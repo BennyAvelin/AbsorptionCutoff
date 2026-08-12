@@ -4,18 +4,49 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Benny Avelin
 -/
 import AbsorptionCutoff.Supercritical.PowerSingularity
+import AbsorptionCutoff.RoundedVectorReduction
 
 /-!
 # Renewal assembly for the invariant-law power singularity
 
 This continuation module carries the renewal equation, renewal limit, and final
-weak-convergence argument for `thm:nd-power-singularity`.
+weak-convergence argument for `thm:nd-power-singularity:intro`.
 -/
 
 open MeasureTheory ProbabilityTheory
 open scoped Topology
 
 namespace AbsorptionCutoff
+
+/-- Every invariant vector law is carried by the coordinate box, since one
+application of the kernel applies `tanh` in every coordinate. -/
+lemma invariant_Pkernel_ae_mem_unitBox
+    {A : ℝ} {N : ℕ} (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (hπ : Kernel.Invariant (Pkernel A N) π) :
+    ∀ᵐ x ∂π, ∀ i, |x i| ≤ 1 := by
+  let K : Set (Fin N → ℝ) := {x | ∀ i, |x i| ≤ 1}
+  have hK : MeasurableSet K := by
+    dsimp [K]
+    rw [Set.setOf_forall]
+    exact MeasurableSet.iInter fun i =>
+      measurableSet_le ((measurable_pi_apply i).abs) measurable_const
+  have hstep (x : Fin N → ℝ) : ∀ᵐ y ∂Pkernel A N x, y ∈ K := by
+    rw [Pkernel_apply]
+    apply (ae_map_iff (μ := gaussianMat A N)
+      (p := fun y => y ∈ K) (measurable_Pstep_right N x).aemeasurable hK).2
+    filter_upwards [] with W
+    intro i
+    exact (Real.abs_tanh_lt_one _).le
+  rw [ae_iff]
+  calc
+    π Kᶜ = (Pkernel A N ∘ₘ π) Kᶜ :=
+      congrArg (fun μ : Measure (Fin N → ℝ) => μ Kᶜ) hπ.def.symm
+    _ = ∫⁻ x, Pkernel A N x Kᶜ ∂π :=
+      Measure.bind_apply hK.compl (Kernel.aemeasurable _)
+    _ = 0 := by
+      apply lintegral_eq_zero_of_ae_eq_zero
+      filter_upwards [] with x
+      exact ae_iff.mp (hstep x)
 
 /-- Away from the absorbing origin, every one-step vector transition has a
 density with respect to Cartesian Lebesgue measure. Gaussian isotropy first
@@ -781,6 +812,23 @@ private lemma tilted_prod_fst {α β : Type*}
   rw [hint]
   simp
 
+/-- In positive dimension, normalized surface measure on the unit sphere is a
+probability measure. -/
+lemma isProbabilityMeasure_normalizedSphereLaw {N : ℕ} (hN : 0 < N) :
+    IsProbabilityMeasure (normalizedSphereLaw N) := by
+  letI : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp hN
+  let E := EuclideanSpace ℝ (Fin N)
+  let σ := (volume : Measure E).toSphere
+  have hm0 : σ Set.univ ≠ 0 := by
+    intro hm
+    exact (Measure.toSphere_ne_zero (volume : Measure E))
+      (Measure.measure_univ_eq_zero.mp hm)
+  have hm_top : σ Set.univ ≠ ⊤ := measure_ne_top σ Set.univ
+  constructor
+  change ((σ Set.univ)⁻¹ • σ) Set.univ = 1
+  rw [Measure.smul_apply, smul_eq_mul,
+    ENNReal.inv_mul_cancel hm0 hm_top]
+
 /-- In positive dimension, the normalized angular law is a probability
 measure. -/
 lemma isProbabilityMeasure_normalizedAngularLaw {N : ℕ} (hN : 0 < N) :
@@ -1269,8 +1317,7 @@ lemma integrable_weightedTailIntegral_one_comp_sub_convPow
 /-- The rescaled polar tail against a bounded continuous angular test function
 converges to its normalized spherical mean times the scalar renewal constant. -/
 theorem tendsto_weightedTailIntegral
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1286,8 +1333,8 @@ theorem tendsto_weightedTailIntegral
       (nhds ((∫ θ, φ θ ∂normalizedAngularLaw N) *
         ((∫ y, nonlinearForcing A N π (cramerExponent A N) y (fun _ => 1)) /
           (∫ z, z ∂tiltedIncrementLaw A N)))) := by
-  have hA0 : 0 < A := by linarith
-  have hN0 : 0 < N := by omega
+  have hA0 : 0 < A := hA
+  have hN0 : 0 < N := hN
   have hσ : (A ^ 2 / (N : ℝ)).toNNReal ≠ 0 :=
     ne_of_gt (Real.toNNReal_pos.mpr (by positivity))
   have horigin : π {x | gaussianEuclideanNorm N x = 0} = 0 := by
@@ -1307,13 +1354,13 @@ theorem tendsto_weightedTailIntegral
       ‖nonlinearForcing A N π (cramerExponent A N) y (fun _ => 1)‖ₑ) ≠ ⊤ := by
     simpa only [Real.enorm_eq_ofReal_abs] using
       (driNorm_ofReal_abs_nonlinearForcing_ne_top
-        hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+        hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
         (φ := fun _ => 1) measurable_const (fun _ => by norm_num))
   have hφd : Renewal.driNorm (fun y =>
       ‖nonlinearForcing A N π (cramerExponent A N) y φ‖ₑ) ≠ ⊤ := by
     simpa only [Real.enorm_eq_ofReal_abs] using
       (driNorm_ofReal_abs_nonlinearForcing_ne_top
-        hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+        hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
         hφc.measurable hφ1)
   exact tendsto_angular_of_renewalEquation_tiltedIncrementLaw
     (h := fun y => weightedTailIntegral N π (cramerExponent A N) y (fun _ => 1))
@@ -1337,8 +1384,7 @@ theorem tendsto_weightedTailIntegral
 test function. This removes the unit-bound normalization used by the forcing
 estimate and exposes the interface for weak convergence of finite measures. -/
 theorem tendsto_weightedTailIntegral_boundedContinuous
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1362,7 +1408,7 @@ theorem tendsto_weightedTailIntegral_boundedContinuous
       simpa only [Real.norm_eq_abs] using
         (φ.norm_coe_le_norm θ).trans (le_max_left _ _)
   have hlim := tendsto_weightedTailIntegral
-    hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
     (φ := fun θ => φ θ / C) (φ.continuous.div_const C) hbound
   have hscaled := hlim.const_mul C
   convert hscaled using 1
@@ -1383,8 +1429,7 @@ noncomputable def powerSingularityConstant
     (∫ z, z ∂tiltedIncrementLaw A N)
 
 lemma powerSingularityConstant_pos
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1395,8 +1440,8 @@ lemma powerSingularityConstant_pos
     0 < powerSingularityConstant A N π := by
   exact div_pos
     (integral_nonlinearForcing_one_pos
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport)
-    (integral_id_tiltedIncrementLaw_pos (by linarith) (by omega) hsc)
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport)
+    (integral_id_tiltedIncrementLaw_pos hA hN hsc)
 
 lemma isFiniteMeasure_weightedTailMeasure
     (N : ℕ) (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
@@ -1436,8 +1481,7 @@ noncomputable def scaledNormalizedAngularFiniteMeasure
 /-- The weighted angular tail measures converge weakly to the power-singularity
 constant times normalized surface measure. -/
 theorem tendsto_weightedTailFiniteMeasure
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1448,19 +1492,145 @@ theorem tendsto_weightedTailFiniteMeasure
     Filter.Tendsto
       (fun y => weightedTailFiniteMeasure N π (cramerExponent A N) y)
       Filter.atTop
-      (nhds (scaledNormalizedAngularFiniteMeasure N (by omega)
+      (nhds (scaledNormalizedAngularFiniteMeasure N hN
         (powerSingularityConstant A N π))) := by
   apply FiniteMeasure.tendsto_of_forall_integral_tendsto
   intro φ
   have hc : 0 ≤ powerSingularityConstant A N π :=
     (powerSingularityConstant_pos
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport).le
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport).le
   simp only [weightedTailFiniteMeasure, FiniteMeasure.toMeasure_mk,
     scaledNormalizedAngularFiniteMeasure, integral_smul_measure]
   rw [ENNReal.toReal_ofReal hc]
   simpa [weightedTailIntegral, powerSingularityConstant, mul_comm] using
     (tendsto_weightedTailIntegral_boundedContinuous
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport φ)
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport φ)
+
+/-- The ambient weighted tail measure is supported on the unit sphere whenever
+the underlying invariant law is origin-free. -/
+lemma weightedTailFiniteMeasure_supported_on_sphere
+    (N : ℕ) (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (horigin : π {x | gaussianEuclideanNorm N x = 0} = 0)
+    (β y : ℝ) :
+    weightedTailFiniteMeasure N π β y
+        (Set.range (Subtype.val :
+          Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1 →
+            EuclideanSpace ℝ (Fin N)))ᶜ = 0 := by
+  rw [FiniteMeasure.null_iff_toMeasure_null]
+  change weightedTailMeasure N π β y
+    (Set.range (Subtype.val :
+      Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1 →
+        EuclideanSpace ℝ (Fin N)))ᶜ = 0
+  rw [weightedTailMeasure_apply]
+  · apply mul_eq_zero_of_right
+    apply measure_mono_null (t := {p | ‖p.2‖ ≠ 1})
+    · intro p hp hnorm
+      apply hp.2
+      exact ⟨⟨p.2, by simpa [Metric.mem_sphere, dist_eq_norm] using hnorm⟩, rfl⟩
+    · exact ae_iff.mp (ae_norm_snd_logPolarLaw_eq_one N π horigin)
+  · exact (Metric.isClosed_sphere.isClosedEmbedding_subtypeVal.isClosed_range
+      ).isOpen_compl.measurableSet
+
+/-- The ambient limiting angular measure is supported on the unit sphere. -/
+lemma scaledNormalizedAngularFiniteMeasure_supported_on_sphere
+    (N : ℕ) (hN : 0 < N) (c : ℝ) :
+    scaledNormalizedAngularFiniteMeasure N hN c
+        (Set.range (Subtype.val :
+          Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1 →
+            EuclideanSpace ℝ (Fin N)))ᶜ = 0 := by
+  rw [FiniteMeasure.null_iff_toMeasure_null]
+  change (ENNReal.ofReal c • normalizedAngularLaw N)
+      (Set.range (Subtype.val :
+        Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1 →
+          EuclideanSpace ℝ (Fin N)))ᶜ = 0
+  rw [Measure.smul_apply, smul_eq_mul, normalizedAngularLaw,
+    Measure.map_apply measurable_subtype_coe
+      (Metric.isClosed_sphere.isClosedEmbedding_subtypeVal.isClosed_range
+        ).isOpen_compl.measurableSet]
+  simp
+
+/-- The weighted angular tail as a finite measure on the sphere itself. -/
+noncomputable def weightedTailSphereFiniteMeasure
+    (N : ℕ) (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (β y : ℝ) :
+    FiniteMeasure (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
+  (weightedTailFiniteMeasure N π β y).comap Subtype.val
+
+/-- The limiting multiple of normalized surface measure, as a finite measure
+on the sphere itself. -/
+noncomputable def scaledNormalizedSphereFiniteMeasure
+    (N : ℕ) (hN : 0 < N) (c : ℝ) :
+    FiniteMeasure (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
+  (scaledNormalizedAngularFiniteMeasure N hN c).comap Subtype.val
+
+/-- Pulling the ambient weak limit back through the closed embedding of the
+unit sphere gives weak convergence in the sphere's relative topology. -/
+theorem tendsto_weightedTailSphereFiniteMeasure
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsc : Supercritical A N) {δ : ℝ}
+    (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
+    (hδβ : δ < cramerExponent A N)
+    (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (hπ : Kernel.Invariant (Pkernel A N) π)
+    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0)
+    (hsupport : ∀ᵐ x ∂π, ∀ i, |x i| ≤ 1) :
+    Filter.Tendsto
+      (fun y => weightedTailSphereFiniteMeasure N π (cramerExponent A N) y)
+      Filter.atTop
+      (nhds (scaledNormalizedSphereFiniteMeasure N hN
+        (powerSingularityConstant A N π))) := by
+  let f : Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1 →
+      EuclideanSpace ℝ (Fin N) := Subtype.val
+  let S : Set (FiniteMeasure (EuclideanSpace ℝ (Fin N))) :=
+    {μ | μ (Set.range f)ᶜ = 0}
+  let μlim := scaledNormalizedAngularFiniteMeasure N hN
+    (powerSingularityConstant A N π)
+  have hlim := tendsto_weightedTailFiniteMeasure
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+  have hsource : ∀ y,
+      weightedTailFiniteMeasure N π (cramerExponent A N) y ∈ S := by
+    intro y
+    exact weightedTailFiniteMeasure_supported_on_sphere N π
+      (by simpa [gaussianEuclideanNorm_eq_zero_iff N] using hπ0)
+      (cramerExponent A N) y
+  have htarget : μlim ∈ S :=
+    scaledNormalizedAngularFiniteMeasure_supported_on_sphere N hN _
+  have hwithin : Filter.Tendsto
+      (fun y => weightedTailFiniteMeasure N π (cramerExponent A N) y)
+      Filter.atTop (nhdsWithin μlim S) :=
+    tendsto_nhdsWithin_iff.mpr ⟨hlim, Filter.Eventually.of_forall hsource⟩
+  exact Filter.Tendsto.comp
+    ((Metric.isClosed_sphere.isClosedEmbedding_subtypeVal
+      ).continuousOn_comap_finiteMeasure μlim htarget) hwithin
+
+lemma weightedTailSphereFiniteMeasure_apply
+    (N : ℕ) (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (β y : ℝ) {B : Set (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)}
+    (hB : MeasurableSet B) :
+    weightedTailSphereFiniteMeasure N π β y B =
+      weightedTailMeasure N π β y (Subtype.val '' B) := by
+  rw [FiniteMeasure.ennreal_coeFn_eq_coeFn_toMeasure,
+    weightedTailSphereFiniteMeasure, FiniteMeasure.toMeasure_comap,
+    (Metric.isClosed_sphere.isClosedEmbedding_subtypeVal
+      ).measurableEmbedding.comap_apply]
+  rfl
+
+lemma scaledNormalizedSphereFiniteMeasure_toMeasure
+    (N : ℕ) (hN : 0 < N) (c : ℝ) :
+    (scaledNormalizedSphereFiniteMeasure N hN c :
+      Measure (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)) =
+      ENNReal.ofReal c • normalizedSphereLaw N := by
+  ext B hB
+  rw [scaledNormalizedSphereFiniteMeasure, FiniteMeasure.toMeasure_comap,
+    (Metric.isClosed_sphere.isClosedEmbedding_subtypeVal
+      ).measurableEmbedding.comap_apply,
+    scaledNormalizedAngularFiniteMeasure, FiniteMeasure.toMeasure_mk,
+    Measure.smul_apply, smul_eq_mul, normalizedAngularLaw,
+    Measure.map_apply measurable_subtype_coe
+      ((Metric.isClosed_sphere.isClosedEmbedding_subtypeVal
+        ).measurableEmbedding.measurableSet_image' hB),
+    Set.preimage_image_eq _ Subtype.coe_injective,
+    Measure.smul_apply, smul_eq_mul]
 
 /-- Portmanteau continuity-set convergence for nonzero finite measures. Mathlib
 states the direct result for probability measures; normalization and convergence
@@ -1481,11 +1651,81 @@ lemma tendsto_finiteMeasure_apply_of_null_frontier
   have hmass := hlim.mass
   simpa only [FiniteMeasure.self_eq_mass_mul_normalize] using hmass.mul hset
 
+/-- Portmanteau on the sphere itself. The frontier here is therefore the
+relative frontier in `𝕊^{N-1}`, exactly as in the paper statement. -/
+theorem tendsto_weightedTailSphereMeasure_apply
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsc : Supercritical A N) {δ : ℝ}
+    (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
+    (hδβ : δ < cramerExponent A N)
+    (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (hπ : Kernel.Invariant (Pkernel A N) π)
+    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0)
+    (hsupport : ∀ᵐ x ∂π, ∀ i, |x i| ≤ 1)
+    {B : Set (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)}
+    (hBm : MeasurableSet B)
+    (hB : normalizedSphereLaw N (frontier B) = 0) :
+    Filter.Tendsto
+      (fun y => weightedTailMeasure N π (cramerExponent A N) y
+        (Subtype.val '' B))
+      Filter.atTop
+      (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
+        normalizedSphereLaw N B)) := by
+  let μlim := scaledNormalizedSphereFiniteMeasure N hN
+    (powerSingularityConstant A N π)
+  have hc := powerSingularityConstant_pos
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+  have hμlim_eq : (μlim : Measure
+      (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)) =
+      ENNReal.ofReal (powerSingularityConstant A N π) • normalizedSphereLaw N :=
+    scaledNormalizedSphereFiniteMeasure_toMeasure N hN _
+  have hμlim : μlim ≠ 0 := by
+    intro hzero
+    have hzero' := congrArg
+      (fun ν : FiniteMeasure
+          (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1) =>
+        (ν : Measure (Metric.sphere
+          (0 : EuclideanSpace ℝ (Fin N)) 1)) Set.univ) hzero
+    letI : IsProbabilityMeasure (normalizedSphereLaw N) :=
+      isProbabilityMeasure_normalizedSphereLaw hN
+    have hcoef : ENNReal.ofReal (powerSingularityConstant A N π) ≠ 0 :=
+      (ENNReal.ofReal_pos.mpr hc).ne'
+    simp [hμlim_eq, Measure.smul_apply, hcoef] at hzero'
+  have hfront : μlim (frontier B) = 0 := by
+    rw [FiniteMeasure.null_iff_toMeasure_null, hμlim_eq,
+      Measure.smul_apply, smul_eq_mul, hB, mul_zero]
+  letI : Nonempty (Fin N) := Fin.pos_iff_nonempty.mp hN
+  letI : Nonempty (Metric.sphere
+      (0 : EuclideanSpace ℝ (Fin N)) 1) :=
+    (NormedSpace.sphere_nonempty.mpr zero_le_one).coe_sort
+  have hnn := tendsto_finiteMeasure_apply_of_null_frontier
+    (tendsto_weightedTailSphereFiniteMeasure
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport)
+    hμlim hfront
+  have henn := ENNReal.tendsto_coe.mpr hnn
+  have hsource : (fun y => ((weightedTailSphereFiniteMeasure N π
+      (cramerExponent A N) y B : NNReal) : ENNReal)) =
+      fun y => weightedTailMeasure N π (cramerExponent A N) y
+        (Subtype.val '' B) := by
+    funext y
+    exact weightedTailSphereFiniteMeasure_apply N π (cramerExponent A N) y hBm
+  have htarget : ((μlim B : NNReal) : ENNReal) =
+      ENNReal.ofReal (powerSingularityConstant A N π) *
+        normalizedSphereLaw N B := by
+    rw [FiniteMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
+    have hμlim_apply : (μlim : Measure
+      (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)) B =
+      ENNReal.ofReal (powerSingularityConstant A N π) *
+        normalizedSphereLaw N B := by
+      rw [hμlim_eq, Measure.smul_apply, smul_eq_mul]
+    exact hμlim_apply
+  rw [hsource, htarget] at henn
+  exact henn
+
 /-- Portmanteau applied to the weighted angular tails: every continuity set of
 normalized surface measure has the expected limiting weighted mass. -/
 theorem tendsto_weightedTailMeasure_apply
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1501,8 +1741,8 @@ theorem tendsto_weightedTailMeasure_apply
       (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
         normalizedAngularLaw N B)) := by
   have hc := powerSingularityConstant_pos
-    hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
-  let μlim := scaledNormalizedAngularFiniteMeasure N (by omega)
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+  let μlim := scaledNormalizedAngularFiniteMeasure N hN
     (powerSingularityConstant A N π)
   have hμlim : μlim ≠ 0 := by
     intro hzero
@@ -1510,7 +1750,7 @@ theorem tendsto_weightedTailMeasure_apply
       (fun ν : FiniteMeasure (EuclideanSpace ℝ (Fin N)) =>
         (ν : Measure (EuclideanSpace ℝ (Fin N))) Set.univ) hzero
     letI : IsProbabilityMeasure (normalizedAngularLaw N) :=
-      isProbabilityMeasure_normalizedAngularLaw (by omega)
+      isProbabilityMeasure_normalizedAngularLaw hN
     have hcoef : ENNReal.ofReal (powerSingularityConstant A N π) ≠ 0 :=
       (ENNReal.ofReal_pos.mpr hc).ne'
     simp [μlim, scaledNormalizedAngularFiniteMeasure, Measure.smul_apply,
@@ -1522,7 +1762,7 @@ theorem tendsto_weightedTailMeasure_apply
     rw [Measure.smul_apply, smul_eq_mul, hB, mul_zero]
   have hnn := tendsto_finiteMeasure_apply_of_null_frontier
     (tendsto_weightedTailFiniteMeasure
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport)
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport)
     hμlim hfront
   have henn := ENNReal.tendsto_coe.mpr hnn
   simpa only [weightedTailFiniteMeasure,
@@ -1533,8 +1773,7 @@ theorem tendsto_weightedTailMeasure_apply
 /-- The weighted continuity-set limit in the original Cartesian coordinates,
 with closed radial endpoint and logarithmic radius parameter. -/
 theorem tendsto_exp_mul_invariant_smallBall_angular
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1554,17 +1793,49 @@ theorem tendsto_exp_mul_invariant_smallBall_angular
       (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
         normalizedAngularLaw N B)) := by
   have h := tendsto_weightedTailMeasure_apply
-    hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hB
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hB
   convert h using 1
   funext y
   exact (weightedTailMeasure_apply_le_exp_neg_of_invariant_Pkernel
-    (by linarith) (by omega) π hπ hπ0 (cramerExponent A N) y hBm).symm
+    hA.ne' hN π hπ hπ0 (cramerExponent A N) y hBm).symm
+
+/-- The logarithmic-radius directional limit for Borel subsets of the sphere,
+with the sphere's relative boundary condition. -/
+theorem tendsto_exp_mul_invariant_smallBall_sphere
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsc : Supercritical A N) {δ : ℝ}
+    (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
+    (hδβ : δ < cramerExponent A N)
+    (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (hπ : Kernel.Invariant (Pkernel A N) π)
+    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0)
+    (hsupport : ∀ᵐ x ∂π, ∀ i, |x i| ≤ 1)
+    {B : Set (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)}
+    (hBm : MeasurableSet B)
+    (hB : normalizedSphereLaw N (frontier B) = 0) :
+    Filter.Tendsto
+      (fun y =>
+        ENNReal.ofReal (Real.exp (cramerExponent A N * y)) *
+          π {x | 0 < gaussianEuclideanNorm N x ∧
+            gaussianEuclideanNorm N x ≤ Real.exp (-y) ∧
+            angular N x ∈ Subtype.val '' B})
+      Filter.atTop
+      (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
+        normalizedSphereLaw N B)) := by
+  have hBimage : MeasurableSet (Subtype.val '' B) :=
+    (Metric.isClosed_sphere.isClosedEmbedding_subtypeVal
+      ).measurableEmbedding.measurableSet_image' hBm
+  have h := tendsto_weightedTailSphereMeasure_apply
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hBm hB
+  convert h using 1
+  funext y
+  exact (weightedTailMeasure_apply_le_exp_neg_of_invariant_Pkernel
+    hA.ne' hN π hπ hπ0 (cramerExponent A N) y hBimage).symm
 
 /-- The directional small-ball tail normalized by its Cramér power converges
 as the radius decreases to zero through positive values. -/
 theorem tendsto_rpow_neg_mul_invariant_smallBall_angular
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1584,7 +1855,47 @@ theorem tendsto_rpow_neg_mul_invariant_smallBall_angular
       (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
         normalizedAngularLaw N B)) := by
   have hy := tendsto_exp_mul_invariant_smallBall_angular
-    hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hBm hB
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hBm hB
+  have hlog : Filter.Tendsto (fun s : ℝ => -Real.log s)
+      (𝓝[>] (0 : ℝ)) Filter.atTop :=
+    Filter.tendsto_neg_atTop_iff.mpr Real.tendsto_log_nhdsGT_zero
+  apply (hy.comp hlog).congr'
+  filter_upwards [self_mem_nhdsWithin] with s hs
+  have hs0 : 0 < s := hs
+  have hpow : Real.exp (cramerExponent A N * (-Real.log s)) =
+      s ^ (-cramerExponent A N) := by
+    rw [Real.rpow_def_of_pos hs0]
+    congr 1
+    ring
+  have hradius : Real.exp (- -Real.log s) = s := by
+    simp only [neg_neg, Real.exp_log hs0]
+  simp only [Function.comp_apply]
+  rw [hpow, hradius]
+
+/-- The directional small-ball limit for Borel subsets of `𝕊^{N-1}`. -/
+theorem tendsto_rpow_neg_mul_invariant_smallBall_sphere
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsc : Supercritical A N) {δ : ℝ}
+    (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
+    (hδβ : δ < cramerExponent A N)
+    (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
+    (hπ : Kernel.Invariant (Pkernel A N) π)
+    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0)
+    (hsupport : ∀ᵐ x ∂π, ∀ i, |x i| ≤ 1)
+    {B : Set (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)}
+    (hBm : MeasurableSet B)
+    (hB : normalizedSphereLaw N (frontier B) = 0) :
+    Filter.Tendsto
+      (fun s =>
+        ENNReal.ofReal (s ^ (-cramerExponent A N)) *
+          π {x | 0 < gaussianEuclideanNorm N x ∧
+            gaussianEuclideanNorm N x ≤ s ∧
+            angular N x ∈ Subtype.val '' B})
+      (𝓝[>] (0 : ℝ))
+      (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
+        normalizedSphereLaw N B)) := by
+  have hy := tendsto_exp_mul_invariant_smallBall_sphere
+    hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hBm hB
   have hlog : Filter.Tendsto (fun s : ℝ => -Real.log s)
       (𝓝[>] (0 : ℝ)) Filter.atTop :=
     Filter.tendsto_neg_atTop_iff.mpr Real.tendsto_log_nhdsGT_zero
@@ -1604,8 +1915,7 @@ theorem tendsto_rpow_neg_mul_invariant_smallBall_angular
 /-- The invariant law's full small-ball tail has Cramér exponent
 `cramerExponent A N` and positive coefficient `powerSingularityConstant A N π`. -/
 theorem tendsto_rpow_neg_mul_invariant_smallBall
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -1621,49 +1931,85 @@ theorem tendsto_rpow_neg_mul_invariant_smallBall
       (𝓝[>] (0 : ℝ))
       (nhds (ENNReal.ofReal (powerSingularityConstant A N π))) := by
   letI : IsProbabilityMeasure (normalizedAngularLaw N) :=
-    isProbabilityMeasure_normalizedAngularLaw (by omega)
+    isProbabilityMeasure_normalizedAngularLaw hN
   simpa only [Set.mem_univ, and_true, measure_univ, mul_one] using
     (tendsto_rpow_neg_mul_invariant_smallBall_angular
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
       (B := Set.univ) MeasurableSet.univ (by simp))
 
-/-- Paper-facing capstone for `thm:nd-power-singularity`: the singularity
-coefficient is positive, every measurable angular continuity set has the
-directional power tail, and the full small ball has the same radial exponent. -/
+/-- The polar perturbation estimate always admits an exponent below the
+Cramér exponent. This discharges the auxiliary `δ` used in the forcing bounds. -/
+lemma exists_pos_le_two_lt_cramerExponent
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsc : Supercritical A N) :
+    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 2 ∧ δ < cramerExponent A N := by
+  have hβ : 0 < cramerExponent A N := (cramerExponent_mem hA hN hsc).1
+  refine ⟨min 1 (cramerExponent A N / 2), ?_, ?_, ?_⟩
+  · exact lt_min zero_lt_one (by linarith)
+  · linarith [min_le_left (1 : ℝ) (cramerExponent A N / 2)]
+  · linarith [min_le_right (1 : ℝ) (cramerExponent A N / 2)]
+
+/-- Paper-facing capstone for `thm:nd-power-singularity:intro`: for the supplied
+origin-free invariant probability, the Gamma-form Cramér equation has a unique
+solution in `(0,N)`, and there is a positive coefficient giving both the
+sphere-valued directional tail and the radial small-ball tail.
+
+The manuscript establishes existence and uniqueness of its named law
+`π_{A,N}` before this theorem and then fixes that law; accordingly this capstone
+takes the law and its defining properties as inputs rather than reasserting the
+prior result. Its normalized limit is equivalent to the displayed `∼` when the
+surface-measure factor is positive, and remains a well-defined zero limit when
+that factor is zero. -/
 theorem invariant_powerSingularity
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
-    (hsc : Supercritical A N) {δ : ℝ}
-    (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
-    (hδβ : δ < cramerExponent A N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsc : Supercritical A N)
     (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
     (hπ : Kernel.Invariant (Pkernel A N) π)
-    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0)
-    (hsupport : ∀ᵐ x ∂π, ∀ i, |x i| ≤ 1) :
-    0 < powerSingularityConstant A N π ∧
-      (∀ (B : Set (EuclideanSpace ℝ (Fin N))), MeasurableSet B →
-        normalizedAngularLaw N (frontier B) = 0 →
+    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0) :
+    ∃ β : ℝ, β ∈ Set.Ioo (0 : ℝ) (N : ℝ) ∧
+      A ^ (-β) * (N : ℝ) ^ (β / 2) * 2 ^ (-β / 2) *
+        Real.Gamma (((N : ℝ) - β) / 2) /
+          Real.Gamma ((N : ℝ) / 2) = 1 ∧
+      (∀ γ : ℝ, γ ∈ Set.Ioo (0 : ℝ) (N : ℝ) ∧
+        A ^ (-γ) * (N : ℝ) ^ (γ / 2) * 2 ^ (-γ / 2) *
+          Real.Gamma (((N : ℝ) - γ) / 2) /
+            Real.Gamma ((N : ℝ) / 2) = 1 → γ = β) ∧
+    ∃ c : ℝ, 0 < c ∧
+      (∀ (B : Set (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)),
+        MeasurableSet B → normalizedSphereLaw N (frontier B) = 0 →
+          Filter.Tendsto
+            (fun s =>
+              ENNReal.ofReal (s ^ (-β)) *
+                π {x | 0 < gaussianEuclideanNorm N x ∧
+                  gaussianEuclideanNorm N x ≤ s ∧
+                  angular N x ∈ Subtype.val '' B})
+            (𝓝[>] (0 : ℝ))
+            (nhds (ENNReal.ofReal c * normalizedSphereLaw N B))) ∧
         Filter.Tendsto
           (fun s =>
-            ENNReal.ofReal (s ^ (-cramerExponent A N)) *
+            ENNReal.ofReal (s ^ (-β)) *
               π {x | 0 < gaussianEuclideanNorm N x ∧
-                gaussianEuclideanNorm N x ≤ s ∧ angular N x ∈ B})
+                gaussianEuclideanNorm N x ≤ s})
           (𝓝[>] (0 : ℝ))
-          (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
-            normalizedAngularLaw N B))) ∧
-      Filter.Tendsto
-        (fun s =>
-          ENNReal.ofReal (s ^ (-cramerExponent A N)) *
-            π {x | 0 < gaussianEuclideanNorm N x ∧
-              gaussianEuclideanNorm N x ≤ s})
-        (𝓝[>] (0 : ℝ))
-        (nhds (ENNReal.ofReal (powerSingularityConstant A N π))) := by
-  refine ⟨powerSingularityConstant_pos
-    hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport, ?_, ?_⟩
+          (nhds (ENNReal.ofReal c)) := by
+  obtain ⟨δ, hδ0, hδ2, hδβ⟩ :=
+    exists_pos_le_two_lt_cramerExponent hA hN hsc
+  have hsupport := invariant_Pkernel_ae_mem_unitBox π hπ
+  have hβmem := cramerExponent_mem hA hN hsc
+  refine ⟨cramerExponent A N, hβmem, ?_, ?_,
+    powerSingularityConstant A N π,
+    powerSingularityConstant_pos
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport, ?_, ?_⟩
+  · rw [← gaussianTransferMoment_eq_paper hA hN hβmem.2]
+    exact gaussianTransferMoment_cramerExponent hA hN hsc
+  · intro γ hγ
+    apply eq_cramerExponent hA hN hsc hγ.1
+    rw [gaussianTransferMoment_eq_paper hA hN hγ.1.2]
+    exact hγ.2
   · intro B hBm hB
-    exact tendsto_rpow_neg_mul_invariant_smallBall_angular
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hBm hB
+    exact tendsto_rpow_neg_mul_invariant_smallBall_sphere
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport hBm hB
   · exact tendsto_rpow_neg_mul_invariant_smallBall
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
 
 end AbsorptionCutoff

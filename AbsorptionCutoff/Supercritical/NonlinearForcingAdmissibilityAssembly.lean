@@ -94,8 +94,7 @@ theorem driNorm_lintegral_exp_tilt_mul_polarEnvelope_ne_top
 /-- The invariant-law subcritical moment makes the actual averaged polar
 envelope directly Riemann integrable. -/
 theorem driNorm_lintegral_exp_tilt_mul_polarEnvelope_of_invariant_Pkernel_ne_top
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδβ : δ < cramerExponent A N)
     (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
@@ -107,11 +106,10 @@ theorem driNorm_lintegral_exp_tilt_mul_polarEnvelope_of_invariant_Pkernel_ne_top
           ENNReal.ofReal
             (Real.exp (cramerExponent A N * (y - p.1)) *
               polarEnvelope N (y - p.1)) ∂logPolarLaw N π) ≠ ⊤ := by
-  have hNpos : 0 < N := by omega
-  have hβmem := cramerExponent_mem (lt_trans zero_lt_one hA1) hNpos hsc
+  have hβmem := cramerExponent_mem hA hN hsc
   have hm :=
     integrable_exp_cramerExponent_sub_fst_logPolarLaw_of_invariant_Pkernel
-      hA1 hN hdim hsc hδ0 hδβ π hπ hπ0
+      hA hN hsc hδ0 hδβ π hπ hπ0
   have hfinite := (hasFiniteIntegral_iff_enorm).mp hm.hasFiniteIntegral
   have heq :
       (fun p : ℝ × EuclideanSpace ℝ (Fin N) =>

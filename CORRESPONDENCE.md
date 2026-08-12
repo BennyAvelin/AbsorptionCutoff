@@ -22,7 +22,7 @@ checked by `leanprover/comparator` against a Mathlib-only restatement.
 | `thm:rounded-qualitative-metastability` (§5), absorption clause | `rounded_fixed_dimension_absorption` | `AbsorptionCutoff/Metastability.lean` | `Audit/FixedDimensionAbsorption/` |
 | `thm:gaussian-process-cutoff` (§6) | `gaussian_process_cutoff` | `AbsorptionCutoff/Supercritical/CutoffLimitAssembly.lean` | `Audit/ScalarCutoff/` |
 | `cor:gaussian-vector-cutoff` (§6) | `gaussian_vector_cutoff` | `AbsorptionCutoff/Supercritical/CutoffLimitAssembly.lean` | `Audit/VectorCutoff/` |
-| `thm:nd-power-singularity` (§7) | `nd_power_singularity` | `AbsorptionCutoff/Supercritical/PowerSingularityRenewal.lean` | `Audit/PowerSingularity/` |
+| `thm:nd-power-singularity:intro` (§7) | `nd_power_singularity` | `AbsorptionCutoff/Supercritical/PowerSingularityRenewal.lean` | `Audit/PowerSingularity/` |
 
 The manuscript's metastability theorem has two logically independent
 conclusions — exponential persistence as the dimension grows, and almost-sure
@@ -48,10 +48,13 @@ and are audited separately.
   fixed-state-space almost-sure absorption.
 - **§6, supercritical dimension cutoff.** Complete in scalar and reconstructed
   vector form, including the two-sided profiles and the `HasCutoff` wrappers.
-- **§7, stationary singularity.** Complete: the stationary weak equation, the
-  log-polar apparatus, the Cramér exponent, the key renewal theorem and its
-  Gaussian instantiation, the polar perturbation, nonlinear forcing
-  admissibility, and the final power-singularity assembly.
+- **§7, stationary singularity.** Complete for the full theorem stated in the
+  introduction and for every fixed positive dimension. The development proves
+  the Gamma-form characterization and uniqueness of the Cramér exponent, the
+  positive coefficient, the directional limit on continuity sets of the unit
+  sphere, and the radial limit. It also contains the stationary weak equation,
+  the log-polar apparatus, the key renewal theorem and its Gaussian
+  instantiation, the polar perturbation, and nonlinear forcing admissibility.
 
 Two libraries were built in-project because Mathlib has no equivalent: the
 positive-drift first-passage development behind §3, and the renewal-theory
@@ -66,9 +69,12 @@ result is *stronger*; there is no hypothesis in this development weaker than the
 manuscript's.
 
 1. **§3 is stated sequentially.** The manuscript writes the limit as `ρ ↓ 0`;
-   `tendsto_tvDist_roundedPkernel_fixedWidthMesh` gives the equivalent
-   formulation along every positive sequence `ρ_r → 0`, at the manuscript's exact
-   floored `L_ρ = log(‖x₀‖₂/ρ)` time.
+   the public `rounded_gaussian_nearest_cutoff` gives the equivalent formulation
+   along every positive sequence `ρ_r → 0`, at the manuscript's exact floored
+   `L_ρ = log(‖x₀‖₂/ρ)` time. It bundles the exact TV/survival identity,
+   Gaussian profile limit, and same-scale `HasCutoff` conclusion; the former
+   profile-only result remains available as
+   `tendsto_tvDist_roundedPkernel_fixedWidthMesh`.
 2. **The renewal route differs in two harmless ways.** Lean sends the terminal
    convolution term to zero using local finiteness of the renewal measure rather
    than a walk realization with almost-sure drift to `+∞`, and its signed
@@ -88,6 +94,17 @@ manuscript's.
 5. **Forcing continuity is proved in a stronger form.** The manuscript asks for
    continuous angular tests; `continuous_nonlinearForcing` gives continuity in the
    radial level for every *bounded measurable* angular test.
+6. **The supercritical hypothesis is encoded by the drift.** The manuscript
+   writes `A > A_c(N)`, while Lean assumes `0 < A` and
+   `Supercritical A N`, where `Supercritical` means that the logarithmic radial
+   multiplier has positive mean. This is the defining characterization of the
+   same fixed-dimensional regime used in the paper.
+7. **The tail asymptotics use normalized convergence.** The manuscript writes
+   the directional and radial conclusions with `\sim`. Lean states that the
+   corresponding probabilities, multiplied by `s^{-β}`, converge to
+   `c σ̄_N(B)` and `c`. This is the equivalent normalized limit when the
+   comparison constant is positive, and it remains meaningful when
+   `σ̄_N(B) = 0`.
 
 On the continuity hypothesis of the key renewal theorem: the Lean proof
 approximates the forcing in the directly Riemann integrable norm and therefore

@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Benny Avelin
 -/
 import AbsorptionCutoff.MainTheorems
+import Audit.Metastability.Statement
 
 /-!
 # Solution to the rounded qualitative metastability challenge
@@ -177,41 +178,10 @@ lemma IsRightmostRoundedPositiveDriftComponent_eq (A ρ h : ℝ) :
 
 /-! ## The theorem under audit -/
 
-/-- **Rounded qualitative metastability** (paper
-`thm:rounded-qualitative-metastability`, exponential-persistence clause). Fix a
-mesh `ρ ∈ (0,1)` and a rightmost positive-drift component. Then there is a
-margin `η₀` such that for every smaller margin there are a burn-in time `Tη` and
-a rate `c₁ > 0` for which, uniformly over starting radii in any compact subset
-`B` of the component, the chain is still unabsorbed at time
-`Tη + ⌊exp (c₁ N)⌋` with probability tending to one as `N → ∞`. -/
-theorem rounded_qualitative_metastability
-    {A ρ h : ℝ} (hA : 0 < A) (hρ : 0 < ρ) (hρ_lt : ρ < 1)
-    (hh : h ∈ roundedPositiveDriftSet A ρ)
-    (hrightmost : IsRightmostRoundedPositiveDriftComponent A ρ h)
-    (B : Set ℝ) (hBCompact : IsCompact B)
-    (hBSub : B ⊆ Set.Ioc
-      (sInf (roundedPositiveDriftComponent A ρ h))
-      (sSup (roundedPositiveDriftComponent A ρ h))) :
-    let Ccomp := roundedPositiveDriftComponent A ρ h
-    ∃ η₀ : ℝ, 0 < η₀ ∧
-      sInf Ccomp < sSup Ccomp - η₀ ∧
-      sSup Ccomp + η₀ < roundedRadiusBound ρ ∧
-      ∀ η : ℝ, 0 < η → η < η₀ →
-        ∃ Tη : ℕ, ∃ c₁ : ℝ, 0 < c₁ ∧
-          ∀ q : ℕ → ℝ, (∀ N, q N ∈ B) →
-            Tendsto
-              (fun N : ℕ =>
-                (markovPathMeasure (Measure.dirac (q N))
-                    (Hkernel A ρ N)).real
-                  {ω |
-                    ((Tη + ⌊Real.exp (c₁ * N)⌋₊ : ℕ) :
-                        WithTop ℕ) <
-                      absorptionTime
-                        (fun (s : ℕ) (ω : ℕ → ℝ) => ω s) ω})
-              atTop (𝓝 1)
-:=
+/-- **Rounded qualitative metastability**, complete paper statement. -/
+theorem rounded_qualitative_metastability :
+    RoundedQualitativeMetastabilityStatement :=
   AbsorptionCutoff.MainTheorems.rounded_qualitative_metastability
-    hA hρ hρ_lt hh hrightmost B hBCompact hBSub
 
 end
 

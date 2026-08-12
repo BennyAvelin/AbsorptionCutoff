@@ -28,6 +28,19 @@ negative. -/
 def FixedWidthSubcritical (A : ℝ) (N : ℕ) : Prop :=
   logRadialDrift A N < 0
 
+/-- Paper-facing fixed-width critical width.  This is the drift
+characterization of
+`sqrt (N / 2) * exp (-digamma (N / 2) / 2)` used in the manuscript; Mathlib
+does not currently provide the digamma function needed to use that closed
+form as the definition. -/
+noncomputable def fixedWidthCriticalWidth (N : ℕ) : ℝ :=
+  Real.exp (-logRadialDrift 1 N)
+
+/-- The paper's positive subcritical drift
+`gamma_{A,N} = log (A_c(N) / A)`. -/
+noncomputable def fixedWidthGamma (A : ℝ) (N : ℕ) : ℝ :=
+  Real.log (fixedWidthCriticalWidth N / A)
+
 /-- Geometric rate arising from half of the negative fixed-width log-radius
 drift. -/
 noncomputable def fixedWidthGeometricRate (A : ℝ) (N : ℕ) : ℝ :=
@@ -92,6 +105,74 @@ lemma memLp_logRadialIncrement_two
   simpa using memLp_of_mem_interior_integrableExpSet
     (zero_mem_interior_integrableExpSet_logRadialIncrement hA hN) (2 : NNReal)
 
+lemma fixedWidthCriticalWidth_pos (N : ℕ) :
+    0 < fixedWidthCriticalWidth N := by
+  unfold fixedWidthCriticalWidth
+  positivity
+
+/-- Changing `A` translates the log-radius increment by the deterministic
+constant `-log A`. -/
+lemma logRadialIncrement_ae_eq_one_sub_log
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N) :
+    logRadialIncrement A N =ᵐ[gaussianVec N]
+      fun g ↦ logRadialIncrement 1 N g - Real.log A := by
+  filter_upwards [ae_gaussianEuclideanNorm_pos hN] with g hg
+  have hsqrt : 0 < Real.sqrt (N : ℝ) := by
+    exact Real.sqrt_pos.2 (by exact_mod_cast hN)
+  unfold logRadialIncrement
+  rw [show (A / Real.sqrt (N : ℝ)) * gaussianEuclideanNorm N g =
+      A * ((1 / Real.sqrt (N : ℝ)) * gaussianEuclideanNorm N g) by ring,
+    Real.log_mul hA.ne' (mul_ne_zero (one_div_ne_zero hsqrt.ne') hg.ne')]
+  ring
+
+/-- Scaling the width adds `log A` to the logarithmic radial drift. -/
+lemma logRadialDrift_eq_log_add
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N) :
+    logRadialDrift A N = Real.log A + logRadialDrift 1 N := by
+  have hAint := (memLp_logRadialIncrement_two hA hN).integrable one_le_two
+  have h1int := (memLp_logRadialIncrement_two zero_lt_one hN).integrable one_le_two
+  have hcongr := integral_congr_ae (logRadialIncrement_ae_eq_one_sub_log hA hN)
+  rw [integral_sub h1int (integrable_const (Real.log A)),
+    integral_logRadialIncrement_eq_neg_logRadialDrift,
+    integral_logRadialIncrement_eq_neg_logRadialDrift] at hcongr
+  simp only [integral_const, measureReal_univ_eq_one, one_smul] at hcongr
+  linarith
+
+/-- The paper's inequality `A < A_c(N)` is exactly fixed-width
+subcriticality. -/
+lemma fixedWidthSubcritical_iff_lt_criticalWidth
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N) :
+    FixedWidthSubcritical A N ↔ A < fixedWidthCriticalWidth N := by
+  rw [FixedWidthSubcritical, logRadialDrift_eq_log_add hA hN]
+  constructor
+  · intro h
+    rw [← Real.log_lt_log_iff hA (fixedWidthCriticalWidth_pos N)]
+    simp only [fixedWidthCriticalWidth, Real.log_exp]
+    linarith
+  · intro h
+    rw [← Real.log_lt_log_iff hA (fixedWidthCriticalWidth_pos N)] at h
+    simp only [fixedWidthCriticalWidth, Real.log_exp] at h
+    linarith
+
+/-- The paper's `gamma_{A,N}` is the negative log-radius drift. -/
+lemma fixedWidthGamma_eq_neg_logRadialDrift
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N) :
+    fixedWidthGamma A N = -logRadialDrift A N := by
+  rw [fixedWidthGamma,
+    Real.log_div (fixedWidthCriticalWidth_pos N).ne' hA.ne',
+    fixedWidthCriticalWidth, Real.log_exp,
+    logRadialDrift_eq_log_add hA hN]
+  ring
+
+/-- In the subcritical regime the paper's `gamma_{A,N}` is positive. -/
+lemma fixedWidthGamma_pos_of_lt_criticalWidth
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hcritical : A < fixedWidthCriticalWidth N) :
+    0 < fixedWidthGamma A N := by
+  rw [fixedWidthGamma_eq_neg_logRadialDrift hA hN]
+  exact neg_pos.mpr
+    ((fixedWidthSubcritical_iff_lt_criticalWidth hA hN).2 hcritical)
+
 /-- In positive dimension, the Gaussian log-radius increment is not almost
 surely equal to any constant. -/
 lemma logRadialIncrement_not_ae_const
@@ -128,6 +209,41 @@ lemma variance_logRadialIncrement_pos
 /-- Standard deviation of the fixed-width Gaussian log-radius increment. -/
 noncomputable def fixedWidthStdDev (A : ℝ) (N : ℕ) : ℝ :=
   Real.sqrt (variance (logRadialIncrement A N) (gaussianVec N))
+
+/-- The paper's `N`-dependent standard deviation
+`sigma_N = sqrt (Var (log chi_N))`. -/
+noncomputable def fixedWidthSigma (N : ℕ) : ℝ :=
+  Real.sqrt
+    (variance (fun g : Fin N → ℝ ↦ Real.log (gaussianEuclideanNorm N g))
+      (gaussianVec N))
+
+/-- The width-dependent helper standard deviation is the manuscript's
+`N`-only quantity `sigma_N`. -/
+lemma fixedWidthStdDev_eq_fixedWidthSigma
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N) :
+    fixedWidthStdDev A N = fixedWidthSigma N := by
+  have hscale : 0 < A / Real.sqrt (N : ℝ) := by
+    positivity
+  have hae : logRadialIncrement A N =ᵐ[gaussianVec N]
+      fun g ↦ -Real.log (A / Real.sqrt (N : ℝ)) -
+        Real.log (gaussianEuclideanNorm N g) := by
+    filter_upwards [ae_gaussianEuclideanNorm_pos hN] with g hg
+    unfold logRadialIncrement
+    rw [Real.log_mul hscale.ne' hg.ne']
+    ring
+  unfold fixedWidthStdDev fixedWidthSigma
+  congr 1
+  calc
+    variance (logRadialIncrement A N) (gaussianVec N) =
+        variance
+          (fun g ↦ -Real.log (A / Real.sqrt (N : ℝ)) -
+            Real.log (gaussianEuclideanNorm N g))
+          (gaussianVec N) := variance_congr hae
+    _ = variance (fun g ↦ Real.log (gaussianEuclideanNorm N g))
+          (gaussianVec N) := by
+      exact variance_const_sub
+        ((measurable_gaussianEuclideanNorm N).log.aestronglyMeasurable)
+        (-Real.log (A / Real.sqrt (N : ℝ)))
 
 /-- The fixed-width standard deviation is positive in positive dimension. -/
 lemma fixedWidthStdDev_pos
@@ -291,6 +407,15 @@ lemma integral_fixedWidthIncrementProcess_zero_eq_neg_logRadialDrift
         (Measure.map (logRadialIncrement A N) (gaussianVec N)))
   rw [map_fixedWidthIncrementProcess A N 0] at hproc
   simpa only [id_eq] using hproc.symm.trans hrad
+
+/-- The mean first-passage increment is exactly the paper's
+`gamma_{A,N}`. -/
+lemma integral_fixedWidthIncrementProcess_zero_eq_fixedWidthGamma
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N) :
+    ∫ ω, fixedWidthIncrementProcess A N 0 ω
+        ∂fixedWidthGaussianMeasure N = fixedWidthGamma A N := by
+  rw [integral_fixedWidthIncrementProcess_zero_eq_neg_logRadialDrift,
+    fixedWidthGamma_eq_neg_logRadialDrift hA hN]
 
 lemma integral_fixedWidthIncrementProcess_zero_pos_of_subcritical
     {A : ℝ} {N : ℕ} (hsub : FixedWidthSubcritical A N) :

@@ -503,8 +503,7 @@ lemma exp_mul_nonlinearForcingIntegrand_one_sub_eq_indicator_Ico
 /-- Every bounded measurable angular test gives a nonlinear forcing with finite
 d.R.i. norm after exponential tilting. -/
 theorem driNorm_ofReal_abs_nonlinearForcing_ne_top
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -519,7 +518,7 @@ theorem driNorm_ofReal_abs_nonlinearForcing_ne_top
         |nonlinearForcing A N π (cramerExponent A N) y φ|) ≠ ⊤ := by
   obtain ⟨C, hC, _, hbound⟩ :=
     exists_abs_nonlinearForcing_le_integral_polarEnvelope_of_invariant_Pkernel
-      hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+      hA hN hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
   let G : ℝ → ENNReal := fun y => ∫⁻ p,
     ENNReal.ofReal (Real.exp ((cramerExponent A N - δ) * p.1)) *
       ENNReal.ofReal
@@ -527,13 +526,13 @@ theorem driNorm_ofReal_abs_nonlinearForcing_ne_top
           polarEnvelope N (y - p.1)) ∂logPolarLaw N π
   have hG : Renewal.driNorm G ≠ ⊤ := by
     exact driNorm_lintegral_exp_tilt_mul_polarEnvelope_of_invariant_Pkernel_ne_top
-      hA1 hN hdim hsc hδ0 hδβ π hπ hπ0
+      hA hN hsc hδ0 hδβ π hπ hπ0
   have hpoint (y : ℝ) :
       ENNReal.ofReal
           |nonlinearForcing A N π (cramerExponent A N) y φ| ≤
         ENNReal.ofReal C * G y := by
     have hi := integrable_rpow_mul_polarEnvelope_of_invariant_Pkernel
-      hA1 hN hdim hsc hδ0 hδβ π hπ hπ0 y
+      hA hN hsc hδ0 hδβ π hπ hπ0 y
     have htilt : Integrable
         (fun p : ℝ × EuclideanSpace ℝ (Fin N) =>
           Real.exp ((cramerExponent A N - δ) * p.1) *
@@ -572,8 +571,7 @@ theorem driNorm_ofReal_abs_nonlinearForcing_ne_top
 /-- Tonelli's identity for the total mass of the constant-one nonlinear
 renewal forcing. -/
 theorem integral_nonlinearForcing_one
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -596,8 +594,8 @@ theorem integral_nonlinearForcing_one
     fun z => Real.exp (β * z.1) *
       (nonlinearForcingPlusIntegrand N z.1 (fun _ => 1) z.2 -
         nonlinearForcingZeroIntegrand N z.1 (fun _ => 1) z.2)
-  have hA0 : 0 < A := by linarith
-  have hN0 : 0 < N := by omega
+  have hA0 : 0 < A := hA
+  have hN0 : 0 < N := hN
   have hβ : 0 < β := (cramerExponent_mem hA0 hN0 hsc).1
   have hσ : (A ^ 2 / (N : ℝ)).toNNReal ≠ 0 := by
     exact ne_of_gt (Real.toNNReal_pos.mpr (by positivity))
@@ -673,7 +671,7 @@ theorem integral_nonlinearForcing_one
             |nonlinearForcing A N π β y (fun _ => 1)|) :=
         Renewal.lintegral_le_driNorm _
       _ < ⊤ := lt_top_iff_ne_top.mpr
-        (driNorm_ofReal_abs_nonlinearForcing_ne_top hA1 hN hdim hsc
+        (driNorm_ofReal_abs_nonlinearForcing_ne_top hA hN hsc
           hδ0 hδ2 hδβ π hπ hπ0 hsupport (φ := fun _ => 1)
           measurable_const (fun _ => by norm_num))
   have hFint : Integrable F (volume.prod μq) := by
@@ -807,8 +805,7 @@ lemma etaDefect_pos (N : ℕ) {r : ℝ} (hr : 0 < r) {v : Fin N → ℝ} (hv : v
 /-- The total mass of the constant-one nonlinear forcing is strictly positive.
 This is the positivity clause of `prop:nd-forcing-admissibility`. -/
 theorem integral_nonlinearForcing_one_pos
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -829,8 +826,8 @@ theorem integral_nonlinearForcing_one_pos
     fun z => Real.exp (β * z.1) *
       (nonlinearForcingPlusIntegrand N z.1 (fun _ => 1) z.2 -
         nonlinearForcingZeroIntegrand N z.1 (fun _ => 1) z.2)
-  have hA0 : 0 < A := by linarith
-  have hN0 : 0 < N := by omega
+  have hA0 : 0 < A := hA
+  have hN0 : 0 < N := hN
   have hβ : 0 < β := (cramerExponent_mem hA0 hN0 hsc).1
   have hσ : (A ^ 2 / (N : ℝ)).toNNReal ≠ 0 :=
     ne_of_gt (Real.toNNReal_pos.mpr (by positivity))
@@ -904,7 +901,7 @@ theorem integral_nonlinearForcing_one_pos
             |nonlinearForcing A N π β y (fun _ => 1)|) :=
         Renewal.lintegral_le_driNorm _
       _ < ⊤ := lt_top_iff_ne_top.mpr
-        (driNorm_ofReal_abs_nonlinearForcing_ne_top hA1 hN hdim hsc
+        (driNorm_ofReal_abs_nonlinearForcing_ne_top hA hN hsc
           hδ0 hδ2 hδβ π hπ hπ0 hsupport (φ := fun _ => 1)
           measurable_const (fun _ => by norm_num))
   have hFint : Integrable F (volume.prod μq) := by
@@ -958,7 +955,7 @@ theorem integral_nonlinearForcing_one_pos
     have hcompl : μq (Function.support E)ᶜ = 0 := MeasureTheory.ae_iff.mp hsupp
     rw [measure_of_measure_compl_eq_zero hcompl, measure_univ]
     exact zero_lt_one
-  rw [integral_nonlinearForcing_one hA1 hN hdim hsc hδ0 hδ2 hδβ
+  rw [integral_nonlinearForcing_one hA hN hsc hδ0 hδ2 hδβ
     π hπ hπ0 hsupport]
   change 0 < β⁻¹ * ∫ q, E q ∂μq
   exact mul_pos (inv_pos.mpr hβ) hEintpos

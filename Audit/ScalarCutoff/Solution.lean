@@ -141,14 +141,13 @@ lemma supercriticalCutoffTime_eq' (A qStar q₀ : ℝ) (N : ℕ) :
 /-! ## The theorem under audit -/
 
 /-- **Supercritical scalar cutoff** (paper `thm:gaussian-process-cutoff`). Under
-the manuscript's coordinate-box and radius-convergence assumptions, there is a
-constant `C` and a family `ν` of invariant laws for the scalar squared-radius
-chain, concentrated on `[0,1]`, away from the origin, and with
-`(q − qStar)²`-variance at most `C/N`, such that the chain started at
-`radiusSq N (x N)` has total-variation cutoff at `supercriticalCutoffTime` with
+the manuscript's coordinate-box and radius-convergence assumptions, the scalar
+squared-radius chain has a unique nonzero invariant law in every sufficiently
+large dimension, and the chain started at `radiusSq N (x N)` has
+total-variation cutoff relative to those laws at `supercriticalCutoffTime` with
 window `1`. -/
 theorem gaussian_process_cutoff
-    {A qStar q₀ b : ℝ}
+    {A qStar q₀ : ℝ}
     (x : (N : ℕ) → Fin N → ℝ)
     (hA : 1 < A)
     (hqStar : qStar ∈ Set.Ioo (0 : ℝ) 1)
@@ -160,17 +159,12 @@ theorem gaussian_process_cutoff
     (hradius :
       Filter.Tendsto
         (fun N : ℕ => radiusSq N (x N))
-        Filter.atTop (nhds q₀))
-    (hb : 0 < b) :
-    ∃ C : ℝ, ∃ ν : ℕ → ProbabilityMeasure ℝ,
-      0 < C ∧
-      (∀ᶠ N : ℕ in Filter.atTop,
-        Kernel.Invariant (Kchain A N) (ν N : Measure ℝ) ∧
-        (ν N : Measure ℝ) ((Set.Icc (0 : ℝ) 1)ᶜ) = 0 ∧
-        (ν N : Measure ℝ) ({0} : Set ℝ) = 0 ∧
-        Integrable (fun q => (q - qStar) ^ 2) (ν N : Measure ℝ) ∧
-        (∫ q, (q - qStar) ^ 2 ∂(ν N : Measure ℝ)) ≤
-          C / (N : ℝ)) ∧
+        Filter.atTop (nhds q₀)) :
+    ∃ ν : ℕ → ProbabilityMeasure ℝ,
+      (∀ᶠ N : ℕ in Filter.atTop, ∀ ρ : ProbabilityMeasure ℝ,
+        ((ρ : Measure ℝ) ({0} : Set ℝ) = 0 ∧
+          Kernel.Invariant (Kchain A N) (ρ : Measure ℝ)) ↔
+        ρ = ν N) ∧
       HasCutoff
         (fun N t =>
           tvDist
@@ -179,7 +173,8 @@ theorem gaussian_process_cutoff
         (supercriticalCutoffTime A qStar q₀)
         (fun _ => 1)
 :=
-  AbsorptionCutoff.MainTheorems.gaussian_process_cutoff x hA hqStar hfix hq₀ hq₀ne hbox hradius hb
+  AbsorptionCutoff.MainTheorems.gaussian_process_cutoff
+    x hA hqStar hfix hq₀ hq₀ne hbox hradius
 
 end
 

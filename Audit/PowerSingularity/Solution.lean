@@ -268,45 +268,54 @@ lemma powerSingularityConstant_eq (A : ℝ) (N : ℕ) (π : Measure (Fin N → �
 
 /-! ## The theorem under audit -/
 
-/-- **Stationary power singularity** (paper `thm:nd-power-singularity`). In the
-supercritical regime, for any invariant probability law `π` of the vector chain
-that gives the origin zero mass and lives in the coordinate box, the constant
-`powerSingularityConstant A N π` is positive and, as `s ↓ 0`,
+/-- **Stationary power singularity** (paper
+`thm:nd-power-singularity:intro`). The paper establishes existence and
+uniqueness of its named nonzero invariant law before this theorem and then
+fixes that law. Correspondingly, this theorem takes an origin-free invariant
+probability as input. The Gamma-form Cramér equation has a unique root, shared
+by both conclusions, and the supplied law has a positive power-singularity
+coefficient. As `s ↓ 0`,
 
-`s^{−β} · π{0 < ‖x‖ ≤ s, x/‖x‖ ∈ B} → powerSingularityConstant · σ̄(B)`
+`s^{−β} · π{0 < ‖x‖ ≤ s, x/‖x‖ ∈ B} → c · σ̄(B)`
 
 for every measurable `B` whose boundary is `σ̄`-null, and the same with the
-angular constraint dropped. -/
+angular constraint dropped. This normalized formulation is equivalent to the
+paper's `∼` when `σ̄(B) > 0`; when `σ̄(B) = 0`, it gives the coherent zero-limit
+reading without adding a set hypothesis absent from the paper. -/
 theorem nd_power_singularity
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
-    (hsc : Supercritical A N) {δ : ℝ}
-    (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
-    (hδβ : δ < cramerExponent A N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
+    (hsc : Supercritical A N)
     (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
     (hπ : Kernel.Invariant (Pkernel A N) π)
-    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0)
-    (hsupport : ∀ᵐ x ∂π, ∀ i, |x i| ≤ 1) :
-    0 < powerSingularityConstant A N π ∧
-      (∀ (B : Set (EuclideanSpace ℝ (Fin N))), MeasurableSet B →
-        normalizedAngularLaw N (frontier B) = 0 →
+    (hπ0 : π ({0} : Set (Fin N → ℝ)) = 0) :
+    ∃ β : ℝ, β ∈ Set.Ioo (0 : ℝ) (N : ℝ) ∧
+      A ^ (-β) * (N : ℝ) ^ (β / 2) * 2 ^ (-β / 2) *
+        Real.Gamma (((N : ℝ) - β) / 2) /
+          Real.Gamma ((N : ℝ) / 2) = 1 ∧
+      (∀ γ : ℝ, γ ∈ Set.Ioo (0 : ℝ) (N : ℝ) ∧
+        A ^ (-γ) * (N : ℝ) ^ (γ / 2) * 2 ^ (-γ / 2) *
+          Real.Gamma (((N : ℝ) - γ) / 2) /
+            Real.Gamma ((N : ℝ) / 2) = 1 → γ = β) ∧
+    ∃ c : ℝ, 0 < c ∧
+      (∀ (B : Set (Metric.sphere (0 : EuclideanSpace ℝ (Fin N)) 1)),
+        MeasurableSet B → normalizedSphereLaw N (frontier B) = 0 →
+          Filter.Tendsto
+            (fun s =>
+              ENNReal.ofReal (s ^ (-β)) *
+                π {x | 0 < gaussianEuclideanNorm N x ∧
+                  gaussianEuclideanNorm N x ≤ s ∧
+                  angular N x ∈ Subtype.val '' B})
+            (𝓝[>] (0 : ℝ))
+            (nhds (ENNReal.ofReal c * normalizedSphereLaw N B))) ∧
         Filter.Tendsto
           (fun s =>
-            ENNReal.ofReal (s ^ (-cramerExponent A N)) *
+            ENNReal.ofReal (s ^ (-β)) *
               π {x | 0 < gaussianEuclideanNorm N x ∧
-                gaussianEuclideanNorm N x ≤ s ∧ angular N x ∈ B})
+                gaussianEuclideanNorm N x ≤ s})
           (𝓝[>] (0 : ℝ))
-          (nhds (ENNReal.ofReal (powerSingularityConstant A N π) *
-            normalizedAngularLaw N B))) ∧
-      Filter.Tendsto
-        (fun s =>
-          ENNReal.ofReal (s ^ (-cramerExponent A N)) *
-            π {x | 0 < gaussianEuclideanNorm N x ∧
-              gaussianEuclideanNorm N x ≤ s})
-        (𝓝[>] (0 : ℝ))
-        (nhds (ENNReal.ofReal (powerSingularityConstant A N π)))
+          (nhds (ENNReal.ofReal c))
 :=
-  AbsorptionCutoff.MainTheorems.nd_power_singularity hA1 hN hdim hsc hδ0 hδ2 hδβ π hπ hπ0 hsupport
+  AbsorptionCutoff.MainTheorems.nd_power_singularity hA hN hsc π hπ hπ0
 
 end
 

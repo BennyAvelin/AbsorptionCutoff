@@ -30,6 +30,11 @@ noncomputable section
 def tvDist {E : Type*} [MeasurableSpace E] (μ ν : Measure E) : ℝ :=
   ⨆ s : {s : Set E // MeasurableSet s}, |(μ s.1).toReal - (ν s.1).toReal|
 
+/-- Total-variation cutoff at center `tCut` with window `w`. -/
+def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (nhds 1) ∧
+  Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (nhds 0)
+
 /-! ## Nearest-grid rounding -/
 
 /-- Scalar nearest-integer rounding on the unit grid, ties broken toward the grid
@@ -121,6 +126,31 @@ instance (A ρ : ℝ) (N : ℕ) : IsMarkovKernel (roundedPkernel A ρ N) := by
   unfold roundedPkernel
   exact Kernel.IsMarkovKernel.map _ (measurable_roundedPstep ρ N)
 
+/-! ## Canonical path space and absorption time -/
+
+/-- A homogeneous kernel viewed as a history-dependent kernel. -/
+def markovHistoryKernel {E : Type*} [MeasurableSpace E]
+    (κ : Kernel E E) (n : ℕ) :
+    Kernel ((i : Finset.Iic n) → E) E :=
+  Kernel.comap κ (fun x => x ⟨n, Finset.mem_Iic.mpr le_rfl⟩) (by fun_prop)
+
+instance {E : Type*} [MeasurableSpace E]
+    (κ : Kernel E E) [IsMarkovKernel κ] (n : ℕ) :
+    IsMarkovKernel (markovHistoryKernel κ n) := by
+  unfold markovHistoryKernel
+  infer_instance
+
+/-- Canonical path-space law for a homogeneous Markov chain. -/
+def markovPathMeasure {E : Type*} [MeasurableSpace E]
+    (μ₀ : Measure E) (κ : Kernel E E) [IsMarkovKernel κ] :
+    Measure (ℕ → E) :=
+  Kernel.trajMeasure μ₀ (markovHistoryKernel κ)
+
+/-- First hitting time of zero, with value `⊤` if zero is never hit. -/
+def absorptionTime {Ω β : Type*} [Zero β]
+    (X : ℕ → Ω → β) : Ω → WithTop ℕ :=
+  hittingAfter X {0} 0
+
 /-! ## Log-radial increments -/
 
 /-- Squared Euclidean norm on `Fin N → ℝ` (whose default norm is the sup norm). -/
@@ -143,6 +173,14 @@ def logRadialDrift (A : ℝ) (N : ℕ) : ℝ :=
 def FixedWidthSubcritical (A : ℝ) (N : ℕ) : Prop :=
   logRadialDrift A N < 0
 
+/-- Critical width in its equivalent log-drift characterization. -/
+def fixedWidthCriticalWidth (N : ℕ) : ℝ :=
+  Real.exp (-logRadialDrift 1 N)
+
+/-- `gamma_{A,N} = log (A_c(N) / A)`. -/
+def fixedWidthGamma (A : ℝ) (N : ℕ) : ℝ :=
+  Real.log (fixedWidthCriticalWidth N / A)
+
 /-! ## The canonical innovation sequence -/
 
 /-- Sample space of the canonical innovation sequence. -/
@@ -160,6 +198,12 @@ instance (N : ℕ) : IsProbabilityMeasure (fixedWidthGaussianMeasure N) := by
 /-- Standard deviation of the log-radial increment. -/
 def fixedWidthStdDev (A : ℝ) (N : ℕ) : ℝ :=
   Real.sqrt (variance (logRadialIncrement A N) (gaussianVec N))
+
+/-- `sigma_N = sqrt (Var (log chi_N))`. -/
+def fixedWidthSigma (N : ℕ) : ℝ :=
+  Real.sqrt
+    (variance (fun g : Fin N → ℝ ↦ Real.log (gaussianEuclideanNorm N g))
+      (gaussianVec N))
 
 /-- The log-radial increment process on the canonical sample space. -/
 def fixedWidthIncrementProcess (A : ℝ) (N : ℕ) :
@@ -183,6 +227,24 @@ def fixedWidthInitialLogMeshScale
     (R₀ : ℝ) (ρ : ℕ → ℝ) (r : ℕ) : ℝ :=
   Real.log (R₀ / ρ r)
 
+/-- Manuscript observation time `t_ρ(a)`. -/
+def fixedWidthPaperObservationTime
+    (A : ℝ) (N : ℕ) (R₀ : ℝ) (ρ : ℕ → ℝ) (a : ℝ) (r : ℕ) : ℕ :=
+  canonicalTime (fixedWidthGamma A N) (fixedWidthSigma N) a
+    (fixedWidthInitialLogMeshScale R₀ ρ) 0 r
+
+/-- Cutoff center `L_ρ / gamma_{A,N}`. -/
+def fixedWidthPaperCutoffTime
+    (A : ℝ) (N : ℕ) (R₀ : ℝ) (ρ : ℕ → ℝ) : ℕ → ℝ :=
+  fun r ↦ fixedWidthInitialLogMeshScale R₀ ρ r / fixedWidthGamma A N
+
+/-- Cutoff window `sigma_N gamma_{A,N}^{-3/2} sqrt L_ρ`. -/
+def fixedWidthPaperCutoffWindow
+    (A : ℝ) (N : ℕ) (R₀ : ℝ) (ρ : ℕ → ℝ) : ℕ → ℝ :=
+  fun r ↦ (fixedWidthSigma N /
+      (fixedWidthGamma A N * Real.sqrt (fixedWidthGamma A N))) *
+    Real.sqrt (fixedWidthInitialLogMeshScale R₀ ρ r)
+
 /-! ## Bridges to the development
 
 Each audit definition was copied verbatim from its source module, so every bridge
@@ -190,6 +252,8 @@ is `rfl`. Stating them makes any future divergence a build error. -/
 
 lemma tvDist_eq {E : Type*} [MeasurableSpace E] (mu nu : Measure E) :
     tvDist mu nu = AbsorptionCutoff.tvDist mu nu := rfl
+
+lemma HasCutoff_eq : HasCutoff = AbsorptionCutoff.HasCutoff := rfl
 
 lemma Q₁_eq : Q₁ = AbsorptionCutoff.Q₁ := rfl
 
@@ -212,6 +276,18 @@ lemma roundedPstep_eq (ρ : ℝ) (N : ℕ) :
 lemma roundedPkernel_eq (A ρ : ℝ) (N : ℕ) :
     roundedPkernel A ρ N = AbsorptionCutoff.roundedPkernel A ρ N := rfl
 
+lemma markovHistoryKernel_eq {E : Type*} [MeasurableSpace E]
+    (κ : Kernel E E) [IsMarkovKernel κ] :
+    markovHistoryKernel κ = AbsorptionCutoff.markovHistoryKernel κ := rfl
+
+lemma markovPathMeasure_eq {E : Type*} [MeasurableSpace E]
+    (μ₀ : Measure E) (κ : Kernel E E) [IsMarkovKernel κ] :
+    markovPathMeasure μ₀ κ = AbsorptionCutoff.markovPathMeasure μ₀ κ := rfl
+
+lemma absorptionTime_eq {Ω β : Type*} [Zero β] :
+    (absorptionTime : (ℕ → Ω → β) → Ω → WithTop ℕ) =
+      AbsorptionCutoff.absorptionTime := rfl
+
 lemma gaussianSquaredNorm_eq (N : ℕ) :
     gaussianSquaredNorm N = AbsorptionCutoff.gaussianSquaredNorm N := rfl
 
@@ -227,11 +303,20 @@ lemma logRadialDrift_eq (A : ℝ) (N : ℕ) :
 lemma FixedWidthSubcritical_eq (A : ℝ) (N : ℕ) :
     FixedWidthSubcritical A N = AbsorptionCutoff.FixedWidthSubcritical A N := rfl
 
+lemma fixedWidthCriticalWidth_eq :
+    fixedWidthCriticalWidth = AbsorptionCutoff.fixedWidthCriticalWidth := rfl
+
+lemma fixedWidthGamma_eq :
+    fixedWidthGamma = AbsorptionCutoff.fixedWidthGamma := rfl
+
 lemma fixedWidthGaussianMeasure_eq (N : ℕ) :
     fixedWidthGaussianMeasure N = AbsorptionCutoff.fixedWidthGaussianMeasure N := rfl
 
 lemma fixedWidthStdDev_eq (A : ℝ) (N : ℕ) :
     fixedWidthStdDev A N = AbsorptionCutoff.fixedWidthStdDev A N := rfl
+
+lemma fixedWidthSigma_eq :
+    fixedWidthSigma = AbsorptionCutoff.fixedWidthSigma := rfl
 
 lemma fixedWidthIncrementProcess_eq (A : ℝ) (N : ℕ) :
     fixedWidthIncrementProcess A N = AbsorptionCutoff.fixedWidthIncrementProcess A N := rfl
@@ -244,37 +329,68 @@ lemma canonicalTime_eq : canonicalTime = AbsorptionCutoff.canonicalTime := rfl
 lemma fixedWidthInitialLogMeshScale_eq :
     fixedWidthInitialLogMeshScale = AbsorptionCutoff.fixedWidthInitialLogMeshScale := rfl
 
+lemma fixedWidthPaperObservationTime_eq :
+    fixedWidthPaperObservationTime =
+      AbsorptionCutoff.fixedWidthPaperObservationTime := rfl
+
+lemma fixedWidthPaperCutoffTime_eq :
+    fixedWidthPaperCutoffTime =
+      AbsorptionCutoff.fixedWidthPaperCutoffTime := rfl
+
+lemma fixedWidthPaperCutoffWindow_eq :
+    fixedWidthPaperCutoffWindow =
+      AbsorptionCutoff.fixedWidthPaperCutoffWindow := rfl
+
 /-! ## The theorem under audit -/
 
 /-- **Fixed-width vanishing-mesh cutoff** (paper
 `thm:rounded-gaussian-nearest-cutoff`). In fixed positive dimension `N` and
 subcritical fixed width `A`, started from any `x₀ ≠ 0`, along any positive mesh
-sequence `ρ r → 0⁺`, the total-variation distance of the rounded chain from the
-absorbing origin at the canonical time with Gaussian offset `a` converges to
-`Φ(−a)`. -/
+sequence `ρ r → 0⁺`, total variation equals absorption survival and has profile
+`Φ(−a)` for every fixed `a`; in particular the family has cutoff at the stated
+center and window. -/
 theorem rounded_gaussian_nearest_cutoff
     {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
-    (hsub : FixedWidthSubcritical A N)
+    (hcritical : A < fixedWidthCriticalWidth N)
     (x0 : Fin N → ℝ) (hx0 : 0 < gaussianEuclideanNorm N x0)
     (ρ : ℕ → ℝ) (hρpos : ∀ r, 0 < ρ r)
-    (hρ : Tendsto ρ atTop (nhdsWithin 0 (Set.Ioi 0)))
-    (a : ℝ) :
-    Tendsto
-      (fun r ↦
+    (hρ : Tendsto ρ atTop (nhdsWithin 0 (Set.Ioi 0))) :
+    (∀ a : ℝ,
+      (∀ r,
         tvDist
-          (((roundedPkernel A (ρ r) N) ^
-            (canonicalTime
-              (∫ x, fixedWidthIncrementProcess A N 0 x
-                ∂fixedWidthGaussianMeasure N)
-              (fixedWidthStdDev A N) a
-              (fixedWidthInitialLogMeshScale
-                (gaussianEuclideanNorm N x0) ρ) 0 r))
-            (Qρ (ρ r) x0))
+            (((roundedPkernel A (ρ r) N) ^
+              (fixedWidthPaperObservationTime A N
+                (gaussianEuclideanNorm N x0) ρ a r))
+              (Qρ (ρ r) x0))
+            (Measure.dirac (0 : Fin N → ℝ)) =
+          ((markovPathMeasure (Measure.dirac (Qρ (ρ r) x0))
+              (roundedPkernel A (ρ r) N))
+            {ω | ((fixedWidthPaperObservationTime A N
+                (gaussianEuclideanNorm N x0) ρ a r : ℕ) : WithTop ℕ) <
+              absorptionTime
+                (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) ↦ ω s) ω}).toReal) ∧
+      Tendsto
+        (fun r ↦
+          tvDist
+            (((roundedPkernel A (ρ r) N) ^
+              (fixedWidthPaperObservationTime A N
+                (gaussianEuclideanNorm N x0) ρ a r))
+              (Qρ (ρ r) x0))
+            (Measure.dirac (0 : Fin N → ℝ)))
+        atTop (nhds (ProbabilityTheory.cdf
+          (ProbabilityTheory.gaussianReal 0 1) (-a)))) ∧
+    HasCutoff
+      (fun r t ↦
+        tvDist
+          (((roundedPkernel A (ρ r) N) ^ t) (Qρ (ρ r) x0))
           (Measure.dirac (0 : Fin N → ℝ)))
-      atTop (nhds (ProbabilityTheory.cdf
-        (ProbabilityTheory.gaussianReal 0 1) (-a)))
+      (fixedWidthPaperCutoffTime A N
+        (gaussianEuclideanNorm N x0) ρ)
+      (fixedWidthPaperCutoffWindow A N
+        (gaussianEuclideanNorm N x0) ρ)
 :=
-  AbsorptionCutoff.MainTheorems.rounded_gaussian_nearest_cutoff hA hN hsub x0 hx0 ρ hρpos hρ a
+  AbsorptionCutoff.MainTheorems.rounded_gaussian_nearest_cutoff
+    hA hN hcritical x0 hx0 ρ hρpos hρ
 
 end
 

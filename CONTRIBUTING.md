@@ -5,11 +5,21 @@ solicited collaborative project, but issues and pull requests are welcome.
 
 ## Building locally
 
+Use the native Lean build for development. Lake builds independent modules in
+parallel; a single `lake env lean <file>` invocation is useful for a focused
+check but is largely serial and will not show the same CPU utilization.
+
 ```bash
 lake exe cache get   # prebuilt Mathlib oleans -- do not skip
-lake build           # the library (default target)
-lake build Audit     # the Mathlib-only comparator surface
+lake build           # the complete library (8,741 jobs in the current tree)
+lake build Audit     # library plus the audit surface (8,754 jobs)
 ```
+
+The current checkout completes both native targets successfully. The audit
+target emits the seven expected warnings for the intentional `sorry`s in
+`Audit/*/Challenge.lean`; those are statement placeholders used by the
+comparator and are not library gaps. Use Lake's `-j` option to control native
+parallelism when needed, for example `lake build -j 8 Audit`.
 
 The toolchain is pinned in [`lean-toolchain`](lean-toolchain), so
 [`elan`](https://github.com/leanprover/elan) installs the right Lean
@@ -71,5 +81,10 @@ A few practical notes for working with a development of this size:
 ## Re-running the audit
 
 See the "Verified against a Mathlib-only statement" section of the
-[README](README.md). `scripts/audit-docker.sh` reproduces it locally in a pinned
-Linux image; `.github/workflows/comparator.yml` runs the same script in CI.
+[README](README.md). Native `lake build Audit` checks that the full audit
+surface elaborates. `scripts/audit-docker.sh` is the reproducibility and
+comparator-sandbox workflow: it runs the same build inside the pinned Linux
+image and then invokes `leanprover/comparator`. Docker is needed here because
+the comparator's Landlock sandbox cannot run directly on macOS; it is not
+required for ordinary Lean development. The GitHub workflow runs the same
+Docker-based comparator audit in CI.

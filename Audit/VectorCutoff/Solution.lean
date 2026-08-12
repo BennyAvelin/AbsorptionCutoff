@@ -24,18 +24,11 @@ open Filter MeasureTheory ProbabilityTheory Topology
 
 noncomputable section
 
-/-! ## Total variation and cutoff -/
+/-! ## Total variation -/
 
 /-- Total-variation distance `‖μ − ν‖_TV = sup_B |μ(B) − ν(B)|` over measurable `B`. -/
 def tvDist {E : Type*} [MeasurableSpace E] (μ ν : Measure E) : ℝ :=
   ⨆ s : {s : Set E // MeasurableSet s}, |(μ s.1).toReal - (ν s.1).toReal|
-
-/-- A family of distance profiles `d n t` has **cutoff** at time `tCut` with window
-`w`: rescaling time by `tCut n ± c * w n` drives the profile to `1` and to `0` as
-`c → ∞`. -/
-def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
-  Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (𝓝 1) ∧
-  Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (𝓝 0)
 
 /-! ## The scalar mean map -/
 
@@ -51,13 +44,6 @@ def V (A q : ℝ) : ℝ :=
 
 /-! ## Gaussian laws, maps, and kernels -/
 
-/-- Standard Gaussian measure on `ℝ^N`. -/
-def gaussianVec (N : ℕ) : Measure (Fin N → ℝ) :=
-  Measure.pi (fun _ => gaussianReal 0 1)
-
-instance (N : ℕ) : IsProbabilityMeasure (gaussianVec N) := by
-  unfold gaussianVec; infer_instance
-
 /-- Entry variance `A²/N` of the Gaussian weight matrix. -/
 def weightVar (A : ℝ) (N : ℕ) : NNReal := (A ^ 2 / N).toNNReal
 
@@ -71,48 +57,6 @@ instance (A : ℝ) (N : ℕ) : IsProbabilityMeasure (gaussianMat A N) := by
 /-- Normalized squared radius `r_N(x) = N⁻¹ ∑ᵢ xᵢ²`. -/
 def radiusSq (N : ℕ) (x : Fin N → ℝ) : ℝ :=
   (N : ℝ)⁻¹ * ∑ i, (x i) ^ 2
-
-/-- The squared-radius random map `F_{A,N}(q, g) = N⁻¹ ∑ᵢ tanh²(A√q · gᵢ)`. -/
-def Fmap (A : ℝ) (N : ℕ) (q : ℝ) (g : Fin N → ℝ) : ℝ :=
-  (N : ℝ)⁻¹ * ∑ i, Real.tanh (A * Real.sqrt q * g i) ^ 2
-
-lemma measurable_Fmap (A : ℝ) (N : ℕ) :
-    Measurable (fun p : ℝ × (Fin N → ℝ) => Fmap A N p.1 p.2) := by
-  apply Continuous.measurable
-  unfold Fmap
-  apply Continuous.const_mul
-  apply continuous_finsetSum
-  intro i _
-  exact (continuous_tanh.comp (by fun_prop)).pow 2
-
-/-- The scalar squared-radius chain on `ℝ`. -/
-def Kchain (A : ℝ) (N : ℕ) : Kernel ℝ ℝ :=
-  Kernel.map ((Kernel.deterministic id measurable_id).prod (Kernel.const ℝ (gaussianVec N)))
-    (fun p => Fmap A N p.1 p.2)
-
-instance (A : ℝ) (N : ℕ) : IsMarkovKernel (Kchain A N) := by
-  unfold Kchain
-  exact Kernel.IsMarkovKernel.map _ (measurable_Fmap A N)
-
-/-- The reconstruction map `J_{A,N}(q, g) = (tanh(A√q · gᵢ))ᵢ`. -/
-def Jmap (A : ℝ) (N : ℕ) (q : ℝ) (g : Fin N → ℝ) : Fin N → ℝ :=
-  fun i => Real.tanh (A * Real.sqrt q * g i)
-
-lemma measurable_Jmap (A : ℝ) (N : ℕ) :
-    Measurable (fun p : ℝ × (Fin N → ℝ) => Jmap A N p.1 p.2) := by
-  apply measurable_pi_iff.mpr
-  intro i
-  unfold Jmap
-  exact continuous_tanh.measurable.comp (by fun_prop)
-
-/-- The reconstruction kernel from a squared radius to a vector. -/
-def Jkernel (A : ℝ) (N : ℕ) : Kernel ℝ (Fin N → ℝ) :=
-  Kernel.map ((Kernel.deterministic id measurable_id).prod (Kernel.const ℝ (gaussianVec N)))
-    (fun p => Jmap A N p.1 p.2)
-
-instance (A : ℝ) (N : ℕ) : IsMarkovKernel (Jkernel A N) := by
-  unfold Jkernel
-  exact Kernel.IsMarkovKernel.map _ (measurable_Jmap A N)
 
 /-- The vector step map `tanh(𝖶x)`, applied coordinatewise. -/
 def Pstep (N : ℕ) (x : Fin N → ℝ) (W : Fin N → Fin N → ℝ) : Fin N → ℝ :=
@@ -166,25 +110,13 @@ is `rfl`. Stating them makes any future divergence a build error. -/
 lemma tvDist_eq {E : Type*} [MeasurableSpace E] (mu nu : Measure E) :
     tvDist mu nu = AbsorptionCutoff.tvDist mu nu := rfl
 
-lemma HasCutoff_eq : HasCutoff = AbsorptionCutoff.HasCutoff := rfl
-
 lemma V_eq : V = AbsorptionCutoff.V := rfl
-
-lemma gaussianVec_eq (N : ℕ) : gaussianVec N = AbsorptionCutoff.gaussianVec N := rfl
 
 lemma weightVar_eq (A : ℝ) (N : ℕ) : weightVar A N = AbsorptionCutoff.weightVar A N := rfl
 
 lemma gaussianMat_eq (A : ℝ) (N : ℕ) : gaussianMat A N = AbsorptionCutoff.gaussianMat A N := rfl
 
 lemma radiusSq_eq (N : ℕ) : radiusSq N = AbsorptionCutoff.radiusSq N := rfl
-
-lemma Fmap_eq (A : ℝ) (N : ℕ) : Fmap A N = AbsorptionCutoff.Fmap A N := rfl
-
-lemma Kchain_eq (A : ℝ) (N : ℕ) : Kchain A N = AbsorptionCutoff.Kchain A N := rfl
-
-lemma Jmap_eq (A : ℝ) (N : ℕ) : Jmap A N = AbsorptionCutoff.Jmap A N := rfl
-
-lemma Jkernel_eq (A : ℝ) (N : ℕ) : Jkernel A N = AbsorptionCutoff.Jkernel A N := rfl
 
 lemma Pstep_eq (N : ℕ) : Pstep N = AbsorptionCutoff.Pstep N := rfl
 
@@ -206,14 +138,12 @@ lemma supercriticalCutoffTime_eq' (A qStar q₀ : ℝ) (N : ℕ) :
 /-! ## The theorem under audit -/
 
 /-- **Supercritical vector cutoff** (paper `cor:gaussian-vector-cutoff`). Under the
-manuscript's coordinate-box and radius-convergence assumptions, there is a constant
-`C` and a family `ν` of scalar invariant laws, concentrated on `[0,1]`, away from
-the origin, and with `(q − qStar)²`-variance `O(1/N)`, whose reconstructions
-`J_{A,N} ∘ ν N` are invariant for the vector chain and away from the origin, such
-that the vector chain has total-variation cutoff at `supercriticalCutoffTime`
-with window `1`. -/
+manuscript's coordinate-box and radius-convergence assumptions, the vector chain
+has a unique nonzero invariant probability in every sufficiently large dimension
+and has total-variation cutoff at `supercriticalCutoffTime` with window `1`
+against that family. -/
 theorem gaussian_vector_cutoff
-    {A qStar q₀ b : ℝ}
+    {A qStar q₀ : ℝ}
     (x : (N : ℕ) → Fin N → ℝ)
     (hA : 1 < A)
     (hqStar : qStar ∈ Set.Ioo (0 : ℝ) 1)
@@ -225,31 +155,42 @@ theorem gaussian_vector_cutoff
     (hradius :
       Filter.Tendsto
         (fun N : ℕ => radiusSq N (x N))
-        Filter.atTop (nhds q₀))
-    (hb : 0 < b) :
-    ∃ C : ℝ, ∃ ν : ℕ → ProbabilityMeasure ℝ,
-      0 < C ∧
-      (∀ᶠ N : ℕ in Filter.atTop,
-        Kernel.Invariant (Kchain A N) (ν N : Measure ℝ) ∧
-        (ν N : Measure ℝ) ((Set.Icc (0 : ℝ) 1)ᶜ) = 0 ∧
-        (ν N : Measure ℝ) ({0} : Set ℝ) = 0 ∧
-        Integrable (fun q => (q - qStar) ^ 2) (ν N : Measure ℝ) ∧
-        (∫ q, (q - qStar) ^ 2 ∂(ν N : Measure ℝ)) ≤
-          C / (N : ℝ)) ∧
+        Filter.atTop (nhds q₀)) :
+    ∃ π : (N : ℕ) → ProbabilityMeasure (Fin N → ℝ),
       (∀ᶠ N : ℕ in Filter.atTop,
         Kernel.Invariant
-            (Pkernel A N)
-            ((Jkernel A N) ∘ₘ (ν N : Measure ℝ)) ∧
-          ((Jkernel A N) ∘ₘ (ν N : Measure ℝ))
-              ({0} : Set (Fin N → ℝ)) = 0) ∧
-      HasCutoff
-        (fun N t =>
-          tvDist (((Pkernel A N) ^ t) (x N))
-            ((Jkernel A N) ∘ₘ (ν N : Measure ℝ)))
-        (supercriticalCutoffTime A qStar q₀)
-        (fun _ => 1)
+            (Pkernel A N) (π N : Measure (Fin N → ℝ)) ∧
+          (π N : Measure (Fin N → ℝ))
+              ({0} : Set (Fin N → ℝ)) = 0 ∧
+          ∀ ρ : ProbabilityMeasure (Fin N → ℝ),
+            Kernel.Invariant
+                (Pkernel A N) (ρ : Measure (Fin N → ℝ)) →
+            (ρ : Measure (Fin N → ℝ))
+                ({0} : Set (Fin N → ℝ)) = 0 →
+            ρ = π N) ∧
+      Filter.Tendsto
+        (fun c : ℝ =>
+          Filter.liminf
+            (fun N : ℕ =>
+              tvDist
+                (((Pkernel A N) ^
+                    ⌊supercriticalCutoffTime A qStar q₀ N - c⌋₊) (x N))
+                (π N : Measure (Fin N → ℝ)))
+            Filter.atTop)
+        Filter.atTop (nhds 1) ∧
+      Filter.Tendsto
+        (fun c : ℝ =>
+          Filter.limsup
+            (fun N : ℕ =>
+              tvDist
+                (((Pkernel A N) ^
+                    ⌊supercriticalCutoffTime A qStar q₀ N + c⌋₊) (x N))
+                (π N : Measure (Fin N → ℝ)))
+            Filter.atTop)
+        Filter.atTop (nhds 0)
 :=
-  AbsorptionCutoff.MainTheorems.gaussian_vector_cutoff x hA hqStar hfix hq₀ hq₀ne hbox hradius hb
+  AbsorptionCutoff.MainTheorems.gaussian_vector_cutoff
+    x hA hqStar hfix hq₀ hq₀ne hbox hradius
 
 end
 

@@ -8,7 +8,7 @@ and stationary singularities for rounded Gaussian random dynamical systems*
 [![CI](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/build.yml/badge.svg)](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/build.yml)
 [![Comparator audit](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/comparator.yml/badge.svg)](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/comparator.yml)
 
-Release version: `1.0.0`
+Release version: `1.1.0`
 
 ## What this is
 
@@ -52,11 +52,11 @@ in [`CITATION.cff`](CITATION.cff), and in
 All seven are stated in [`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean).
 
 **Fixed-width vanishing-mesh cutoff** — `rounded_gaussian_nearest_cutoff`. Fix the
-dimension `N` and a subcritical width `A` (negative log-radial drift). Along any
-positive mesh sequence `ρ_r → 0`, the total-variation distance between the chain
-at the canonical observation time with Gaussian offset `a` and the absorbing
-`δ₀` converges to `Φ(−a)`. This is the cutoff *profile*, not merely a two-sided
-bound: the window is Gaussian and the limit is the standard normal CDF.
+dimension `N` and assume `0 < A < A_c(N)`. Along any positive mesh sequence
+`ρ_r → 0`, at the paper's floored time the total-variation distance equals the
+canonical absorption-time survival probability and converges to `Φ(−a)`. The
+same theorem includes `HasCutoff` at center `L_ρ/γ_{A,N}` with window
+`σ_N γ_{A,N}^{-3/2}√L_ρ` and Gaussian profile.
 
 **Fixed-precision dimension cutoff** — `subcritical_dimension_cutoff`. Fix the mesh
 `ρ ∈ (0,1)` and a width below the lattice threshold `A_lat`. As `N → ∞` the
@@ -125,14 +125,30 @@ permits only
 and sets `enable_nanoda: false`. All seven printed `Your solution is okay!` on
 2026-08-04.
 
-To reproduce the audit:
+For ordinary Lean development, build natively first:
+
+```bash
+lake exe cache get
+lake build           # complete library; parallel native build
+lake build Audit     # library plus all seven audit challenge/solutions
+```
+
+The current checkout completes both targets successfully. The audit target
+emits only the seven expected warnings for the intentional `sorry`s in the
+challenge files. Prefer `lake build` over `lake env lean <file>` when you want
+parallel compilation; the latter is a focused, mostly serial single-file
+check. Lake's `-j` option controls native parallelism.
+
+To reproduce the comparator audit in its pinned sandbox:
 
 ```bash
 docker build -f docker/audit.Dockerfile -t absorptioncutoff-audit .
 scripts/audit-docker.sh          # or: scripts/audit-docker.sh PowerSingularity
 ```
 
-The image pins comparator, `lean4export`, and `landrun`. Two caveats are stated
+Docker is used for the comparator's reproducible Linux/Landlock environment,
+not because Lean requires Docker for normal builds. The image pins comparator,
+`lean4export`, and `landrun`. Two caveats are stated
 in full in [`formalization.yaml`](formalization.yaml) and belong here too:
 the comparator is invoked through
 [`docker/landrun-argv-shim.sh`](docker/landrun-argv-shim.sh), which repairs an
@@ -158,18 +174,24 @@ toolchain is pinned in [`lean-toolchain`](lean-toolchain).
 
 ```bash
 lake exe cache get   # prebuilt Mathlib oleans -- avoids a multi-hour build
-lake build           # the library
-lake build Audit     # the Mathlib-only comparator surface
+lake build           # complete native library build
+lake build Audit     # complete native build plus audit surface
 ```
 
 `lake exe cache get` requires the committed
 [`lake-manifest.json`](lake-manifest.json), which pins the exact dependency
 revisions. `lake build Audit` elaborates the whole tree, the audit root, and the
-seven challenge/solution pairs (8,754 jobs) and emits exactly seven warnings — the
-seven intentional `sorry`s. Live build status and timings are in the
+seven challenge/solution pairs (8,755 jobs in the current tree) and emits exactly
+seven warnings — the seven intentional `sorry`s. Live build status and timings are in the
 [Actions tab](https://github.com/BennyAvelin/AbsorptionCutoff/actions) and the
 badges above. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for practical notes on
 working with a development of this size.
+
+The pinned local comparator audit was rerun on 2026-08-12 from the merged
+`main` branch with `scripts/audit-docker.sh`. All seven configurations printed
+`Your solution is okay!` and passed: fixed-width, dimension, metastability,
+fixed-dimensional absorption, scalar cutoff, vector cutoff, and power
+singularity. The full per-target record is in [`UPDATE_PLAN.md`](UPDATE_PLAN.md).
 
 To use the library, `import AbsorptionCutoff` pulls in the whole development; the public
 results are in `import AbsorptionCutoff.MainTheorems`.

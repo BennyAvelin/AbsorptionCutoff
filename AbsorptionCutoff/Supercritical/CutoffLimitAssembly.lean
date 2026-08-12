@@ -1561,6 +1561,74 @@ theorem
     exists_reconstructed_invariant_vector_family_hasCutoff
       x hA hqStar hfix hq₀ hq₀ne hradius hradiusMem hb
 
+/-- Under the manuscript's coordinate-box and radius-convergence assumptions,
+the vector chain has a unique nonzero invariant probability in every sufficiently
+large dimension and has supercritical total-variation cutoff with window one
+against that family. -/
+theorem
+    exists_unique_nonzero_invariant_vector_family_cutoff_of_forall_mem_Icc
+    {A qStar q₀ : ℝ}
+    (x : (N : ℕ) → Fin N → ℝ)
+    (hA : 1 < A)
+    (hqStar : qStar ∈ Set.Ioo (0 : ℝ) 1)
+    (hfix : V A qStar = qStar)
+    (hq₀ : q₀ ∈ Set.Ioc (0 : ℝ) 1)
+    (hq₀ne : q₀ ≠ qStar)
+    (hbox :
+      ∀ N : ℕ, ∀ i, x N i ∈ Set.Icc (-1 : ℝ) 1)
+    (hradius :
+      Filter.Tendsto
+        (fun N : ℕ => radiusSq N (x N))
+        Filter.atTop (nhds q₀)) :
+    ∃ π : (N : ℕ) → ProbabilityMeasure (Fin N → ℝ),
+      (∀ᶠ N : ℕ in Filter.atTop,
+        Kernel.Invariant
+            (Pkernel A N) (π N : Measure (Fin N → ℝ)) ∧
+          (π N : Measure (Fin N → ℝ))
+              ({0} : Set (Fin N → ℝ)) = 0 ∧
+          ∀ ρ : ProbabilityMeasure (Fin N → ℝ),
+            Kernel.Invariant
+                (Pkernel A N) (ρ : Measure (Fin N → ℝ)) →
+            (ρ : Measure (Fin N → ℝ))
+                ({0} : Set (Fin N → ℝ)) = 0 →
+            ρ = π N) ∧
+      Filter.Tendsto
+        (fun c : ℝ =>
+          Filter.liminf
+            (fun N : ℕ =>
+              tvDist
+                (((Pkernel A N) ^
+                    ⌊supercriticalCutoffTime A qStar q₀ N - c⌋₊) (x N))
+                (π N : Measure (Fin N → ℝ)))
+            Filter.atTop)
+        Filter.atTop (nhds 1) ∧
+      Filter.Tendsto
+        (fun c : ℝ =>
+          Filter.limsup
+            (fun N : ℕ =>
+              tvDist
+                (((Pkernel A N) ^
+                    ⌊supercriticalCutoffTime A qStar q₀ N + c⌋₊) (x N))
+                (π N : Measure (Fin N → ℝ)))
+            Filter.atTop)
+        Filter.atTop (nhds 0) := by
+  obtain ⟨C, ν, hC, hν, hvector, hcutoff⟩ :=
+    exists_reconstructed_invariant_vector_family_hasCutoff_of_forall_mem_Icc
+      (b := 1) x hA hqStar hfix hq₀ hq₀ne hbox hradius (by norm_num)
+  let π : (N : ℕ) → ProbabilityMeasure (Fin N → ℝ) := fun N =>
+    ⟨(Jkernel A N) ∘ₘ (ν N : Measure ℝ), inferInstance⟩
+  refine ⟨π, ?_, ?_⟩
+  · filter_upwards [hvector, Filter.eventually_atTop.2 ⟨1, fun _ hN => hN⟩]
+      with N hvectorN hN
+    refine ⟨hvectorN.1, hvectorN.2, ?_⟩
+    intro ρ hρ hρ0
+    apply ProbabilityMeasure.toMeasure_injective
+    exact invariant_probability_unique_Pkernel_of_apply_singleton_zero
+      (zero_lt_one.trans hA) (Nat.zero_lt_of_lt hN)
+      (ρ : Measure (Fin N → ℝ)) (π N : Measure (Fin N → ℝ))
+      hρ hvectorN.1 hρ0 hvectorN.2
+  · simpa [HasCutoff, π] using hcutoff
+
 /-- One origin-free invariant scalar family carries both fixed-shift cutoff
 profiles, with every constant selected before the shift. -/
 theorem
@@ -1887,5 +1955,93 @@ theorem
     exists_stationary_family_hasCutoff
       (fun N => radiusSq N (x N))
       hA hqStar hfix hq₀ hq₀ne hradius hradiusMem hb
+
+/-- Under the manuscript's coordinate-box and radius-convergence assumptions,
+the scalar squared-radius chain has a unique origin-free invariant law in every
+sufficiently large dimension, and cutoff relative to those laws. This is the
+paper-facing form of `exists_stationary_family_hasCutoff_of_forall_mem_Icc`;
+the latter additionally records support and variance estimates used in its
+proof. -/
+theorem
+    exists_eventually_unique_nonzero_invariant_family_hasCutoff_of_forall_mem_Icc
+    {A qStar q₀ : ℝ}
+    (x : (N : ℕ) → Fin N → ℝ)
+    (hA : 1 < A)
+    (hqStar : qStar ∈ Set.Ioo (0 : ℝ) 1)
+    (hfix : V A qStar = qStar)
+    (hq₀ : q₀ ∈ Set.Ioc (0 : ℝ) 1)
+    (hq₀ne : q₀ ≠ qStar)
+    (hbox :
+      ∀ N : ℕ, ∀ i, x N i ∈ Set.Icc (-1 : ℝ) 1)
+    (hradius :
+      Filter.Tendsto
+        (fun N : ℕ => radiusSq N (x N))
+        Filter.atTop (nhds q₀)) :
+    ∃ ν : ℕ → ProbabilityMeasure ℝ,
+      (∀ᶠ N : ℕ in Filter.atTop,
+        Kernel.Invariant (Kchain A N) (ν N : Measure ℝ) ∧
+        (ν N : Measure ℝ) ({0} : Set ℝ) = 0 ∧
+        ∀ ρ : ProbabilityMeasure ℝ,
+          Kernel.Invariant (Kchain A N) (ρ : Measure ℝ) →
+          (ρ : Measure ℝ) ({0} : Set ℝ) = 0 →
+          ρ = ν N) ∧
+      HasCutoff
+        (fun N t =>
+          tvDist
+            (((Kchain A N) ^ t) (radiusSq N (x N)))
+            (ν N : Measure ℝ))
+        (supercriticalCutoffTime A qStar q₀)
+        (fun _ => 1) := by
+  obtain ⟨C, ν, hC, hν, hcutoff⟩ :=
+    exists_stationary_family_hasCutoff_of_forall_mem_Icc
+      (b := 1) x hA hqStar hfix hq₀ hq₀ne hbox hradius zero_lt_one
+  refine ⟨ν, ?_, hcutoff⟩
+  filter_upwards [hν, Filter.eventually_gt_atTop 0] with N hνN hN
+  refine ⟨hνN.1, hνN.2.2.1, ?_⟩
+  intro ρ hρ hρ0
+  exact invariant_probability_unique_Kchain_of_apply_singleton_zero
+    (zero_lt_one.trans hA) hN ρ (ν N) hρ hνN.1 hρ0 hνN.2.2.1
+
+/-- Paper-facing scalar cutoff theorem. In every sufficiently large dimension,
+`ν N` is characterized as the unique probability law that is both nonzero and
+invariant for `Kchain A N`; cutoff holds relative to this same family. -/
+theorem
+    exists_unique_nonzero_invariant_family_hasCutoff_of_forall_mem_Icc
+    {A qStar q₀ : ℝ}
+    (x : (N : ℕ) → Fin N → ℝ)
+    (hA : 1 < A)
+    (hqStar : qStar ∈ Set.Ioo (0 : ℝ) 1)
+    (hfix : V A qStar = qStar)
+    (hq₀ : q₀ ∈ Set.Ioc (0 : ℝ) 1)
+    (hq₀ne : q₀ ≠ qStar)
+    (hbox :
+      ∀ N : ℕ, ∀ i, x N i ∈ Set.Icc (-1 : ℝ) 1)
+    (hradius :
+      Filter.Tendsto
+        (fun N : ℕ => radiusSq N (x N))
+        Filter.atTop (nhds q₀)) :
+    ∃ ν : ℕ → ProbabilityMeasure ℝ,
+      (∀ᶠ N : ℕ in Filter.atTop, ∀ ρ : ProbabilityMeasure ℝ,
+        ((ρ : Measure ℝ) ({0} : Set ℝ) = 0 ∧
+          Kernel.Invariant (Kchain A N) (ρ : Measure ℝ)) ↔
+        ρ = ν N) ∧
+      HasCutoff
+        (fun N t =>
+          tvDist
+            (((Kchain A N) ^ t) (radiusSq N (x N)))
+            (ν N : Measure ℝ))
+        (supercriticalCutoffTime A qStar q₀)
+        (fun _ => 1) := by
+  obtain ⟨ν, hν, hcutoff⟩ :=
+    exists_eventually_unique_nonzero_invariant_family_hasCutoff_of_forall_mem_Icc
+      x hA hqStar hfix hq₀ hq₀ne hbox hradius
+  refine ⟨ν, ?_, hcutoff⟩
+  filter_upwards [hν] with N hνN
+  intro ρ
+  constructor
+  · rintro ⟨hρ0, hρ⟩
+    exact hνN.2.2 ρ hρ hρ0
+  · rintro rfl
+    exact ⟨hνN.2.1, hνN.1⟩
 
 end AbsorptionCutoff

@@ -12,7 +12,7 @@ This file is the comparator challenge surface for the paper's supercritical
 scalar cutoff `thm:gaussian-process-cutoff`: in the supercritical regime the
 scalar squared-radius chain exhibits total-variation cutoff, in the dimension
 `N`, at `supercriticalCutoffTime` with window `1`, against an eventually unique
-family of invariant laws whose `(q − qStar)²`-variance is `O(1/N)`.
+family of nonzero invariant laws.
 
 It is the scalar half of the pair whose vector form is audited in
 `Audit/VectorCutoff/`; the two statements share most of their vocabulary.
@@ -122,14 +122,13 @@ def supercriticalCutoffTime (A qStar q₀ : ℝ) (N : ℕ) : ℝ :=
 /-! ## The theorem under audit -/
 
 /-- **Supercritical scalar cutoff** (paper `thm:gaussian-process-cutoff`). Under
-the manuscript's coordinate-box and radius-convergence assumptions, there is a
-constant `C` and a family `ν` of invariant laws for the scalar squared-radius
-chain, concentrated on `[0,1]`, away from the origin, and with
-`(q − qStar)²`-variance at most `C/N`, such that the chain started at
-`radiusSq N (x N)` has total-variation cutoff at `supercriticalCutoffTime` with
+the manuscript's coordinate-box and radius-convergence assumptions, the scalar
+squared-radius chain has a unique nonzero invariant law in every sufficiently
+large dimension, and the chain started at `radiusSq N (x N)` has
+total-variation cutoff relative to those laws at `supercriticalCutoffTime` with
 window `1`. -/
 theorem gaussian_process_cutoff
-    {A qStar q₀ b : ℝ}
+    {A qStar q₀ : ℝ}
     (x : (N : ℕ) → Fin N → ℝ)
     (hA : 1 < A)
     (hqStar : qStar ∈ Set.Ioo (0 : ℝ) 1)
@@ -141,17 +140,12 @@ theorem gaussian_process_cutoff
     (hradius :
       Filter.Tendsto
         (fun N : ℕ => radiusSq N (x N))
-        Filter.atTop (nhds q₀))
-    (hb : 0 < b) :
-    ∃ C : ℝ, ∃ ν : ℕ → ProbabilityMeasure ℝ,
-      0 < C ∧
-      (∀ᶠ N : ℕ in Filter.atTop,
-        Kernel.Invariant (Kchain A N) (ν N : Measure ℝ) ∧
-        (ν N : Measure ℝ) ((Set.Icc (0 : ℝ) 1)ᶜ) = 0 ∧
-        (ν N : Measure ℝ) ({0} : Set ℝ) = 0 ∧
-        Integrable (fun q => (q - qStar) ^ 2) (ν N : Measure ℝ) ∧
-        (∫ q, (q - qStar) ^ 2 ∂(ν N : Measure ℝ)) ≤
-          C / (N : ℝ)) ∧
+        Filter.atTop (nhds q₀)) :
+    ∃ ν : ℕ → ProbabilityMeasure ℝ,
+      (∀ᶠ N : ℕ in Filter.atTop, ∀ ρ : ProbabilityMeasure ℝ,
+        ((ρ : Measure ℝ) ({0} : Set ℝ) = 0 ∧
+          Kernel.Invariant (Kchain A N) (ρ : Measure ℝ)) ↔
+        ρ = ν N) ∧
       HasCutoff
         (fun N t =>
           tvDist

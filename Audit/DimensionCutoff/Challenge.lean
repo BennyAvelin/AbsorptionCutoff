@@ -21,6 +21,9 @@ from Mathlib primitives. The source correspondences are:
 * `tvDist`: `AbsorptionCutoff/Cutoff.lean`;
 * `weightVar`, `gaussianMat`, `Pstep`: `AbsorptionCutoff/VectorReduction.lean`;
 * `roundedPstep`, `roundedPkernel`: `AbsorptionCutoff/RoundedVectorReduction.lean`;
+* `markovHistoryKernel`, `markovPathMeasure`:
+  `AbsorptionCutoff/MarkovTrajectory.lean`;
+* `absorptionTime`: `AbsorptionCutoff/AbsorptionTime.lean`;
 * `latticeProfile`, `latticeThresholdSq`, `latticeThreshold`, `roundedMeanMap`:
   `AbsorptionCutoff/Lattice.lean`;
 * `fixedPrecisionScale`, `roundedOrbit`, `roundedOrbitEntrance`:
@@ -128,6 +131,34 @@ instance (A ρ : ℝ) (N : ℕ) : IsMarkovKernel (roundedPkernel A ρ N) := by
   unfold roundedPkernel
   exact Kernel.IsMarkovKernel.map _ (measurable_roundedPstep ρ N)
 
+/-! ## Canonical path law and absorption time -/
+
+/-- Regard a homogeneous kernel as a history-dependent kernel by reading only
+the last coordinate of the history. -/
+def markovHistoryKernel {E : Type*} [MeasurableSpace E]
+    (κ : Kernel E E) (n : ℕ) :
+    Kernel ((i : Finset.Iic n) → E) E :=
+  Kernel.comap κ (fun x => x ⟨n, Finset.mem_Iic.mpr le_rfl⟩) (by fun_prop)
+
+instance {E : Type*} [MeasurableSpace E]
+    (κ : Kernel E E) [IsMarkovKernel κ] (n : ℕ) :
+    IsMarkovKernel (markovHistoryKernel κ n) := by
+  unfold markovHistoryKernel
+  infer_instance
+
+/-- The canonical path-space law obtained by starting from `μ₀` and iterating
+the homogeneous Markov kernel `κ`. -/
+def markovPathMeasure {E : Type*} [MeasurableSpace E]
+    (μ₀ : Measure E) (κ : Kernel E E) [IsMarkovKernel κ] :
+    Measure (ℕ → E) :=
+  Kernel.trajMeasure μ₀ (markovHistoryKernel κ)
+
+/-- The first time at or after zero when a process hits the absorbing state
+`0`, with value `⊤` if it never does. -/
+def absorptionTime {Ω β : Type*} [Zero β]
+    (X : ℕ → Ω → β) : Ω → WithTop ℕ :=
+  hittingAfter X {0} 0
+
 /-! ## The lattice threshold -/
 
 /-- The lattice profile `m(α) = E[Q₁(α G)²]`, `G ∼ 𝒩(0,1)`. -/
@@ -174,24 +205,50 @@ def roundedDimensionCutoffTime
   roundedOrbitEntrance A ρ (roundedInitialRadius ρ N x)
     (fixedPrecisionScale N)
 
+/-- The paper's macroscopic rounded-initial-radius hypothesis. -/
+def macroscopicRoundedInitialRadii
+    (ρ : ℝ) (x : ∀ N : ℕ, Fin N → ℝ) : Prop :=
+  0 < Filter.liminf
+    (fun N : ℕ => roundedInitialRadius ρ N (x N)) Filter.atTop
+
 /-! ## The theorem under audit -/
 
-/-- **Fixed-precision dimension cutoff** (paper `thm:subcritical-dimension-cutoff`).
-Below the lattice threshold, for meshes `ρ ∈ (0,1)` and starting vectors with
-coordinates in `[-1,1]` whose cutoff times diverge, the rounded vector chain
-started at `Qρ ρ (x N)` is at total-variation distance tending to `1` from the
-absorbing origin one step before the cutoff time, and to `0` two steps after. -/
+/-- **Subcritical dimension cutoff** (paper
+`thm:subcritical-dimension-cutoff:intro` and the complete displays of
+`thm:subcritical-dimension-cutoff`). Below the lattice threshold, macroscopic
+rounded initial radii imply divergence of the cutoff times and the exact
+`-1`/`+2` survival and total-variation limits. -/
 theorem subcritical_dimension_cutoff
     {A ρ : ℝ}
     (hA : 0 < A) (hA_lt : A < latticeThreshold)
     (hρ : 0 < ρ) (hρ_lt : ρ < 1)
     (x : ∀ N : ℕ, Fin N → ℝ)
     (hx : ∀ N : ℕ, ∀ i : Fin N, |x N i| ≤ 1)
-    (htime :
-      Filter.Tendsto
-        (fun N : ℕ => roundedDimensionCutoffTime A ρ N (x N))
-        Filter.atTop Filter.atTop) :
+    (hmacro : macroscopicRoundedInitialRadii ρ x) :
     Filter.Tendsto
+        (fun N : ℕ => roundedDimensionCutoffTime A ρ N (x N))
+        Filter.atTop Filter.atTop ∧
+      ((Filter.Tendsto
+        (fun N : ℕ =>
+          (markovPathMeasure
+              (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+            {ω |
+              ((roundedDimensionCutoffTime A ρ N (x N) - 1 : ℕ) :
+                  WithTop ℕ) <
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+        Filter.atTop (𝓝 1) ∧
+      Filter.Tendsto
+        (fun N : ℕ =>
+          (markovPathMeasure
+              (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+            {ω |
+              ((roundedDimensionCutoffTime A ρ N (x N) + 2 : ℕ) :
+                  WithTop ℕ) <
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+        Filter.atTop (𝓝 0)) ∧
+      (Filter.Tendsto
         (fun N : ℕ =>
           tvDist
             (((roundedPkernel A ρ N) ^
@@ -206,7 +263,7 @@ theorem subcritical_dimension_cutoff
                 (roundedDimensionCutoffTime A ρ N (x N) + 2))
               (Qρ ρ (x N)))
             (Measure.dirac (0 : Fin N → ℝ)))
-        Filter.atTop (𝓝 0) := by
+        Filter.atTop (𝓝 0))) := by
   sorry
 
 end

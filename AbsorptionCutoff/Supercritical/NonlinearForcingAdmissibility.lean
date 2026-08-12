@@ -291,8 +291,7 @@ lemma integrable_exp_fst_logPolarLaw_of_integrable_neg_rpow {N : ℕ} {α : ℝ}
 /-- The subcritical invariant-law moment at exponent `β - δ`, expressed in
 log-polar coordinates. -/
 lemma integrable_exp_cramerExponent_sub_fst_logPolarLaw_of_invariant_Pkernel
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδβ : δ < cramerExponent A N)
     (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
@@ -306,7 +305,7 @@ lemma integrable_exp_cramerExponent_sub_fst_logPolarLaw_of_invariant_Pkernel
   have hpβ : 2 * ((cramerExponent A N - δ) / 2) <
       cramerExponent A N := by linarith
   have hm := integrable_neg_rpow_gaussianEuclideanNorm_of_invariant_Pkernel
-    hA1 hN hdim hsc hp hpβ π hπ hπ0
+    hA hN hsc hp hpβ π hπ hπ0
   have hm' : Integrable
       (fun x => gaussianEuclideanNorm N x ^ (-(cramerExponent A N - δ))) π := by
     convert hm using 1
@@ -366,8 +365,7 @@ lemma integrable_rpow_mul_polarEnvelope_of_integrable_exp_tilt
 /-- Under the invariant-law hypotheses, every shifted forcing majorant is
 integrable. -/
 lemma integrable_rpow_mul_polarEnvelope_of_invariant_Pkernel
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδβ : δ < cramerExponent A N)
     (π : Measure (Fin N → ℝ)) [IsProbabilityMeasure π]
@@ -377,18 +375,16 @@ lemma integrable_rpow_mul_polarEnvelope_of_invariant_Pkernel
       (fun p : ℝ × EuclideanSpace ℝ (Fin N) =>
         Real.exp (-p.1) ^ δ * polarEnvelope N (y - p.1))
       (logPolarLaw N π) := by
-  have hNpos : 0 < N := by omega
-  have hβmem := cramerExponent_mem (lt_trans zero_lt_one hA1) hNpos hsc
+  have hβmem := cramerExponent_mem hA hN hsc
   apply integrable_rpow_mul_polarEnvelope_of_integrable_exp_tilt
     hβmem.1.le hβmem.2.le hδ0.le π
   exact integrable_exp_cramerExponent_sub_fst_logPolarLaw_of_invariant_Pkernel
-    hA1 hN hdim hsc hδ0 hδβ π hπ hπ0
+    hA hN hsc hδ0 hδβ π hπ hπ0
 
 /-- The invariant-law nonlinear forcing is globally controlled by the averaged
 polar envelope, with no separate majorant-integrability assumption. -/
 theorem exists_abs_nonlinearForcing_le_integral_polarEnvelope_of_invariant_Pkernel
-    {A : ℝ} (hA1 : 1 < A) {N : ℕ} (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N)
+    {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N) {δ : ℝ}
     (hδ0 : 0 < δ) (hδ2 : δ ≤ 2)
     (hδβ : δ < cramerExponent A N)
@@ -406,14 +402,13 @@ theorem exists_abs_nonlinearForcing_le_integral_polarEnvelope_of_invariant_Pkern
           C * Real.exp (cramerExponent A N * y) *
             ∫ p, Real.exp (-p.1) ^ δ * polarEnvelope N (y - p.1)
               ∂logPolarLaw N π := by
-  have hA0 : A ≠ 0 := ne_of_gt (lt_trans zero_lt_one hA1)
-  have hNpos : 0 < N := by omega
-  have hNreal : (0 : ℝ) < N := by exact_mod_cast hNpos
+  have hA0 : A ≠ 0 := ne_of_gt hA
+  have hNreal : (0 : ℝ) < N := by exact_mod_cast hN
   have hvar : 0 < A ^ 2 / (N : ℝ) :=
-    div_pos (sq_pos_of_pos (lt_trans zero_lt_one hA1)) hNreal
+    div_pos (sq_pos_of_pos hA) hNreal
   have hσ0 : (0 : ℝ) < (A ^ 2 / N).toNNReal := Real.toNNReal_pos.mpr hvar
   have hσ : (A ^ 2 / N).toNNReal ≠ 0 := ne_of_gt hσ0
-  have hβmem := cramerExponent_mem (lt_trans zero_lt_one hA1) hNpos hsc
+  have hβmem := cramerExponent_mem hA hN hsc
   have horigin : π {x | gaussianEuclideanNorm N x = 0} = 0 := by
     rw [show {x | gaussianEuclideanNorm N x = 0} = ({0} : Set (Fin N → ℝ)) by
       ext x
@@ -422,11 +417,11 @@ theorem exists_abs_nonlinearForcing_le_integral_polarEnvelope_of_invariant_Pkern
     exact hπ0
   obtain ⟨C, hC, hdri, hbound⟩ :=
     exists_abs_nonlinearForcing_le_integral_polarEnvelope
-      A hA0 hNpos hσ hσ0 hβmem.1 hβmem.2 hδ0 hδ2 π horigin hsupport
+      A hA0 hN hσ hσ0 hβmem.1 hβmem.2 hδ0 hδ2 π horigin hsupport
   refine ⟨C, hC, hdri, ?_⟩
   intro y φ hφ habs
   exact hbound y hφ habs
     (integrable_rpow_mul_polarEnvelope_of_invariant_Pkernel
-      hA1 hN hdim hsc hδ0 hδβ π hπ hπ0 y)
+      hA hN hsc hδ0 hδβ π hπ hπ0 y)
 
 end AbsorptionCutoff

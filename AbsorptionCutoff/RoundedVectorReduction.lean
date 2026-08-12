@@ -19,6 +19,13 @@ open scoped Topology
 
 namespace AbsorptionCutoff
 
+/-- The paper's finite rounded vector state space
+`(ρℤ)^N ∩ [-1-ρ/2, 1+ρ/2]^N`. -/
+def roundedStateSpace (ρ : ℝ) (N : ℕ) : Set (Fin N → ℝ) :=
+  {y |
+    (∀ i, ∃ z : ℤ, y i = ρ * z) ∧
+      ∀ i, y i ∈ Set.Icc (-1 - ρ / 2) (1 + ρ / 2)}
+
 /-- Coordinatewise rounding `Qρ ρ` is measurable. -/
 lemma measurable_Qρ (ρ : ℝ) (N : ℕ) : Measurable (Qρ ρ : (Fin N → ℝ) → Fin N → ℝ) := by
   apply measurable_pi_iff.mpr
@@ -434,6 +441,208 @@ theorem subcritical_dimension_cutoff_roundedVector
       roundedRadiusSq_Qρ] using hscalar.1
   · simpa only [tvDist_roundedPkernel_pow_eq_Hkernel_pow hρ,
       roundedRadiusSq_Qρ] using hscalar.2
+
+/-- **Complete fixed-precision subcritical dimension cutoff for the rounded
+vector chain** (paper `thm:subcritical-dimension-cutoff`). If the deterministic
+cutoff location diverges, the vector-chain survival probabilities and,
+equivalently, its total-variation distances have the paper's exact `-1`/`+2`
+limits.
+
+The older TV-only projection remains available as
+`subcritical_dimension_cutoff_roundedVector`. -/
+theorem subcritical_dimension_cutoff_roundedVector_of_tendsto_cutoffTime
+    {A ρ : ℝ}
+    (hA : 0 < A) (hA_lt : A < latticeThreshold)
+    (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (x : ∀ N : ℕ, Fin N → ℝ)
+    (hx : ∀ N : ℕ, ∀ i : Fin N, |x N i| ≤ 1)
+    (htime :
+      Filter.Tendsto
+        (fun N : ℕ => roundedDimensionCutoffTime A ρ N (x N))
+        Filter.atTop Filter.atTop) :
+    (Filter.Tendsto
+        (fun N : ℕ =>
+          (markovPathMeasure
+              (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+            {ω |
+              ((roundedDimensionCutoffTime A ρ N (x N) - 1 : ℕ) :
+                  WithTop ℕ) <
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+        Filter.atTop (𝓝 1) ∧
+      Filter.Tendsto
+        (fun N : ℕ =>
+          (markovPathMeasure
+              (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+            {ω |
+              ((roundedDimensionCutoffTime A ρ N (x N) + 2 : ℕ) :
+                  WithTop ℕ) <
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+        Filter.atTop (𝓝 0)) ∧
+    (Filter.Tendsto
+        (fun N : ℕ =>
+          tvDist
+            (((roundedPkernel A ρ N) ^
+                (roundedDimensionCutoffTime A ρ N (x N) - 1))
+              (Qρ ρ (x N)))
+            (Measure.dirac (0 : Fin N → ℝ)))
+        Filter.atTop (𝓝 1) ∧
+      Filter.Tendsto
+        (fun N : ℕ =>
+          tvDist
+            (((roundedPkernel A ρ N) ^
+                (roundedDimensionCutoffTime A ρ N (x N) + 2))
+              (Qρ ρ (x N)))
+            (Measure.dirac (0 : Fin N → ℝ)))
+        Filter.atTop (𝓝 0)) := by
+  have htv :=
+    subcritical_dimension_cutoff_roundedVector
+      hA hA_lt hρ hρ_lt x hx htime
+  constructor
+  · constructor
+    · have heq :
+          (fun N : ℕ =>
+            (markovPathMeasure
+                (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+              {ω |
+                ((roundedDimensionCutoffTime A ρ N (x N) - 1 : ℕ) :
+                    WithTop ℕ) <
+                  absorptionTime
+                    (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω}) =
+            (fun N : ℕ =>
+              tvDist
+                (((roundedPkernel A ρ N) ^
+                    (roundedDimensionCutoffTime A ρ N (x N) - 1))
+                  (Qρ ρ (x N)))
+                (Measure.dirac (0 : Fin N → ℝ))) := by
+          funext N
+          exact (tvDist_roundedPkernel_pow_eq_survival
+            A ρ N (Qρ ρ (x N))
+              (roundedDimensionCutoffTime A ρ N (x N) - 1)).symm
+      rw [heq]
+      exact htv.1
+    · have heq :
+          (fun N : ℕ =>
+            (markovPathMeasure
+                (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+              {ω |
+                ((roundedDimensionCutoffTime A ρ N (x N) + 2 : ℕ) :
+                    WithTop ℕ) <
+                  absorptionTime
+                    (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω}) =
+            (fun N : ℕ =>
+              tvDist
+                (((roundedPkernel A ρ N) ^
+                    (roundedDimensionCutoffTime A ρ N (x N) + 2))
+                  (Qρ ρ (x N)))
+                (Measure.dirac (0 : Fin N → ℝ))) := by
+          funext N
+          exact (tvDist_roundedPkernel_pow_eq_survival
+            A ρ N (Qρ ρ (x N))
+              (roundedDimensionCutoffTime A ρ N (x N) + 2)).symm
+      rw [heq]
+      exact htv.2
+  · exact htv
+
+/-- **Subcritical dimension cutoff from macroscopic rounded initial radii**
+(paper `thm:subcritical-dimension-cutoff:intro`). If the rounded initial
+radii have positive `liminf`, then the deterministic cutoff locations diverge,
+and the rounded vector-chain TV distance drops from one to zero in the exact
+bounded window `[\bar t_N - 1, \bar t_N + 2]`. -/
+theorem subcritical_dimension_cutoff_roundedVector_intro
+    {A ρ : ℝ}
+    (hA : 0 < A) (hA_lt : A < latticeThreshold)
+    (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (x : ∀ N : ℕ, Fin N → ℝ)
+    (hx : ∀ N : ℕ, ∀ i : Fin N, |x N i| ≤ 1)
+    (hmacro : macroscopicRoundedInitialRadii ρ x) :
+    Filter.Tendsto
+        (fun N : ℕ => roundedDimensionCutoffTime A ρ N (x N))
+        Filter.atTop Filter.atTop ∧
+      (Filter.Tendsto
+          (fun N : ℕ =>
+            tvDist
+              (((roundedPkernel A ρ N) ^
+                  (roundedDimensionCutoffTime A ρ N (x N) - 1))
+                (Qρ ρ (x N)))
+              (Measure.dirac (0 : Fin N → ℝ)))
+          Filter.atTop (𝓝 1) ∧
+        Filter.Tendsto
+          (fun N : ℕ =>
+            tvDist
+              (((roundedPkernel A ρ N) ^
+                  (roundedDimensionCutoffTime A ρ N (x N) + 2))
+                (Qρ ρ (x N)))
+              (Measure.dirac (0 : Fin N → ℝ)))
+          Filter.atTop (𝓝 0)) := by
+  have htime :=
+    tendsto_roundedDimensionCutoffTime_atTop_of_macroscopic
+      hA hA_lt hρ hρ_lt x hx hmacro
+  exact ⟨htime,
+    subcritical_dimension_cutoff_roundedVector
+      hA hA_lt hρ hρ_lt x hx htime⟩
+
+/-- **Complete paper-facing subcritical dimension cutoff.** The macroscopic
+rounded-initial-radius hypothesis from
+`thm:subcritical-dimension-cutoff:intro` forces the deterministic center to
+diverge; the conclusion then records both the survival display and its
+total-variation equivalent from `thm:subcritical-dimension-cutoff`.
+
+The first-pass TV-only introduction wrapper remains available as
+`subcritical_dimension_cutoff_roundedVector_intro`. -/
+theorem subcritical_dimension_cutoff_roundedVector_paper
+    {A ρ : ℝ}
+    (hA : 0 < A) (hA_lt : A < latticeThreshold)
+    (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (x : ∀ N : ℕ, Fin N → ℝ)
+    (hx : ∀ N : ℕ, ∀ i : Fin N, |x N i| ≤ 1)
+    (hmacro : macroscopicRoundedInitialRadii ρ x) :
+    Filter.Tendsto
+        (fun N : ℕ => roundedDimensionCutoffTime A ρ N (x N))
+        Filter.atTop Filter.atTop ∧
+      ((Filter.Tendsto
+          (fun N : ℕ =>
+            (markovPathMeasure
+                (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+              {ω |
+                ((roundedDimensionCutoffTime A ρ N (x N) - 1 : ℕ) :
+                    WithTop ℕ) <
+                  absorptionTime
+                    (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+          Filter.atTop (𝓝 1) ∧
+        Filter.Tendsto
+          (fun N : ℕ =>
+            (markovPathMeasure
+                (Measure.dirac (Qρ ρ (x N))) (roundedPkernel A ρ N)).real
+              {ω |
+                ((roundedDimensionCutoffTime A ρ N (x N) + 2 : ℕ) :
+                    WithTop ℕ) <
+                  absorptionTime
+                    (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+          Filter.atTop (𝓝 0)) ∧
+        (Filter.Tendsto
+          (fun N : ℕ =>
+            tvDist
+              (((roundedPkernel A ρ N) ^
+                  (roundedDimensionCutoffTime A ρ N (x N) - 1))
+                (Qρ ρ (x N)))
+              (Measure.dirac (0 : Fin N → ℝ)))
+          Filter.atTop (𝓝 1) ∧
+        Filter.Tendsto
+          (fun N : ℕ =>
+            tvDist
+              (((roundedPkernel A ρ N) ^
+                  (roundedDimensionCutoffTime A ρ N (x N) + 2))
+                (Qρ ρ (x N)))
+              (Measure.dirac (0 : Fin N → ℝ)))
+          Filter.atTop (𝓝 0))) := by
+  have htime :=
+    tendsto_roundedDimensionCutoffTime_atTop_of_macroscopic
+      hA hA_lt hρ hρ_lt x hx hmacro
+  exact ⟨htime,
+    subcritical_dimension_cutoff_roundedVector_of_tendsto_cutoffTime
+      hA hA_lt hρ hρ_lt x hx htime⟩
 
 /-- Mixing-time consequence of the rounded-vector fixed-precision cutoff. For
 every fixed `ε ∈ (0,1)`, the vector mixing time lies in the same eventual

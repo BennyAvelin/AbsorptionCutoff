@@ -135,6 +135,108 @@ theorem apply_singleton_zero_of_tendsto_of_uniform_integral_inv
     le_antisymm hmass_nonpos measureReal_nonneg
   exact (measureReal_eq_zero_iff).mp hmass_zero
 
+/-- A normalized negative-moment cap. It equals one at the origin, while on
+the positive half-line it is bounded by `(k+1)⁻ᵖ q⁻ᵖ`. -/
+noncomputable def negativeMomentAtomTruncation
+    (p : ℝ) (hp : 0 ≤ p) (k : ℕ) :
+    BoundedContinuousFunction ℝ ℝ :=
+  ((k + 1 : ℝ) ^ (-p)) • negativeMomentTruncation p hp k
+
+@[simp]
+lemma negativeMomentAtomTruncation_apply
+    (p : ℝ) (hp : 0 ≤ p) (k : ℕ) (q : ℝ) :
+    negativeMomentAtomTruncation p hp k q =
+      (k + 1 : ℝ) ^ (-p) * negativeMomentTruncation p hp k q :=
+  rfl
+
+@[simp]
+lemma negativeMomentAtomTruncation_zero
+    {p : ℝ} (hp : 0 ≤ p) (k : ℕ) :
+    negativeMomentAtomTruncation p hp k 0 = 1 := by
+  rw [negativeMomentAtomTruncation_apply, negativeMomentTruncation_apply,
+    abs_zero, max_eq_right]
+  · have hk : (0 : ℝ) < k + 1 := by positivity
+    rw [Real.inv_rpow hk.le, ← Real.rpow_neg hk.le, ← Real.rpow_add hk]
+    simp
+  · positivity
+
+lemma negativeMomentAtomTruncation_nonneg
+    (p : ℝ) (hp : 0 ≤ p) (k : ℕ) (q : ℝ) :
+    0 ≤ negativeMomentAtomTruncation p hp k q := by
+  rw [negativeMomentAtomTruncation_apply]
+  exact mul_nonneg (Real.rpow_nonneg (by positivity) _)
+    (negativeMomentTruncation_nonneg p hp k q)
+
+lemma negativeMomentAtomTruncation_le_scaled
+    {p q : ℝ} (hp : 0 ≤ p) (hq : 0 < q) (k : ℕ) :
+    negativeMomentAtomTruncation p hp k q ≤
+      (k + 1 : ℝ) ^ (-p) * q ^ (-p) := by
+  rw [negativeMomentAtomTruncation_apply]
+  exact mul_le_mul_of_nonneg_left (negativeMomentTruncation_le hp hq k)
+    (Real.rpow_nonneg (by positivity) _)
+
+/-- A weak limit of positive laws with a uniformly bounded negative
+`p`-moment, for any `p > 0`, has no atom at the origin. -/
+theorem apply_singleton_zero_of_tendsto_of_uniform_integral_neg_rpow
+    {p : ℝ} (hp : 0 < p)
+    (μs : ℕ → ProbabilityMeasure ℝ) (ν : ProbabilityMeasure ℝ)
+    (hconv : Tendsto μs atTop (𝓝 ν))
+    (hpos : ∀ n, ∀ᵐ q ∂(μs n : Measure ℝ), 0 < q)
+    (hint : ∀ n, Integrable (fun q : ℝ => q ^ (-p)) (μs n : Measure ℝ))
+    {C : ℝ}
+    (hbound : ∀ n, ∫ q, q ^ (-p) ∂(μs n : Measure ℝ) ≤ C) :
+    (ν : Measure ℝ) ({0} : Set ℝ) = 0 := by
+  have htrunc_bound (k n : ℕ) :
+      ∫ q, negativeMomentAtomTruncation p hp.le k q ∂(μs n : Measure ℝ) ≤
+        (k + 1 : ℝ) ^ (-p) * C := by
+    calc
+      ∫ q, negativeMomentAtomTruncation p hp.le k q ∂(μs n : Measure ℝ) ≤
+          ∫ q, (k + 1 : ℝ) ^ (-p) * q ^ (-p) ∂(μs n : Measure ℝ) :=
+        integral_mono_ae
+          (BoundedContinuousFunction.integrable _ _)
+          ((hint n).const_mul _)
+          ((hpos n).mono fun q hq =>
+            negativeMomentAtomTruncation_le_scaled hp.le hq k)
+      _ = (k + 1 : ℝ) ^ (-p) * ∫ q, q ^ (-p) ∂(μs n : Measure ℝ) := by
+        rw [integral_const_mul]
+      _ ≤ (k + 1 : ℝ) ^ (-p) * C :=
+        mul_le_mul_of_nonneg_left (hbound n) (Real.rpow_nonneg (by positivity) _)
+  have hlimit_bound (k : ℕ) :
+      ∫ q, negativeMomentAtomTruncation p hp.le k q ∂(ν : Measure ℝ) ≤
+        (k + 1 : ℝ) ^ (-p) * C := by
+    exact le_of_tendsto
+      ((ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hconv)
+        (negativeMomentAtomTruncation p hp.le k))
+      (Eventually.of_forall (htrunc_bound k))
+  have hatom_le (k : ℕ) :
+      (ν : Measure ℝ).real ({0} : Set ℝ) ≤
+        ∫ q, negativeMomentAtomTruncation p hp.le k q ∂(ν : Measure ℝ) := by
+    calc
+      (ν : Measure ℝ).real ({0} : Set ℝ) =
+          ∫ q in ({0} : Set ℝ), negativeMomentAtomTruncation p hp.le k q
+            ∂(ν : Measure ℝ) := by
+        rw [integral_singleton, negativeMomentAtomTruncation_zero,
+          smul_eq_mul, mul_one]
+      _ ≤ ∫ q, negativeMomentAtomTruncation p hp.le k q ∂(ν : Measure ℝ) :=
+        setIntegral_le_integral
+          (BoundedContinuousFunction.integrable _ _)
+          (Eventually.of_forall
+            (negativeMomentAtomTruncation_nonneg p hp.le k))
+  have hmass_bound (k : ℕ) :
+      (ν : Measure ℝ).real ({0} : Set ℝ) ≤ (k + 1 : ℝ) ^ (-p) * C :=
+    (hatom_le k).trans (hlimit_bound k)
+  have htozero :
+      Tendsto (fun k : ℕ => (k + 1 : ℝ) ^ (-p) * C) atTop (𝓝 0) := by
+    have hcast : Tendsto (fun k : ℕ => (k + 1 : ℝ)) atTop atTop := by
+      exact tendsto_atTop_add_const_right atTop 1 tendsto_natCast_atTop_atTop
+    simpa only [Function.comp_apply, zero_mul] using
+      ((tendsto_rpow_neg_atTop hp).comp hcast).mul_const C
+  have hmass_nonpos : (ν : Measure ℝ).real ({0} : Set ℝ) ≤ 0 :=
+    ge_of_tendsto' htozero hmass_bound
+  have hmass_zero : (ν : Measure ℝ).real ({0} : Set ℝ) = 0 :=
+    le_antisymm hmass_nonpos measureReal_nonneg
+  exact (measureReal_eq_zero_iff).mp hmass_zero
+
 /-- A uniform negative-moment bound passes to a weak probability limit when
 both the approximating laws and the limit are carried by the positive
 half-line. -/
@@ -301,8 +403,7 @@ theorem exists_invariant_Kchain_apply_singleton_zero_of_dimension
 /-- A uniform negative-moment estimate for the Cesàro laws passes to an
 invariant subsequential limit, with the same bound. -/
 theorem exists_invariant_Kchain_integrable_neg_rpow_of_uniform_cesaro
-    {A p C : ℝ} {N : ℕ} (hA : 1 < A) (hN : 2 < N)
-    (hdim : 2 * A ^ 2 < (A ^ 2 - 1) * N) (hp : 0 ≤ p)
+    {A p C : ℝ} {N : ℕ} (hA : 0 < A) (hN : 0 < N) (hp : 0 < p)
     {q : ℝ} (hq : q ∈ Set.Ioo (0 : ℝ) 1)
     (hcesaro :
       ∀ T : ℕ, 0 < T →
@@ -318,43 +419,16 @@ theorem exists_invariant_Kchain_integrable_neg_rpow_of_uniform_cesaro
         Integrable (fun y : ℝ => y ^ (-p)) (ν : Measure ℝ) ∧
         (∫ y : ℝ, y ^ (-p) ∂(ν : Measure ℝ)) ≤ C := by
   have hqIcc : q ∈ Set.Icc (0 : ℝ) 1 := ⟨hq.1.le, hq.2.le⟩
-  have hqIoc : q ∈ Set.Ioc (0 : ℝ) 1 := ⟨hq.1, hq.2.le⟩
   obtain ⟨ν, φ, _hφ, hconv, hν, hνsupport⟩ :=
-    exists_invariant_of_cesaro_with_subseq A
-      (Nat.zero_lt_of_lt hN) hqIcc
+    exists_invariant_of_cesaro_with_subseq A hN hqIcc
   have hμpos (n : ℕ) :
       ∀ᵐ y ∂(cesaroPM A N q (φ n) : Measure ℝ), 0 < y := by
     have hmem :
         ∀ᵐ y ∂(cesaroPM A N q (φ n) : Measure ℝ),
           y ∈ Set.Ioo (0 : ℝ) 1 :=
       (mem_ae_iff_prob_eq_one measurableSet_Ioo).2
-        (cesaroPM_apply_Ioo_eq_one (zero_lt_one.trans hA)
-          (Nat.zero_lt_of_lt hN) hq (φ n))
+        (cesaroPM_apply_Ioo_eq_one hA hN hq (φ n))
     exact hmem.mono fun y hy => hy.1
-  obtain ⟨Cinv, _hCinv, hinv_cesaro⟩ :=
-    exists_uniform_integral_inv_cesaroMeasure_le hA hN hdim hqIoc
-  have hinv (n : ℕ) :
-      Integrable (fun y : ℝ => y⁻¹)
-        (cesaroPM A N q (φ n) : Measure ℝ) := by
-    simpa only [cesaroPM_toMeasure] using
-      (hinv_cesaro (φ n + 1) (Nat.succ_pos (φ n))).1
-  have hinv_bound (n : ℕ) :
-      (∫ y : ℝ, y⁻¹ ∂(cesaroPM A N q (φ n) : Measure ℝ)) ≤ Cinv := by
-    simpa only [cesaroPM_toMeasure] using
-      (hinv_cesaro (φ n + 1) (Nat.succ_pos (φ n))).2
-  have hν0 : (ν : Measure ℝ) ({0} : Set ℝ) = 0 :=
-    apply_singleton_zero_of_tendsto_of_uniform_integral_inv
-      (fun n => cesaroPM A N q (φ n)) ν hconv hμpos hinv hinv_bound
-  have hνIcc :
-      ∀ᵐ y ∂(ν : Measure ℝ), y ∈ Set.Icc (0 : ℝ) 1 := by
-    rw [ae_iff]
-    exact hνsupport
-  have hνne : ∀ᵐ y ∂(ν : Measure ℝ), y ≠ 0 := by
-    rw [ae_iff]
-    simpa using hν0
-  have hνpos : ∀ᵐ y ∂(ν : Measure ℝ), 0 < y := by
-    filter_upwards [hνIcc, hνne] with y hy hy0
-    exact lt_of_le_of_ne hy.1 (Ne.symm hy0)
   have hneg_int (n : ℕ) :
       Integrable (fun y : ℝ => y ^ (-p))
         (cesaroPM A N q (φ n) : Measure ℝ) := by
@@ -365,9 +439,22 @@ theorem exists_invariant_Kchain_integrable_neg_rpow_of_uniform_cesaro
           ∂(cesaroPM A N q (φ n) : Measure ℝ)) ≤ C := by
     simpa only [cesaroPM_toMeasure] using
       (hcesaro (φ n + 1) (Nat.succ_pos (φ n))).2
+  have hν0 : (ν : Measure ℝ) ({0} : Set ℝ) = 0 :=
+    apply_singleton_zero_of_tendsto_of_uniform_integral_neg_rpow hp
+      (fun n => cesaroPM A N q (φ n)) ν hconv hμpos hneg_int hneg_bound
+  have hνIcc :
+      ∀ᵐ y ∂(ν : Measure ℝ), y ∈ Set.Icc (0 : ℝ) 1 := by
+    rw [ae_iff]
+    exact hνsupport
+  have hνne : ∀ᵐ y ∂(ν : Measure ℝ), y ≠ 0 := by
+    rw [ae_iff]
+    simpa using hν0
+  have hνpos : ∀ᵐ y ∂(ν : Measure ℝ), 0 < y := by
+    filter_upwards [hνIcc, hνne] with y hy hy0
+    exact lt_of_le_of_ne hy.1 (Ne.symm hy0)
   have hmoment :=
     integrable_neg_rpow_of_tendsto_of_uniform_integral
-      hp (fun n => cesaroPM A N q (φ n)) ν hconv
+      hp.le (fun n => cesaroPM A N q (φ n)) ν hconv
       hμpos hνpos hneg_int hneg_bound
   exact ⟨ν, hν, hνsupport, hν0, hmoment.1, hmoment.2⟩
 
@@ -549,8 +636,8 @@ theorem exists_eventually_invariant_Kchain_integrable_neg_rpow
     (hmoment N hN₀ (Nat.zero_lt_of_lt hNtwo) q₀ hq₀Ioc).2
   obtain ⟨ν, hν, hνsupport, hν0, hνint, hνbound⟩ :=
     exists_invariant_Kchain_integrable_neg_rpow_of_uniform_cesaro
-      hA hNtwo hdim
-      (mul_nonneg hγ.1.le (Nat.cast_nonneg N))
+      (zero_lt_one.trans hA) (Nat.zero_lt_of_lt hNtwo)
+      (mul_pos hγ.1 (by exact_mod_cast (Nat.zero_lt_of_lt hNtwo)))
       hq₀Ioo hcesaro
   refine ⟨ν, hν, hνsupport, hν0, hνint, ?_⟩
   simpa only [q₀, hCeq] using hνbound
@@ -1996,6 +2083,30 @@ theorem exists_eventually_invariant_Kchain_integral_sq_sub_fixed_le_inv_nat
   rw [htarget, le_div_iff₀ hden]
   nlinarith [hrec]
 
+/-- Any two origin-free invariant probabilities of `Kchain` agree. -/
+theorem invariant_probability_unique_Kchain_of_apply_singleton_zero
+    {A : ℝ} {N : ℕ} (hA : 0 < A) (hN : 0 < N)
+    (μ ν : ProbabilityMeasure ℝ)
+    (hμ : Kernel.Invariant (Kchain A N) (μ : Measure ℝ))
+    (hν : Kernel.Invariant (Kchain A N) (ν : Measure ℝ))
+    (hμ0 : (μ : Measure ℝ) ({0} : Set ℝ) = 0)
+    (hν0 : (ν : Measure ℝ) ({0} : Set ℝ) = 0) :
+    μ = ν := by
+  apply ProbabilityMeasure.toMeasure_injective
+  have hμsupport :
+      (μ : Measure ℝ) ((Set.Icc (0 : ℝ) 1)ᶜ) = 0 :=
+    invariant_Kchain_apply_Icc_compl A hN (μ : Measure ℝ) hμ
+  have hνsupport :
+      (ν : Measure ℝ) ((Set.Icc (0 : ℝ) 1)ᶜ) = 0 :=
+    invariant_Kchain_apply_Icc_compl A hN (ν : Measure ℝ) hν
+  have hparts :=
+    nonzeroPart_eq_of_invariant_Kchain hA hN
+      (μ : Measure ℝ) (ν : Measure ℝ) hμ hν hμsupport hνsupport
+      (by simp [hμ0]) (by simp [hν0])
+  rw [nonzeroPart_eq_self_of_apply_singleton_zero _ hμ0,
+    nonzeroPart_eq_self_of_apply_singleton_zero _ hν0] at hparts
+  exact hparts
+
 /-- Under the explicit finite-dimensional supercritical criterion, there is a
 unique invariant probability for `Kchain` having no atom at the origin. -/
 theorem exists_unique_invariant_probability_Kchain_of_apply_singleton_zero
@@ -2008,23 +2119,8 @@ theorem exists_unique_invariant_probability_Kchain_of_apply_singleton_zero
     exists_invariant_Kchain_apply_singleton_zero_of_dimension hA hN hdim
   refine ⟨ν, ⟨hν, hν0⟩, ?_⟩
   intro μ hμ
-  apply ProbabilityMeasure.toMeasure_injective
-  have hμsupport :
-      (μ : Measure ℝ) ((Set.Icc (0 : ℝ) 1)ᶜ) = 0 :=
-    invariant_Kchain_apply_Icc_compl A (Nat.zero_lt_of_lt hN) (μ : Measure ℝ) hμ.1
-  have hμ0lt : (μ : Measure ℝ) ({0} : Set ℝ) < 1 := by
-    rw [hμ.2]
-    exact zero_lt_one
-  have hν0lt : (ν : Measure ℝ) ({0} : Set ℝ) < 1 := by
-    rw [hν0]
-    exact zero_lt_one
-  have hparts :=
-    nonzeroPart_eq_of_invariant_Kchain (zero_lt_one.trans hA)
-      (Nat.zero_lt_of_lt hN) (μ : Measure ℝ) (ν : Measure ℝ)
-      hμ.1 hν hμsupport hνsupport hμ0lt hν0lt
-  rw [nonzeroPart_eq_self_of_apply_singleton_zero _ hμ.2,
-    nonzeroPart_eq_self_of_apply_singleton_zero _ hν0] at hparts
-  exact hparts
+  exact invariant_probability_unique_Kchain_of_apply_singleton_zero
+    (zero_lt_one.trans hA) (Nat.zero_lt_of_lt hN) μ ν hμ.1 hν hμ.2 hν0
 
 /-- Any two supported, nontrivial invariant squared-radius probabilities
 reconstruct the same nonzero invariant vector law. -/

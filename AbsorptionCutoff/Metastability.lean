@@ -37,6 +37,13 @@ lemma roundedMeanMap_eq_roundedProfile (A ρ h : ℝ) :
 noncomputable def roundedRadiusBound (ρ : ℝ) : ℝ :=
   (Q₁ ρ⁻¹ : ℝ) ^ 2
 
+/-- The finite rounded vector state space used by the fixed-precision chain.
+Its coordinates are `ρ` times unit-grid integers whose absolute values do not
+exceed the largest rounded coordinate attainable after applying `tanh`. -/
+noncomputable def roundedVectorStateSpace (ρ : ℝ) (N : ℕ) : Set (Fin N → ℝ) :=
+  {x | ∀ i, ∃ k : ℤ,
+    |(k : ℝ)| ≤ |(Q₁ ρ⁻¹ : ℝ)| ∧ x i = ρ * (k : ℝ)}
+
 /-- The rounded radius bound is nonnegative. -/
 lemma roundedRadiusBound_nonneg (ρ : ℝ) : 0 ≤ roundedRadiusBound ρ := by
   unfold roundedRadiusBound
@@ -81,6 +88,34 @@ lemma Q₁_sq_le_roundedRadiusBound {ρ u : ℝ} (hρ : 0 < ρ)
     abs_Q₁_mono (hu.trans_eq hinv.symm)
   rw [roundedRadiusBound, ← sq_abs (Q₁ u : ℝ), ← sq_abs (Q₁ ρ⁻¹ : ℝ)]
   exact pow_le_pow_left₀ (abs_nonneg _) hQ 2
+
+/-- Every state in the finite rounded vector state space has normalized
+rounded squared radius in the canonical scalar state interval. -/
+lemma roundedRadiusSq_mem_Icc_of_mem_roundedVectorStateSpace
+    {ρ : ℝ} (hρ : 0 < ρ) {N : ℕ} (hN : 0 < N)
+    {x : Fin N → ℝ} (hx : x ∈ roundedVectorStateSpace ρ N) :
+    roundedRadiusSq ρ N x ∈ Set.Icc 0 (roundedRadiusBound ρ) := by
+  constructor
+  · unfold roundedRadiusSq
+    positivity
+  · have hNreal : (0 : ℝ) < N := by exact_mod_cast hN
+    have hscale : 0 ≤ ((N : ℝ) * ρ ^ 2)⁻¹ := by positivity
+    unfold roundedRadiusSq
+    calc
+      ((N : ℝ) * ρ ^ 2)⁻¹ * ∑ i, x i ^ 2 ≤
+          ((N : ℝ) * ρ ^ 2)⁻¹ *
+            ∑ _i : Fin N, ρ ^ 2 * roundedRadiusBound ρ := by
+        gcongr with i
+        obtain ⟨k, hk, hik⟩ := hx i
+        rw [hik, mul_pow]
+        apply mul_le_mul_of_nonneg_left _ (sq_nonneg ρ)
+        rw [roundedRadiusBound, ← sq_abs (k : ℝ),
+          ← sq_abs (Q₁ ρ⁻¹ : ℝ)]
+        exact pow_le_pow_left₀ (abs_nonneg _) hk 2
+      _ = roundedRadiusBound ρ := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+          nsmul_eq_mul]
+        field_simp [hNreal.ne', hρ.ne']
 
 /-- Every coordinate produced by the rounded `tanh` dynamics is bounded by
 `M_ρ`. -/
@@ -2971,9 +3006,10 @@ lemma markovPathMeasure_measureReal_inter_start_metastableExitEvent_le
       (markovPathMeasure_measureReal_shiftedFiniteHorizonStepDeviationEvent_le
         hA hρ hρ_lt hN (half_pos hd))
 
-/-- Paper-form persistence estimate for the rightmost positive-drift
-component, combining stochastic entrance with the stopped Hoeffding bound. -/
-theorem exists_uniform_markovPathMeasure_exit_exp_bound
+/-- Paper-form entrance and persistence estimates for the rightmost
+positive-drift component, with the same burn-in time, prefactor, and
+exponential rate in both displayed bounds. -/
+theorem exists_uniform_markovPathMeasure_entrance_exit_exp_bound
     {A ρ h : ℝ} (hA : 0 < A) (hρ : 0 < ρ) (hρ_lt : ρ < 1)
     (hh : h ∈ roundedPositiveDriftSet A ρ)
     (hrightmost : IsRightmostRoundedPositiveDriftComponent A ρ h)
@@ -2987,10 +3023,14 @@ theorem exists_uniform_markovPathMeasure_exit_exp_bound
       sSup Ccomp + η₀ < roundedRadiusBound ρ ∧
       ∀ η : ℝ, 0 < η → η < η₀ →
         ∃ Tη : ℕ, ∃ C c₀ : ℝ, 0 < C ∧ 0 < c₀ ∧
-          ∀ (N : ℕ), 0 < N → ∀ q ∈ B, ∀ T : ℕ,
+          (∀ (N : ℕ), 0 < N → ∀ q ∈ B,
             (markovPathMeasure (Measure.dirac q) (Hkernel A ρ N)).real
-                (metastableExitEvent (sSup Ccomp) η Tη T) ≤
-              C * (1 + T) * Real.exp (-c₀ * N) := by
+                {ω : ℕ → ℝ | |ω Tη - sSup Ccomp| > η / 2} ≤
+              C * Real.exp (-c₀ * N)) ∧
+          ∀ (N : ℕ), 0 < N → ∀ q ∈ B, ∀ T : ℕ,
+              (markovPathMeasure (Measure.dirac q) (Hkernel A ρ N)).real
+                  (metastableExitEvent (sSup Ccomp) η Tη T) ≤
+                C * (1 + T) * Real.exp (-c₀ * N) := by
   dsimp only
   let Ccomp := roundedPositiveDriftComponent A ρ h
   let upper := sSup Ccomp
@@ -3019,72 +3059,117 @@ theorem exists_uniform_markovPathMeasure_exit_exp_bound
   have hC : 0 < C := by
     dsimp only [C]
     linarith
-  refine ⟨Tη, C, c₀, hC, hc₀, ?_⟩
-  intro N hN q hqB T
-  let μ : Measure (ℕ → ℝ) :=
-    markovPathMeasure (Measure.dirac q) (Hkernel A ρ N)
-  let E : Set (ℕ → ℝ) :=
-    metastableExitEvent upper η Tη T
-  let F : Set (ℕ → ℝ) :=
-    {ω | η / 2 < |ω Tη - upper|}
-  let S : Set (ℕ → ℝ) :=
-    {ω | |ω Tη - upper| ≤ η / 2}
-  have hsubset : E ⊆ F ∪ (S ∩ E) := by
-    intro ω hωE
-    by_cases hωS : |ω Tη - upper| ≤ η / 2
-    · exact Or.inr ⟨hωS, hωE⟩
-    · exact Or.inl (lt_of_not_ge hωS)
-  have hentranceBound :
-      μ.real F ≤ Cent * Real.exp (-cent * N) := by
-    exact hentrance N hN q hqB
-  have hpersistenceBound :
-      μ.real (S ∩ E) ≤
-        2 * T * Real.exp
-          (-2 * N * (d / 2) ^ 2 / roundedRadiusBound ρ ^ 2) := by
-    exact
-      markovPathMeasure_measureReal_inter_start_metastableExitEvent_le
-        hA hρ hρ_lt hN hη hd hmargin
-  have hexpEntrance :
-      Real.exp (-cent * N) ≤ Real.exp (-c₀ * N) := by
-    apply Real.exp_le_exp.mpr
-    have hc₀le : c₀ ≤ cent := by
-      dsimp only [c₀]
-      exact min_le_left _ _
-    exact
-      mul_le_mul_of_nonneg_right (neg_le_neg hc₀le)
-        (Nat.cast_nonneg N)
-  have hexpPersistence :
-      Real.exp (-cpers * N) ≤ Real.exp (-c₀ * N) := by
-    apply Real.exp_le_exp.mpr
-    have hc₀le : c₀ ≤ cpers := by
-      dsimp only [c₀]
-      exact min_le_right _ _
-    exact
-      mul_le_mul_of_nonneg_right (neg_le_neg hc₀le)
-        (Nat.cast_nonneg N)
-  calc
-    μ.real E ≤ μ.real (F ∪ (S ∩ E)) :=
-      measureReal_mono hsubset
-    _ ≤ μ.real F + μ.real (S ∩ E) :=
-      measureReal_union_le _ _
-    _ ≤ Cent * Real.exp (-cent * N) +
+  refine ⟨Tη, C, c₀, hC, hc₀, ?_, ?_⟩
+  · intro N hN q hqB
+    calc
+      (markovPathMeasure (Measure.dirac q) (Hkernel A ρ N)).real
+            {ω : ℕ → ℝ | |ω Tη - sSup Ccomp| > η / 2}
+          ≤ Cent * Real.exp (-cent * N) := hentrance N hN q hqB
+      _ ≤ Cent * Real.exp (-c₀ * N) := by
+        apply mul_le_mul_of_nonneg_left _ hCent.le
+        apply Real.exp_le_exp.mpr
+        have hc₀le : c₀ ≤ cent := by
+          dsimp only [c₀]
+          exact min_le_left _ _
+        exact mul_le_mul_of_nonneg_right (neg_le_neg hc₀le)
+          (Nat.cast_nonneg N)
+      _ ≤ C * Real.exp (-c₀ * N) := by
+        apply mul_le_mul_of_nonneg_right _ (Real.exp_pos _).le
+        dsimp only [C]
+        linarith
+  · intro N hN q hqB T
+    let μ : Measure (ℕ → ℝ) :=
+      markovPathMeasure (Measure.dirac q) (Hkernel A ρ N)
+    let E : Set (ℕ → ℝ) :=
+      metastableExitEvent upper η Tη T
+    let F : Set (ℕ → ℝ) :=
+      {ω | η / 2 < |ω Tη - upper|}
+    let S : Set (ℕ → ℝ) :=
+      {ω | |ω Tη - upper| ≤ η / 2}
+    have hsubset : E ⊆ F ∪ (S ∩ E) := by
+      intro ω hωE
+      by_cases hωS : |ω Tη - upper| ≤ η / 2
+      · exact Or.inr ⟨hωS, hωE⟩
+      · exact Or.inl (lt_of_not_ge hωS)
+    have hentranceBound :
+        μ.real F ≤ Cent * Real.exp (-cent * N) := by
+      exact hentrance N hN q hqB
+    have hpersistenceBound :
+        μ.real (S ∩ E) ≤
           2 * T * Real.exp
-            (-2 * N * (d / 2) ^ 2 / roundedRadiusBound ρ ^ 2) :=
-      add_le_add hentranceBound hpersistenceBound
-    _ = Cent * Real.exp (-cent * N) +
-          2 * T * Real.exp (-cpers * N) := by
-      congr 2
-      dsimp only [cpers]
-      congr 1
-      ring
-    _ ≤ Cent * Real.exp (-c₀ * N) +
-          2 * T * Real.exp (-c₀ * N) := by
-      gcongr
-    _ = (Cent + 2 * T) * Real.exp (-c₀ * N) := by ring
-    _ ≤ C * (1 + T) * Real.exp (-c₀ * N) := by
-      gcongr
-      dsimp only [C]
-      nlinarith [mul_nonneg hCent.le (Nat.cast_nonneg T)]
+            (-2 * N * (d / 2) ^ 2 / roundedRadiusBound ρ ^ 2) := by
+      exact
+        markovPathMeasure_measureReal_inter_start_metastableExitEvent_le
+          hA hρ hρ_lt hN hη hd hmargin
+    have hexpEntrance :
+        Real.exp (-cent * N) ≤ Real.exp (-c₀ * N) := by
+      apply Real.exp_le_exp.mpr
+      have hc₀le : c₀ ≤ cent := by
+        dsimp only [c₀]
+        exact min_le_left _ _
+      exact
+        mul_le_mul_of_nonneg_right (neg_le_neg hc₀le)
+          (Nat.cast_nonneg N)
+    have hexpPersistence :
+        Real.exp (-cpers * N) ≤ Real.exp (-c₀ * N) := by
+      apply Real.exp_le_exp.mpr
+      have hc₀le : c₀ ≤ cpers := by
+        dsimp only [c₀]
+        exact min_le_right _ _
+      exact
+        mul_le_mul_of_nonneg_right (neg_le_neg hc₀le)
+          (Nat.cast_nonneg N)
+    calc
+      μ.real E ≤ μ.real (F ∪ (S ∩ E)) :=
+        measureReal_mono hsubset
+      _ ≤ μ.real F + μ.real (S ∩ E) :=
+        measureReal_union_le _ _
+      _ ≤ Cent * Real.exp (-cent * N) +
+            2 * T * Real.exp
+              (-2 * N * (d / 2) ^ 2 / roundedRadiusBound ρ ^ 2) :=
+        add_le_add hentranceBound hpersistenceBound
+      _ = Cent * Real.exp (-cent * N) +
+            2 * T * Real.exp (-cpers * N) := by
+        congr 2
+        dsimp only [cpers]
+        congr 1
+        ring
+      _ ≤ Cent * Real.exp (-c₀ * N) +
+            2 * T * Real.exp (-c₀ * N) := by
+        gcongr
+      _ = (Cent + 2 * T) * Real.exp (-c₀ * N) := by ring
+      _ ≤ C * (1 + T) * Real.exp (-c₀ * N) := by
+        gcongr
+        dsimp only [C]
+        nlinarith [mul_nonneg hCent.le (Nat.cast_nonneg T)]
+
+/-- Compatibility form exposing only the finite-horizon exit estimate. -/
+theorem exists_uniform_markovPathMeasure_exit_exp_bound
+    {A ρ h : ℝ} (hA : 0 < A) (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (hh : h ∈ roundedPositiveDriftSet A ρ)
+    (hrightmost : IsRightmostRoundedPositiveDriftComponent A ρ h)
+    (B : Set ℝ) (hBCompact : IsCompact B)
+    (hBSub : B ⊆ Set.Ioc
+      (sInf (roundedPositiveDriftComponent A ρ h))
+      (sSup (roundedPositiveDriftComponent A ρ h))) :
+    let Ccomp := roundedPositiveDriftComponent A ρ h
+    ∃ η₀ : ℝ, 0 < η₀ ∧
+      sInf Ccomp < sSup Ccomp - η₀ ∧
+      sSup Ccomp + η₀ < roundedRadiusBound ρ ∧
+      ∀ η : ℝ, 0 < η → η < η₀ →
+        ∃ Tη : ℕ, ∃ C c₀ : ℝ, 0 < C ∧ 0 < c₀ ∧
+          ∀ (N : ℕ), 0 < N → ∀ q ∈ B, ∀ T : ℕ,
+            (markovPathMeasure (Measure.dirac q) (Hkernel A ρ N)).real
+                (metastableExitEvent (sSup Ccomp) η Tη T) ≤
+              C * (1 + T) * Real.exp (-c₀ * N) := by
+  obtain ⟨η₀, hη₀, hleft, hright, hbounds⟩ :=
+    exists_uniform_markovPathMeasure_entrance_exit_exp_bound
+      hA hρ hρ_lt hh hrightmost B hBCompact hBSub
+  refine ⟨η₀, hη₀, hleft, hright, ?_⟩
+  intro η hη hη_lt
+  obtain ⟨Tη, C, c₀, hC, hc₀, _hentrance, hexit⟩ :=
+    hbounds η hη hη_lt
+  exact ⟨Tη, C, c₀, hC, hc₀, hexit⟩
 
 /-- The scalar exponential estimate used when the persistence horizon is
 `floor (exp (c₁ N))` with `c₁ < c₀`. -/
@@ -3484,6 +3569,455 @@ theorem tendsto_Hkernel_survival_and_ae_absorption
     exact le_antisymm hInfLe measureReal_nonneg
   change ∀ᵐ ω ∂μ,
     absorptionTime (fun (s : ℕ) (ω : ℕ → ℝ) => ω s) ω ≠ ⊤
+  rw [ae_iff]
+  simpa only [Einf, not_ne_iff] using hInfZero
+
+/-- Vector-chain form of fixed-dimensional absorption. It applies in
+particular to every deterministic initial state in
+`roundedVectorStateSpace ρ N`. -/
+theorem tendsto_roundedPkernel_survival_and_ae_absorption
+    {A ρ : ℝ} (hA : 0 < A) (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    {N : ℕ} (hN : 0 < N) (x : Fin N → ℝ)
+    (hx : x ∈ roundedVectorStateSpace ρ N) :
+    Tendsto
+        (fun t : ℕ =>
+          (((roundedPkernel A ρ N) ^ t) x).real
+            ({(0 : Fin N → ℝ)}ᶜ))
+        atTop (𝓝 0) ∧
+      ∀ᵐ ω ∂markovPathMeasure (Measure.dirac x) (roundedPkernel A ρ N),
+        absorptionTime
+          (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω ≠ ⊤ := by
+  have hq :=
+    roundedRadiusSq_mem_Icc_of_mem_roundedVectorStateSpace hρ hN hx
+  have hscalar :=
+    tendsto_Hkernel_survival_and_ae_absorption hA hρ hρ_lt hN hq
+  have hsurv :
+      Tendsto
+        (fun t : ℕ =>
+          (((roundedPkernel A ρ N) ^ t) x).real
+            ({(0 : Fin N → ℝ)}ᶜ))
+        atTop (𝓝 0) := by
+    simpa only [measureReal_def,
+      roundedPkernel_pow_compl_singleton_zero_eq_Hkernel_pow hρ]
+      using hscalar.1
+  refine ⟨hsurv, ?_⟩
+  let μ :=
+    markovPathMeasure (Measure.dirac x) (roundedPkernel A ρ N)
+  let Einf : Set (ℕ → (Fin N → ℝ)) :=
+    {ω |
+      absorptionTime
+        (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω = ⊤}
+  have hsubset :
+      ∀ t : ℕ,
+        Einf ⊆
+          {ω |
+            (t : WithTop ℕ) <
+              absorptionTime
+                (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω} := by
+    intro t ω hω
+    change absorptionTime
+      (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω = ⊤ at hω
+    change
+      (t : WithTop ℕ) <
+        absorptionTime
+          (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω
+    rw [hω]
+    simp
+  have hsurvEq :
+      ∀ t : ℕ,
+        μ.real
+            {ω |
+              (t : WithTop ℕ) <
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω} =
+          (((roundedPkernel A ρ N) ^ t) x).real
+            ({(0 : Fin N → ℝ)}ᶜ) := by
+    intro t
+    rw [measureReal_def,
+      measure_roundedVectorAbsorptionTime_gt_eq A ρ N x t]
+    rfl
+  have hInfLe : μ.real Einf ≤ 0 := by
+    apply ge_of_tendsto' hsurv
+    intro t
+    rw [← hsurvEq t]
+    exact measureReal_mono (hsubset t)
+  have hInfZero : μ Einf = 0 := by
+    apply (measureReal_eq_zero_iff).mp
+    exact le_antisymm hInfLe measureReal_nonneg
+  change ∀ᵐ ω ∂μ,
+    absorptionTime
+      (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω ≠ ⊤
+  rw [ae_iff]
+  simpa only [Einf, not_ne_iff] using hInfZero
+
+/-- Paper-facing form of `thm:rounded-qualitative-metastability`. Above the
+fixed-precision existence threshold it selects a rightmost positive-drift
+component, exposes the full right-stability margin, gives the entrance and
+finite-horizon exit estimates with common constants, derives exponential
+survival for deterministic rounded-vector initial families, and records
+almost-sure absorption in every fixed positive dimension. -/
+theorem rounded_qualitative_metastability_paper
+    {A ρ : ℝ} (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (hA : roundedExistenceThreshold ρ < A) :
+    ∃ h : ℝ, h ∈ roundedPositiveDriftSet A ρ ∧
+      IsRightmostRoundedPositiveDriftComponent A ρ h ∧
+      let Ccomp := roundedPositiveDriftComponent A ρ h
+        ∃ η₀ : ℝ, 0 < η₀ ∧
+          sInf Ccomp < sSup Ccomp - η₀ ∧
+          sSup Ccomp + η₀ < roundedRadiusBound ρ ∧
+          (∀ u ∈ Set.Ioc (sSup Ccomp) (sSup Ccomp + η₀),
+            roundedMeanMap A ρ u < u) ∧
+          ((∀ (B : Set ℝ), IsCompact B →
+              B ⊆ Set.Ioc (sInf Ccomp) (sSup Ccomp) →
+              ∀ η : ℝ, 0 < η → η < η₀ →
+                ∃ Tη : ℕ, ∃ C c₀ c₁ : ℝ,
+                  0 < C ∧ 0 < c₀ ∧ 0 < c₁ ∧ c₁ < c₀ ∧
+                  (∀ (N : ℕ), 0 < N → ∀ x : Fin N → ℝ,
+                    roundedRadiusSq ρ N x ∈ B →
+                    (markovPathMeasure
+                        (Measure.dirac (roundedRadiusSq ρ N x))
+                        (Hkernel A ρ N)).real
+                        {ω : ℕ → ℝ |
+                          |ω Tη - sSup Ccomp| > η / 2} ≤
+                      C * Real.exp (-c₀ * N)) ∧
+                  (∀ (N : ℕ), 0 < N → ∀ x : Fin N → ℝ,
+                    roundedRadiusSq ρ N x ∈ B → ∀ T : ℕ,
+                    (markovPathMeasure
+                        (Measure.dirac (roundedRadiusSq ρ N x))
+                        (Hkernel A ρ N)).real
+                        (metastableExitEvent (sSup Ccomp) η Tη T) ≤
+                      C * (1 + T) * Real.exp (-c₀ * N)) ∧
+                  (∀ x : ∀ N : ℕ, Fin N → ℝ,
+                    (∀ N, roundedRadiusSq ρ N (x N) ∈ B) →
+                    Tendsto
+                      (fun N : ℕ =>
+                        (markovPathMeasure (Measure.dirac (x N))
+                            (roundedPkernel A ρ N)).real
+                          {ω |
+                            ((Tη + ⌊Real.exp (c₁ * N)⌋₊ : ℕ) :
+                                WithTop ℕ) <
+                              absorptionTime
+                                (fun (s : ℕ)
+                                  (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+                      atTop (𝓝 1))) ∧
+            ∀ (N : ℕ), 0 < N → ∀ x ∈ roundedVectorStateSpace ρ N,
+              ∀ᵐ ω ∂markovPathMeasure (Measure.dirac x)
+                  (roundedPkernel A ρ N),
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω ≠ ⊤) := by
+  have hApos : 0 < A :=
+    (roundedExistenceThreshold_pos hρ hρ_lt).trans hA
+  have hne := roundedPositiveDriftSet_nonempty hρ hρ_lt hA
+  obtain ⟨h, hh, hrightmost⟩ :=
+    exists_isRightmostRoundedPositiveDriftComponent
+      hApos hρ hρ_lt hne
+  refine ⟨h, hh, hrightmost, ?_⟩
+  let Ccomp := roundedPositiveDriftComponent A ρ h
+  obtain ⟨ηs, hηs, hlefts, hrights, hstable⟩ :=
+    roundedPositiveDriftComponent_right_stable_of_rightmost
+      hApos hρ hρ_lt hh hrightmost
+  refine ⟨ηs, hηs, hlefts, hrights, hstable, ?_, ?_⟩
+  · intro B hBCompact hBSub η hη hη_lt
+    obtain ⟨ηb, hηb, _hleftb, _hrightb, hbounds⟩ :=
+      exists_uniform_markovPathMeasure_entrance_exit_exp_bound
+        hApos hρ hρ_lt hh hrightmost B hBCompact hBSub
+    let η' := min (η / 2) (ηb / 2)
+    have hη' : 0 < η' := by
+      dsimp only [η']
+      exact lt_min (half_pos hη) (half_pos hηb)
+    have hη'_lt_b : η' < ηb := by
+      exact (min_le_right (η / 2) (ηb / 2)).trans_lt (half_lt_self hηb)
+    have hη'_le : η' ≤ η := by
+      exact (min_le_left (η / 2) (ηb / 2)).trans (half_le_self hη.le)
+    obtain ⟨Tη, C, c₀, hC, hc₀, hentranceSmall, hexitSmall⟩ :=
+      hbounds η' hη' hη'_lt_b
+    have hentrance :
+        ∀ (N : ℕ), 0 < N → ∀ x : Fin N → ℝ,
+          roundedRadiusSq ρ N x ∈ B →
+          (markovPathMeasure
+              (Measure.dirac (roundedRadiusSq ρ N x))
+              (Hkernel A ρ N)).real
+              {ω : ℕ → ℝ | |ω Tη - sSup Ccomp| > η / 2} ≤
+            C * Real.exp (-c₀ * N) := by
+      intro N hN x hx
+      apply (measureReal_mono ?_).trans
+        (hentranceSmall N hN (roundedRadiusSq ρ N x) hx)
+      intro ω hω
+      change η / 2 < |ω Tη - sSup Ccomp| at hω
+      change η' / 2 < |ω Tη - sSup Ccomp|
+      exact (div_le_div_of_nonneg_right hη'_le (by norm_num)).trans_lt hω
+    have hexit :
+        ∀ (N : ℕ), 0 < N → ∀ x : Fin N → ℝ,
+          roundedRadiusSq ρ N x ∈ B → ∀ T : ℕ,
+          (markovPathMeasure
+              (Measure.dirac (roundedRadiusSq ρ N x))
+              (Hkernel A ρ N)).real
+              (metastableExitEvent (sSup Ccomp) η Tη T) ≤
+            C * (1 + T) * Real.exp (-c₀ * N) := by
+      intro N hN x hx T
+      apply (measureReal_mono ?_).trans
+        (hexitSmall N hN (roundedRadiusSq ρ N x) hx T)
+      rintro ω ⟨s, hs, hω⟩
+      exact ⟨s, hs, hη'_le.trans_lt hω⟩
+    let c₁ := c₀ / 2
+    have hc₁ : 0 < c₁ := half_pos hc₀
+    have hc₁_lt : c₁ < c₀ := half_lt_self hc₀
+    refine ⟨Tη, C, c₀, c₁, hC, hc₀, hc₁, hc₁_lt,
+      hentrance, hexit, ?_⟩
+    · intro x hxB
+      let b : ℕ → ℝ := fun N =>
+        C * (1 + (⌊Real.exp (c₁ * N)⌋₊ : ℝ)) *
+          Real.exp (-c₀ * N)
+      let p : ℕ → ℝ := fun N =>
+        (markovPathMeasure
+            (Measure.dirac (roundedRadiusSq ρ N (x N)))
+            (Hkernel A ρ N)).real
+          {ω |
+            ((Tη + ⌊Real.exp (c₁ * N)⌋₊ : ℕ) : WithTop ℕ) <
+              absorptionTime
+                (fun (s : ℕ) (ω : ℕ → ℝ) => ω s) ω}
+      have hb : Tendsto b atTop (𝓝 0) :=
+        tendsto_one_add_floor_exp_mul_exp_neg hC.le hc₁ hc₁_lt
+      have hwell : 0 < sSup Ccomp - η := by
+        have hends :=
+          roundedPositiveDriftComponent_endpoints hApos hρ hρ_lt hh
+        exact hends.1.trans (by linarith)
+      have hlower : ∀ᶠ N in atTop, 1 - b N ≤ p N := by
+        filter_upwards [eventually_atTop.2 ⟨1, fun _ hN => hN⟩] with N hN
+        have hexitN :=
+          hexit N (by omega) (x N) (hxB N)
+            ⌊Real.exp (c₁ * N)⌋₊
+        have hbridge :=
+          one_sub_measureReal_metastableExitEvent_le_survival
+            (A := A) (ρ := ρ) (upper := sSup Ccomp) (η := η)
+            (q := roundedRadiusSq ρ N (x N)) (N := N) (t₀ := Tη)
+            (T := ⌊Real.exp (c₁ * N)⌋₊) hwell
+        exact (sub_le_sub_left hexitN 1).trans hbridge
+      have hp : Tendsto p atTop (𝓝 1) := by
+        have hlower_tendsto :
+            Tendsto (fun N => 1 - b N) atTop (𝓝 1) := by
+          simpa using tendsto_const_nhds.sub hb
+        have hupper : ∀ᶠ N in atTop, p N ≤ 1 :=
+          Eventually.of_forall fun _ => measureReal_le_one
+        exact tendsto_of_tendsto_of_tendsto_of_le_of_le'
+          hlower_tendsto tendsto_const_nhds hlower hupper
+      simpa only [p, measureReal_def,
+        measure_roundedVectorAbsorptionTime_gt_eq,
+        measure_roundedAbsorptionTime_gt_eq,
+        roundedPkernel_pow_compl_singleton_zero_eq_Hkernel_pow hρ]
+        using hp
+  · intro N hN x hx
+    exact
+      (tendsto_roundedPkernel_survival_and_ae_absorption
+        hApos hρ hρ_lt hN x hx).2
+
+/- The first rounded transition enters the canonical compact interval, after
+which the uniform geometric absorption bound applies. -/
+theorem exists_geometric_Hkernel_survival_bound_succ
+    {A ρ q : ℝ} (hA : 0 < A) (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    {N : ℕ} (hN : 0 < N) :
+    ∃ p : ℝ, 0 < p ∧ p ≤ 1 ∧
+      ∀ t : ℕ,
+        (((Hkernel A ρ N) ^ (t + 1)) q).real {(0 : ℝ)}ᶜ ≤
+          (1 - p) ^ t := by
+  obtain ⟨p, hp, hpzero⟩ :=
+    exists_pos_le_measureReal_Hkernel_singleton_zero hA hρ hρ_lt N
+  have hp_le : p ≤ 1 :=
+    (hpzero 0 ⟨le_rfl, roundedRadiusBound_nonneg ρ⟩).trans
+      measureReal_le_one
+  have hcp : 0 ≤ 1 - p := sub_nonneg.mpr hp_le
+  let c : ENNReal := ENNReal.ofReal (1 - p)
+  have hc : c.toReal = 1 - p := ENNReal.toReal_ofReal hcp
+  have hENN :
+      ∀ t : ℕ,
+        ((Hkernel A ρ N) ^ (t + 1)) q {(0 : ℝ)}ᶜ ≤ c ^ t := by
+    intro t
+    induction t with
+    | zero =>
+        calc
+          ((Hkernel A ρ N) ^ (0 + 1)) q {(0 : ℝ)}ᶜ ≤
+              ((Hkernel A ρ N) ^ (0 + 1)) q Set.univ :=
+            measure_mono (Set.subset_univ _)
+          _ = 1 := measure_univ
+          _ = c ^ 0 := by simp
+    | succ t ih =>
+        let ν := ((Hkernel A ρ N) ^ (t + 1)) q
+        haveI : IsProbabilityMeasure ν := by
+          dsimp only [ν]
+          infer_instance
+        have hstate :
+            ∀ᵐ h ∂ν, h ∈ Set.Icc 0 (roundedRadiusBound ρ) := by
+          let μ :=
+            markovPathMeasure (Measure.dirac q) (Hkernel A ρ N)
+          have hpath :
+              ∀ᵐ ω ∂μ,
+                ω (t + 1) ∈ Set.Icc 0 (roundedRadiusBound ρ) := by
+            dsimp only [μ]
+            exact
+              markovPathMeasure_ae_eval_succ_mem_roundedRadiusBound_Icc
+                hρ hN (Measure.dirac q) t
+          have hmap :
+              μ.map (fun ω => ω (t + 1)) = ν := by
+            dsimp only [μ, ν]
+            exact markovPathMeasure_dirac_map_eval
+              q (Hkernel A ρ N) (t + 1)
+          have hmapped :
+              ∀ᵐ h ∂μ.map (fun ω => ω (t + 1)),
+                h ∈ Set.Icc 0 (roundedRadiusBound ρ) :=
+            (MeasureTheory.ae_map_iff
+              (measurable_pi_apply (t + 1)).aemeasurable measurableSet_Icc).2 hpath
+          rwa [hmap] at hmapped
+        have hpoint :
+            ∀ᵐ h ∂ν,
+              Hkernel A ρ N h {(0 : ℝ)}ᶜ ≤
+                ({(0 : ℝ)}ᶜ : Set ℝ).indicator (fun _ => c) h := by
+          filter_upwards [hstate] with h hh
+          by_cases hz : h = 0
+          · subst h
+            rw [isAbsorbing_Hkernel,
+              Set.indicator_of_notMem (by simp)]
+            simp
+          · rw [Set.indicator_of_mem (by simpa)]
+            have hreal :
+                (Hkernel A ρ N h).real {(0 : ℝ)}ᶜ ≤ 1 - p := by
+              rw [measureReal_compl (measurableSet_singleton (0 : ℝ)),
+                probReal_univ]
+              linarith [hpzero h hh]
+            calc
+              Hkernel A ρ N h {(0 : ℝ)}ᶜ =
+                  ENNReal.ofReal
+                    ((Hkernel A ρ N h).real {(0 : ℝ)}ᶜ) := by
+                    rw [measureReal_def,
+                      ENNReal.ofReal_toReal (measure_ne_top _ _)]
+              _ ≤ ENNReal.ofReal (1 - p) :=
+                ENNReal.ofReal_le_ofReal hreal
+              _ = c := rfl
+        rw [pow_succ',
+          show Hkernel A ρ N * (Hkernel A ρ N) ^ (t + 1) =
+              Kernel.comp (Hkernel A ρ N) ((Hkernel A ρ N) ^ (t + 1)) from rfl]
+        calc
+          (Kernel.comp (Hkernel A ρ N) ((Hkernel A ρ N) ^ (t + 1)) q)
+                {(0 : ℝ)}ᶜ =
+              ∫⁻ h, Hkernel A ρ N h {(0 : ℝ)}ᶜ ∂ν := by
+                simpa only [ν] using
+                  Kernel.comp_apply' (Hkernel A ρ N)
+                    ((Hkernel A ρ N) ^ (t + 1)) q
+                    (measurableSet_singleton (0 : ℝ)).compl
+          _ ≤
+              ∫⁻ h,
+                ({(0 : ℝ)}ᶜ : Set ℝ).indicator (fun _ => c) h ∂ν :=
+            lintegral_mono_ae hpoint
+          _ = c * ν {(0 : ℝ)}ᶜ := by
+            rw [lintegral_indicator (measurableSet_singleton (0 : ℝ)).compl,
+              setLIntegral_const]
+          _ ≤ c * c ^ t := by gcongr
+          _ = c ^ (t + 1) := by
+            rw [pow_succ]
+            exact mul_comm _ _
+  refine ⟨p, hp, hp_le, ?_⟩
+  intro t
+  rw [measureReal_def]
+  calc
+    ((((Hkernel A ρ N) ^ (t + 1)) q {(0 : ℝ)}ᶜ).toReal)
+        ≤ (c ^ t).toReal :=
+      ENNReal.toReal_mono (by finiteness) (hENN t)
+    _ = (1 - p) ^ t := by rw [ENNReal.toReal_pow, hc]
+
+/-! The exact finite-state paper-facing absorption clause. -/
+
+theorem ae_absorption_roundedPkernel_of_rounded_state
+    {A ρ : ℝ} (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (hA : roundedExistenceThreshold ρ < A)
+    {N : ℕ} (hN : 0 < N)
+    (y : Fin N → ℝ) (hy : y ∈ roundedStateSpace ρ N) :
+    ∀ᵐ ω ∂markovPathMeasure
+        (Measure.dirac y) (roundedPkernel A ρ N),
+      absorptionTime
+        (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω ≠ ⊤ := by
+  have hApos : 0 < A :=
+    (roundedExistenceThreshold_pos hρ hρ_lt).trans hA
+  obtain ⟨p, hp, hp_le, hbound⟩ :=
+    exists_geometric_Hkernel_survival_bound_succ
+      hApos hρ hρ_lt hN (q := roundedRadiusSq ρ N y)
+  have hbase0 : 0 ≤ 1 - p := sub_nonneg.mpr hp_le
+  have hbase1 : 1 - p < 1 := by linarith
+  have hgeom :
+      Tendsto (fun t : ℕ => (1 - p) ^ t) atTop (𝓝 0) :=
+    tendsto_pow_atTop_nhds_zero_of_lt_one hbase0 hbase1
+  have hscalar_surv :
+      Tendsto
+        (fun t : ℕ =>
+          (((Hkernel A ρ N) ^ (t + 1)) (roundedRadiusSq ρ N y)).real
+            {(0 : ℝ)}ᶜ)
+        atTop (𝓝 0) := by
+    apply squeeze_zero
+    · intro t
+      exact measureReal_nonneg
+    · exact hbound
+    · exact hgeom
+  have hsurv_shift :
+      Tendsto
+        (fun t : ℕ =>
+          (((roundedPkernel A ρ N) ^ (t + 1)) y).real
+            ({(0 : Fin N → ℝ)}ᶜ))
+        atTop (𝓝 0) := by
+    convert hscalar_surv using 1
+    funext t
+    rw [measureReal_def, measureReal_def,
+      roundedPkernel_pow_compl_singleton_zero_eq_Hkernel_pow hρ]
+  have hsurv :
+      Tendsto
+        (fun t : ℕ =>
+          (((roundedPkernel A ρ N) ^ t) y).real
+            ({(0 : Fin N → ℝ)}ᶜ))
+        atTop (𝓝 0) :=
+    (tendsto_add_atTop_iff_nat 1).mp hsurv_shift
+  let μ := markovPathMeasure (Measure.dirac y) (roundedPkernel A ρ N)
+  let Einf : Set (ℕ → (Fin N → ℝ)) :=
+    {ω |
+      absorptionTime
+        (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω = ⊤}
+  have hsubset :
+      ∀ t : ℕ,
+        Einf ⊆
+          {ω |
+            (t : WithTop ℕ) <
+              absorptionTime
+                (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω} := by
+    intro t ω hω
+    change
+      absorptionTime
+        (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω = ⊤ at hω
+    change
+      (t : WithTop ℕ) <
+        absorptionTime
+          (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω
+    rw [hω]
+    simp
+  have hsurvEq :
+      ∀ t : ℕ,
+        μ.real
+            {ω |
+              (t : WithTop ℕ) <
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω} =
+          (((roundedPkernel A ρ N) ^ t) y).real
+            ({(0 : Fin N → ℝ)}ᶜ) := by
+    intro t
+    rw [measureReal_def,
+      measure_roundedVectorAbsorptionTime_gt_eq A ρ N y t]
+    rfl
+  have hInfLe : μ.real Einf ≤ 0 := by
+    apply ge_of_tendsto' hsurv
+    intro t
+    rw [← hsurvEq t]
+    exact measureReal_mono (hsubset t)
+  have hInfZero : μ Einf = 0 := by
+    apply (measureReal_eq_zero_iff).mp
+    exact le_antisymm hInfLe measureReal_nonneg
+  change ∀ᵐ ω ∂μ,
+    absorptionTime
+      (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω ≠ ⊤
   rw [ae_iff]
   simpa only [Einf, not_ne_iff] using hInfZero
 
