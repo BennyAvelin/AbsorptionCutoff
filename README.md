@@ -21,8 +21,8 @@ point of the grid `ρℤ`. Rounding makes the zero bin absorbing, and the paper
 describes when and how sharply the chain is absorbed — and, in the supercritical
 regime, what the invariant law looks like near the origin.
 
-- **86 Lean modules, ~70,200 lines** under `AbsorptionCutoff/`, plus a ~3,100-line
-  Mathlib-only audit surface under `Audit/`.
+- **86 Lean modules, 72,094 lines** under `AbsorptionCutoff/`, plus **15 audit
+  files and 3,455 lines** in the Mathlib-only audit surface under `Audit/`.
 - **No `sorry`** anywhere in the library. (Each comparator challenge in `Audit/`
   contains its single intentional statement-level `sorry`, filled by the
   corresponding solution file.)
