@@ -8,6 +8,8 @@ and stationary singularities for rounded Gaussian random dynamical systems*
 [![CI](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/build.yml/badge.svg)](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/build.yml)
 [![Comparator audit](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/comparator.yml/badge.svg)](https://github.com/BennyAvelin/AbsorptionCutoff/actions/workflows/comparator.yml)
 
+Release version: `1.0.0`
+
 ## What this is
 
 The manuscript studies the Gaussian random dynamical system on `ℝ^N`
