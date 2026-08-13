@@ -52,7 +52,7 @@ its conclusion implies the manuscript's conclusion.
 ## The manuscript
 
 The exact manuscript snapshot used for this release is included as
-[`manuscript/absorption-cutoff.pdf`](manuscript/absorption-cutoff.pdf), together
+[`manuscript/manuscript.pdf`](manuscript/manuscript.pdf), together
 with self-contained LaTeX build inputs. Its SHA-256 digest and provenance are
 recorded in
 [`manuscript/README.md`](manuscript/README.md). This fixed snapshot makes the

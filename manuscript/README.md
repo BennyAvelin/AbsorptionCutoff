@@ -1,25 +1,24 @@
 # Manuscript snapshot
 
-`absorption-cutoff.pdf` is the exact source snapshot used for the 1.1.0
+`manuscript.pdf` is the exact source snapshot used for the 1.1.0
 formalization release. It was rebuilt from the author's current LaTeX source on
 2026-08-13 and contains 74 pages.
 
-Provenance: the PDF was built from `nn_cutoff_arxiv_refactor.tex` in the
-[`BennyAvelin/NNCutoff`](https://github.com/BennyAvelin/NNCutoff) source
+Provenance: the PDF was built from the file now bundled as `manuscript.tex` in
+the [`BennyAvelin/NNCutoff`](https://github.com/BennyAvelin/NNCutoff) source
 repository at commit `527fc7f26bcfe863eebb44aad4dd9107ddd5fad1`. The
 self-contained LaTeX inputs from that commit are bundled in [`source/`](source/)
 because the commit had not yet been pushed to that separate repository when
 this release was prepared. The bundle includes the `.bbl` generated from that
 commit's `refs.bib` and the seven used figures. From that directory, the
-snapshot can be rebuilt
-without BibTeX by running
-`pdflatex -interaction=nonstopmode -halt-on-error nn_cutoff_arxiv_refactor.tex`
+snapshot can be rebuilt without BibTeX by running
+`pdflatex -interaction=nonstopmode -halt-on-error manuscript.tex`
 three times.
 
 SHA-256:
 
 ```text
-873d155bb25921c97adc2d8b1764c54dc3184a6495c17202558ad1f7d841182a  absorption-cutoff.pdf
+873d155bb25921c97adc2d8b1764c54dc3184a6495c17202558ad1f7d841182a  manuscript.pdf
 ```
 
 This fixed copy and its build inputs are included so the manuscript-to-Lean

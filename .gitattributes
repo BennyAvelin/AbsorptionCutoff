@@ -1,4 +1,4 @@
 * text=auto
 
 # Preserve the exact manuscript-source snapshot, including upstream whitespace.
-manuscript/source/nn_cutoff_arxiv_refactor.tex whitespace=-trailing-space
+manuscript/source/manuscript.tex whitespace=-trailing-space

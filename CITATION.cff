@@ -34,7 +34,7 @@ references:
       - family-names: Avelin
         given-names: Benny
     year: 2026
-    url: "https://github.com/BennyAvelin/AbsorptionCutoff/blob/v1.1/manuscript/absorption-cutoff.pdf"
+    url: "https://github.com/BennyAvelin/AbsorptionCutoff/blob/v1.1/manuscript/manuscript.pdf"
     notes: "The fixed manuscript snapshot formalized by release 1.1.0; self-contained build inputs are bundled under manuscript/source, and an arXiv identifier will be added when available."
   - type: article
     title: "Formalization of De Giorgi--Nash--Moser Theory in Lean"

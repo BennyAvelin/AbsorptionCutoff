@@ -15,7 +15,7 @@ sources:
   - title: "Absorption cutoff and stationary singularities for rounded Gaussian random dynamical systems"
     authors:
       - "Benny Avelin"
-    id: "https://github.com/BennyAvelin/AbsorptionCutoff/blob/v1.1/manuscript/absorption-cutoff.pdf"
+    id: "https://github.com/BennyAvelin/AbsorptionCutoff/blob/v1.1/manuscript/manuscript.pdf"
     type: "manuscript"
     location: "Bundled PDF and self-contained build inputs under manuscript/"
     relationship: "formalizes"
