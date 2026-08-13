@@ -1,8 +1,11 @@
-version: "v0.3"
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/17b5cdfc99facc7e1dfe0a0daa546a8878fa6217/schema/v0.4.schema.json
+version: "v0.4"
 
 project:
   name: "AbsorptionCutoff"
   authors:
+    - "Benny Avelin"
+  responsible_maintainers:
     - "Benny Avelin"
   license: "Apache-2.0"
   release_version: "1.1.0"
@@ -12,11 +15,30 @@ sources:
   - title: "Absorption cutoff and stationary singularities for rounded Gaussian random dynamical systems"
     authors:
       - "Benny Avelin"
-    id: ""                      # TODO: arXiv identifier once the manuscript is posted
+    id: "https://github.com/BennyAvelin/AbsorptionCutoff/blob/v1.1/manuscript/absorption-cutoff.pdf"
     type: "manuscript"
+    location: "Bundled PDF and self-contained build inputs under manuscript/"
+    relationship: "formalizes"
     license: "all rights reserved"
-    author_contacted: "n/a"     # the formalizer is the author of the source
-    prior_work: ""
+    author_endorsement: "participated"
+
+related_formalizations:
+  - id: "https://github.com/scottnarmstrong/DeGiorgi"
+    relationship: "other"
+    note: >-
+      Scott Armstrong and Julia Kempe's formalization of core elliptic
+      De Giorgi–Nash–Moser theory; motivation for undertaking and publicly
+      documenting a large modern-analysis formalization.
+  - id: "https://github.com/scottnarmstrong/CoarseGraining"
+    relationship: "other"
+    note: >-
+      Scott Armstrong and Tuomo Kuusi's formalization of coarse-graining and
+      quantitative stochastic homogenization; motivation for this project's
+      explicit manuscript correspondence and comparator-audit design.
+
+classification:
+  arxiv: ["math.PR", "math.DS"]
+  msc2020: ["60J05", "60K05", "60G50", "37H15", "68T07"]
 
 status:
   scope: >-
@@ -25,11 +47,13 @@ status:
     nonlinearity and nearest-grid rounding: the fixed-width vanishing-mesh cutoff
     profile, with the full cutoff predicate checking center divergence, eventual
     window positivity, and the little-o window condition; the fixed-precision
-    dimension cutoff, both clauses of qualitative metastability (including
+    dimension cutoff; both clauses of qualitative metastability (including
     fixed-dimensional absorption from every point of the full finite rounded
-    state space), the
-    supercritical dimension cutoff in scalar and reconstructed
-    vector form, and the fixed-dimensional stationary power singularity. Every
+    state space); the supercritical dimension cutoff in scalar and reconstructed
+    vector form; and
+    the fixed-dimensional stationary power singularity, with normalized
+    directional convergence and the equivalent normalized form of the radial
+    asymptotic. Every
     result stated in the manuscript's main-results section is formalized and
     exposed in AbsorptionCutoff/MainTheorems.lean. The six paper-facing results,
     plus a focused alias for the fixed-dimensional absorption clause, are checked
@@ -91,11 +115,12 @@ automation:
   methods:
     - method: "agent"
       models:
-        # Autoformalization of the manuscript. The bulk of the work over the
-        # final weeks was done by GPT-5.6; the Claude models contributed
-        # throughout, and Opus 5 additionally carried the release track (the
-        # Mathlib-only audit surface, the comparator tooling, CI, and the
-        # release documentation).
+        # ChatGPT 5.5 and Claude Opus 4.8 contributed to manuscript drafting and
+        # the earlier development. The bulk of the work over the final weeks was
+        # done by GPT-5.6; the Claude models contributed throughout, and Opus 5
+        # additionally carried the release track (the Mathlib-only audit
+        # surface, comparator tooling, CI, and release documentation).
+        - "gpt-5.5"
         - "gpt-5.6-sol"
         - "claude-opus-4-8"
         - "claude-opus-5"
@@ -106,12 +131,13 @@ automation:
         docker/audit.Dockerfile, with leanprover/comparator at
         07bc4ea40f2266dcb861820a2ec1fa3244ed307f, leanprover/lean4export at
         4e7915201d3f9f04470d9eae002fa695f7cdc589 (both the v4.32.0 window), and
-        Zouuup/landrun v0.1.17. See the disclosure below for the one local
-        modification to that tooling.
+        Zouuup/landrun v0.1.17 at
+        62823c05e58ec22c1f91b4c8468318c1f97f2d32. See the disclosure below for
+        the one local modification to that tooling.
       cost:
         wall_time: >-
           About two weeks of calendar time: first Lean commit 2026-07-21,
-          release candidate finalized 2026-08-12, after roughly 2,870
+          release candidate finalized 2026-08-13, after roughly 2,870
           development commits. Machine hours were not tracked separately.
         # The standard names this field spend_usd; the amount below is reported
         # in EUR, the currency actually billed.
@@ -124,23 +150,30 @@ automation:
       prompting_notes: >-
         Autoformalization: the Lean proofs were written from the manuscript's
         arguments by the models above under the author's supervision, rather
-        than typed by hand, with GPT-5.6 responsible for most of the recent
-        work. Correctness does not depend on that process -- it is
+        than typed by hand. The manuscript acknowledgement names ChatGPT 5.5
+        and Claude Opus 4.8, which contributed to its drafting and the earlier
+        development; this release metadata additionally records the later
+        formalization and release work, with GPT-5.6 responsible for most of the
+        recent work and Claude Opus 5 contributing to the release track.
+        Correctness does not depend on that process -- it is
         enforced by the Lean kernel, by the machine-verified absence of sorry
-        and custom axioms, and by the comparator checks on the public
-        statements.
+        from the production library and of custom axioms, and by the comparator
+        checks on the audited declarations. The public repository starts from a
+        curated release snapshot; the earlier development commits counted above
+        are not included in its public Git history.
   # Reported in EUR, the currency actually billed, despite the field name.
   spend_usd: >-
     On the order of EUR 120: consumer subscriptions only (a EUR 100 per month
     ChatGPT Pro plan, the lower-priced Pro tier, and a Claude Pro plan, about one
     month of each). No metered API usage.
   notes: >-
-    Every proof is checked by the Lean kernel and Mathlib; the verified library
+    Every proof is checked by the Lean kernel and Mathlib; the production library
     contains no sorry and no custom axiom. The Mathlib-only comparator challenge
     files (Audit/*/Challenge.lean) each contain exactly one intentional
     statement-level sorry -- the body of the theorem being challenged -- which
     the corresponding Audit/*/Solution.lean fills and leanprover/comparator
-    confirms ("Your solution is okay!"). All seven passed on 2026-08-12.
+    confirms ("Your solution is okay!"). All seven passed on 2026-08-13 from
+    commit b0943d9.
 
     DISCLOSURE, tooling modification: the comparator is invoked through
     docker/landrun-argv-shim.sh rather than calling landrun directly. landrun
@@ -165,8 +198,10 @@ automation:
 fidelity:
   divergences: >-
     Recorded item by item in CORRESPONDENCE.md, and all of them are packaging,
-    proof route, or cases where the Lean result is stronger; no theorem rests on
-    a hypothesis weaker than the manuscript's. Summary: the fixed-width theorem
+    proof route, or cases where the Lean result is stronger. After unfolding the
+    standing notation and equivalent regime formulations, the manuscript's
+    hypotheses imply those of the corresponding Lean declaration, and its
+    conclusion implies the manuscript's conclusion. Summary: the fixed-width theorem
     is stated along positive mesh sequences rather than as a continuous limit;
     the renewal terminal term and the signed kernel are handled by different but
     equivalent routes; several manuscript intermediates (the transfer operator,
@@ -180,10 +215,12 @@ review:
   reviewers:
     - "Benny Avelin"
   notes: >-
-    Correctness of every proof is guaranteed by the Lean kernel and Mathlib (no
-    sorry, no custom axiom). The public statements were additionally checked by
-    leanprover/comparator against Mathlib-only restatements. This is not external
-    peer review.
+    The Lean kernel and Mathlib check every production-library proof term (no
+    sorry, no custom axiom). The seven audited declarations were additionally
+    checked by leanprover/comparator against Mathlib-only restatements. This
+    checks the chosen formal statements, not their semantic correspondence with
+    the manuscript; that correspondence was reviewed by the author and recorded
+    in CORRESPONDENCE.md. This is not external peer review.
 
 alignment:
   namespace: "AbsorptionCutoff"
@@ -220,4 +257,8 @@ alignment:
 acknowledgements: >-
   Built on Lean 4, Mathlib, and Lake. The audit in Audit/ uses
   leanprover/comparator, leanprover/lean4export, and Zouuup/landrun; the
-  blueprint uses leanblueprint and PatrickMassot/checkdecls.
+  blueprint uses leanblueprint and PatrickMassot/checkdecls. Scott Armstrong
+  and Julia Kempe's DeGiorgi project motivated the scale and public
+  documentation of this formalization; Scott Armstrong and Tuomo Kuusi's
+  CoarseGraining project additionally motivated its explicit correspondence and
+  comparator-audit structure.

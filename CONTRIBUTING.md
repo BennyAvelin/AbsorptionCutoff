@@ -11,15 +11,16 @@ check but is largely serial and will not show the same CPU utilization.
 
 ```bash
 lake exe cache get   # prebuilt Mathlib oleans -- do not skip
-lake build           # the complete library (8,741 jobs in the current tree)
-lake build Audit     # library plus the audit surface (8,755 jobs)
+lake build           # the complete library
+lake build Audit     # library plus the audit surface
 ```
 
 The current checkout completes both native targets successfully. The audit
-target emits the seven expected warnings for the intentional `sorry`s in
+target's output includes the seven expected warnings for the intentional `sorry`s in
 `Audit/*/Challenge.lean`; those are statement placeholders used by the
-comparator and are not library gaps. Use Lake's `-j` option to control native
-parallelism when needed, for example `lake build -j 8 Audit`.
+comparator and are not library gaps.
+Set `LEAN_NUM_THREADS` to control Lean's task pool when needed, for example
+`LEAN_NUM_THREADS=8 lake build Audit`.
 
 The toolchain is pinned in [`lean-toolchain`](lean-toolchain), so
 [`elan`](https://github.com/leanprover/elan) installs the right Lean
@@ -53,10 +54,13 @@ A few practical notes for working with a development of this size:
 
 ## Invariants to preserve
 
-- **No `sorry` and no custom `axiom` in `AbsorptionCutoff/`.** The seven headline
-  theorems reduce to Mathlib's three standard foundational axioms;
-  [`AbsorptionCutoff/Meta/AxiomsAudit.lean`](AbsorptionCutoff/Meta/AxiomsAudit.lean) prints that
-  fact, and CI builds it so the log carries the evidence.
+- **No `sorry` and no custom `axiom` in `AbsorptionCutoff/`.** The six
+  paper-facing results and focused absorption alias reduce to Mathlib's three
+  standard foundational axioms;
+  [`AbsorptionCutoff/Meta/AxiomsAudit.lean`](AbsorptionCutoff/Meta/AxiomsAudit.lean)
+  rejects any namespace-local custom axiom or `sorryAx` dependency and prints
+  the audited declarations' axiom sets; CI builds it so the log carries the
+  evidence.
 
 - **The only `sorry`s in the repository are the seven intentional ones** in
   `Audit/*/Challenge.lean` — each is the body of the theorem being challenged,
@@ -86,5 +90,13 @@ surface elaborates. `scripts/audit-docker.sh` is the reproducibility and
 comparator-sandbox workflow: it runs the same build inside the pinned Linux
 image and then invokes `leanprover/comparator`. Docker is needed here because
 the comparator's Landlock sandbox cannot run directly on macOS; it is not
-required for ordinary Lean development. The GitHub workflow runs the same
-Docker-based comparator audit in CI.
+required for ordinary Lean development. The GitHub workflow builds and runs the
+same pinned comparator toolchain directly on a Linux runner.
+
+## Licensing contributions
+
+By submitting a contribution, you agree that it may be distributed under this
+repository's Apache License 2.0. Do not submit third-party material unless its
+license is compatible and its attribution and modification notices are retained.
+The bundled manuscript and its source inputs are not an open contribution target
+and remain all rights reserved.

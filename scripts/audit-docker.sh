@@ -25,15 +25,19 @@ IMAGE="${AUDIT_IMAGE:-absorptioncutoff-audit}"
 VOLUME="${AUDIT_VOLUME:-absorptioncutoff-project}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-docker run --rm \
+docker run --rm --pull=never \
   -v "${repo_root}":/src:ro \
   -v "${VOLUME}":/project \
   "${IMAGE}" bash -lc '
     set -euo pipefail
-    rsync -a --delete --exclude .git --exclude .lake /src/ /project/
+    find /project -type f \( -name .env -o -name ".env.*" -o -name "*.pem" -o -name "*.key" \) \
+      ! -name .env.example -delete
+    rsync -a --delete --exclude .git --exclude .lake \
+      --include .env.example --exclude .env --exclude ".env.*" \
+      --exclude "*.pem" --exclude "*.key" /src/ /project/
     cd /project
     lake exe cache get
     lake build
     lake build Audit
-    scripts/run-comparator.sh '"$*"'
-  '
+    scripts/run-comparator.sh "$@"
+  ' bash "$@"

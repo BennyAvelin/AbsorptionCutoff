@@ -1,3 +1,4 @@
+# Derived from leanblueprint project templates; modified for AbsorptionCutoff.
 # This file configures the latexmk command you can use to compile
 # the pdf version of the blueprint
 $pdf_mode = 1;

@@ -279,9 +279,10 @@ coefficient. As `s ↓ 0`,
 `s^{−β} · π{0 < ‖x‖ ≤ s, x/‖x‖ ∈ B} → c · σ̄(B)`
 
 for every measurable `B` whose boundary is `σ̄`-null, and the same with the
-angular constraint dropped. This normalized formulation is equivalent to the
-paper's `∼` when `σ̄(B) > 0`; when `σ̄(B) = 0`, it gives the coherent zero-limit
-reading without adding a set hypothesis absent from the paper. -/
+angular constraint dropped. The directional conclusion is the paper's normalized
+formulation, including its coherent zero limit when `σ̄(B) = 0`. For the radial
+conclusion, the paper writes the equivalent `π{0 < ‖x‖ ≤ s} ∼ c s^β`; here
+`c > 0`. -/
 theorem nd_power_singularity
     {A : ℝ} (hA : 0 < A) {N : ℕ} (hN : 0 < N)
     (hsc : Supercritical A N)

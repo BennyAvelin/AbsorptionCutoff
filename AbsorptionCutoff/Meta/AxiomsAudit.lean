@@ -5,15 +5,29 @@ Authors: Benny Avelin
 -/
 import AbsorptionCutoff.MainTheorems
 
+open Lean
+
+run_cmd do
+  let env ← getEnv
+  for (name, info) in env.constants.map₂ do
+    if `AbsorptionCutoff |>.isPrefixOf name then
+      if (← Lean.collectAxioms name).contains ``sorryAx then
+        throwError "{name} depends on sorryAx"
+      match info with
+      | .axiomInfo _ => throwError "custom axiom declaration: {name}"
+      | _ => pure ()
+
 /-!
 # Axiom audit
 
-Machine-checked record of the axioms the headline theorems depend on.
+Machine-checked record of the axioms the seven audited declarations depend on.
+The command above also traverses every declaration in the `AbsorptionCutoff`
+namespace and rejects any dependency on `sorryAx` or any custom axiom declaration.
 
-This development contains no `sorry` and declares no custom `axiom`, so every
-public theorem reduces to Mathlib's three standard foundational axioms:
-`propext`, `Classical.choice`, and `Quot.sound`. Building this file prints
-those dependencies for inspection (see the CI log).
+The production library contains no `sorry` and declares no custom `axiom`. Each
+of the six paper-facing results and the focused fixed-dimensional-absorption
+alias printed below reduces to Mathlib's three standard foundational axioms:
+`propext`, `Classical.choice`, and `Quot.sound`.
 
 The module is deliberately **not** imported by `AbsorptionCutoff.lean`: it exists only
 for its `#print axioms` output, and is built explicitly with

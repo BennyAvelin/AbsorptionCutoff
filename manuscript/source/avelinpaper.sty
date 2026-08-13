@@ -1,0 +1,521 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{avelinpaper}[2026/05/26 General Avelin-style paper package]
+
+\RequirePackage{iftex}
+
+\newif\ifapruninsections
+\apruninsectionstrue
+\DeclareOption{runinsections}{\apruninsectionstrue}
+\DeclareOption{noruninsections}{\apruninsectionsfalse}
+\ProcessOptions\relax
+
+\ifPDFTeX
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage[T1]{fontenc}
+\fi
+\RequirePackage[english]{babel}
+\RequirePackage{microtype}
+
+% Page layout and figures
+\RequirePackage[margin=1in]{geometry}
+\RequirePackage{graphicx}
+\RequirePackage{graphics}
+\RequirePackage{caption}
+\RequirePackage{subcaption}
+\RequirePackage{float}
+
+% Mathematics
+\RequirePackage{amsmath,amsfonts,amssymb}
+\RequirePackage{amsthm}
+\RequirePackage{mathrsfs}
+\RequirePackage{mathtools}
+\RequirePackage{dsfont}
+\RequirePackage{bm}
+\RequirePackage{scalerel}
+\RequirePackage{xfrac}
+\RequirePackage{nicefrac}
+
+% Preserve ordinary square and diamond while making mathabx symbols available.
+\let\ap@olddiamond\diamond
+\let\ap@oldsquare\square
+\RequirePackage{mathabx}
+\renewcommand{\square}{\ap@oldsquare}
+\renewcommand{\diamond}{\ap@olddiamond}
+\RequirePackage{accents}
+\RequirePackage[usenames,dvipsnames]{xcolor}
+\definecolor{revblue}{RGB}{0,80,180}
+
+% Tables, algorithms, and graphics used frequently in later papers.
+\RequirePackage{booktabs}
+\RequirePackage{array}
+\RequirePackage{multirow}
+\RequirePackage{makecell}
+\RequirePackage{colortbl}
+\RequirePackage{siunitx}
+\let\siunitxsi\si
+\RequirePackage{csvsimple}
+\RequirePackage{pgfplots}
+\RequirePackage{pgfplotstable}
+\pgfplotsset{compat=1.18}
+\RequirePackage{tikz}
+\usetikzlibrary{calc}
+\RequirePackage{pgf}
+\RequirePackage{algorithm}
+\RequirePackage{algpseudocode}
+\makeatletter
+\@ifclassloaded{amsart}{}{\RequirePackage[nottoc,notlot,notlof]{tocbibind}}
+\makeatother
+
+% Lists and text utilities
+\RequirePackage{paralist}
+\RequirePackage{enumerate}
+\RequirePackage{enumitem}
+\RequirePackage{verbatim}
+\RequirePackage{fancyvrb}
+\RequirePackage[normalem]{ulem}
+\RequirePackage{cancel}
+\RequirePackage{comment}
+\RequirePackage{soul}
+\RequirePackage{pifont}
+
+% Hyperlinks and references
+% \RequirePackage[colorlinks=true,pdfstartview=FitV,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[colorlinks=true, pdfstartview={FitV null}, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+\RequirePackage[capitalize]{cleveref}
+\crefname{enumi}{}{}
+\crefname{equation}{}{}
+\crefname{assumption}{Assumption}{Assumptions}
+\newcommand{\crefrangeconjunction}{--}
+
+% Numbering and theorem environments
+\renewcommand{\arraystretch}{0.93}
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+
+\makeatletter
+\@ifundefined{theorem}{\newtheorem{theorem}{Theorem}[section]}{}
+\theoremstyle{plain}
+\@ifundefined{conjecture}{\newtheorem{conjecture}[theorem]{Conjecture}}{}
+\@ifundefined{assumption}{\newtheorem{assumption}[theorem]{Assumption}}{}
+\@ifundefined{corollary}{\newtheorem{corollary}[theorem]{Corollary}}{}
+\@ifundefined{proposition}{\newtheorem{proposition}[theorem]{Proposition}}{}
+\@ifundefined{lemma}{\newtheorem{lemma}[theorem]{Lemma}}{}
+\@ifundefined{claim}{\newtheorem{claim}[theorem]{Claim}}{}
+\@ifundefined{question}{\newtheorem{question}[theorem]{Question}}{}
+\@ifundefined{property}{\newtheorem{property}[theorem]{Property}}{}
+\@ifundefined{theoremA}{%
+  \newtheorem{theoremA}{Theorem}
+  \renewcommand{\thetheoremA}{\Alph{theoremA}}
+}{}
+\theoremstyle{definition}
+\@ifundefined{definition}{\newtheorem{definition}[theorem]{Definition}}{}
+\@ifundefined{exercise}{\newtheorem{exercise}{Exercise}[section]}{}
+\theoremstyle{remark}
+\@ifundefined{remark}{\newtheorem{remark}[theorem]{Remark}}{}
+\@ifundefined{example}{\newtheorem{example}[theorem]{Example}}{}
+\@ifundefined{problem}{\newtheorem{problem}{Problem}}{}
+\makeatother
+
+% Optional run-in section formatting, matching the coarse-grained paper.
+\ifapruninsections
+  \RequirePackage{titlesec}
+  \newcommand{\addperiod}[1]{#1.}
+  \titleformat{\section}
+    {\centering\normalfont\Large}{\thesection.}{0.5em}{}
+  \titleformat{\subsection}[runin]
+    {\normalfont\bfseries}{\thesubsection.}{0.5em}{\addperiod}
+  \titleformat{\subsubsection}[runin]
+    {\normalfont\bfseries}{\thesubsubsection.}{0.5em}{\addperiod}
+  \titleformat*{\subsubsection}{\normalfont\itshape}
+  \titleformat*{\paragraph}{\bfseries}
+  \titleformat*{\subparagraph}{\large\bfseries}
+\fi
+
+% Paired delimiters, operators, and common functions
+\DeclarePairedDelimiter{\snorm}{\llbracket}{\rrbracket}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+\DeclarePairedDelimiter{\pair}{\langle}{\rangle}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\scabs}[1]{\left|#1\right|}
+\newcommand{\average}[1]{\left\langle#1\right\rangle}
+\newcommand{\md}[1]{\ (\text{mod}\ #1)}
+\newcommand{\paren}[1]{\left(#1\right)}
+\newcommand{\Mid}{\,\middle\vert\,}
+
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator{\diam}{diam}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\loc}{loc}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Vol}{Vol}
+\DeclareMathOperator{\Div}{div}
+\DeclareMathOperator{\BV}{BV}
+\DeclareMathOperator*{\osc}{osc}
+\DeclareMathOperator*{\var}{var}
+\DeclareMathOperator*{\cov}{cov}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\renewcommand*{\div}{\ensuremath{\mathrm{div\,}}}
+\newcommand*{\curl}{\ensuremath{\mathrm{curl\,}}}
+\newcommand*{\tr}{\ensuremath{\mathrm{trace\,}}}
+\newcommand*{\op}{\ensuremath{\mathrm{op\,}}}
+\newcommand*{\ad}{\ensuremath{\mathrm{ad\,}}}
+\renewcommand*{\Re}{\ensuremath{\mathrm{Re\,}}}
+
+% Differentials and elementary PDE notation
+\newcommand{\diff}{\,\mathrm{d}}
+\newcommand{\de}{\,{\rm d}}
+\newcommand{\rmd}{\mathrm{d}}
+\newcommand{\dx}{\,{\rm d}x}
+\newcommand{\dy}{\,{\rm d}y}
+\newcommand{\dt}{\,{\rm d}t}
+\newcommand{\ds}{\,{\rm d}s}
+\newcommand{\ud}{\textrm{d}}
+\newcommand{\pa}{\partial}
+\newcommand{\grad}{\nabla}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\ep}{\eps}
+\newcommand{\nep}{\hat{\eps}}
+\newcommand{\vp}{\varphi}
+\newcommand{\vphi}{\varphi}
+\newcommand{\al}{\alpha}
+\newcommand{\ga}{\gamma}
+\newcommand{\ka}{\kappa}
+\newcommand{\om}{\omega}
+\renewcommand{\si}{\sigma}
+\newcommand{\te}{\theta}
+\newcommand{\ze}{\zeta}
+\newcommand{\qand}{\quad \mbox{and} \quad}
+\newcommand{\les}{\lesssim}
+\renewcommand*{\tilde}{\widetilde}
+\renewcommand{\hat}{\widehat}
+
+% Number sets and probability
+\newcommand*{\N}{\ensuremath{\mathbb{N}}}
+\newcommand*{\QQ}{\ensuremath{\mathbb{Q}}}
+\newcommand*{\Q}{\ensuremath{\mathbb{Q}}}
+\newcommand*{\TT}{\ensuremath{\mathbb{T}}}
+\newcommand*{\T}{\ensuremath{\mathbb{T}}}
+\newcommand*{\ZZ}{\ensuremath{\mathbb{Z}}}
+\newcommand*{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand*{\RR}{\ensuremath{\mathbb{R}}}
+\newcommand*{\R}{\ensuremath{\mathbb{R}}}
+\newcommand*{\CC}{\ensuremath{\mathbb{C}}}
+\newcommand*{\Co}{\ensuremath{\mathbb{C}}}
+\renewcommand{\P}{\ensuremath{\mathbb{P}}}
+\newcommand{\PR}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\EX}{\mathbb{E}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\indc}{{\mathds{1}}}
+\newcommand{\one}{{\mathds{1}}}
+\newcommand{\pospart}[1]{\left(#1\right)_+}
+\newcommand{\p}{\mathbb{P}}
+\newcommand{\V}{\mathrm{Var}}
+\newcommand{\Risk}{\mathcal{R}}
+
+\newcommand*{\Zd}{\ensuremath{\mathbb{Z}^d}}
+\newcommand*{\Rd}{\ensuremath{\mathbb{R}^d}}
+
+% Roman spaces and kinetic notation common in later papers
+\newcommand{\rmH}{\mathrm{H}}
+\newcommand{\rmL}{\mathrm{L}}
+\newcommand{\rmW}{\mathrm{W}}
+\newcommand{\rmV}{\mathrm{V}}
+\newcommand{\rmC}{\mathrm{C}}
+\newcommand{\calD}{\mathcal{D}}
+\newcommand{\calU}{\mathcal{U}}
+\newcommand{\calV}{\mathcal{V}}
+\newcommand{\calW}{\mathcal{W}}
+\newcommand{\calR}{\mathcal{R}}
+\newcommand{\ssubset}{\subset\joinrel\subset}
+
+% Calligraphic, script, and fraktur alphabets
+\newcommand*{\DD}{\mathscr{D}}
+\newcommand{\OO}{\mathcal O}
+\renewcommand{\O}{\ensuremath{\mathcal{O}}}
+\newcommand{\X}{\ensuremath{\mathcal{X}}}
+\newcommand{\A}{\mathcal{A}}
+\renewcommand{\S}{\mathcal{S}}
+
+\newcommand{\Acal}{\mathcal A}
+\newcommand{\Bcal}{\mathcal B}
+\newcommand{\Ccal}{\mathcal C}
+\newcommand{\Dcal}{\mathcal D}
+\newcommand{\Ecal}{\mathcal E}
+\newcommand{\Fcal}{\mathcal F}
+\newcommand{\Gcal}{\mathcal G}
+\newcommand{\Hcal}{\mathcal H}
+\newcommand{\Ical}{\mathcal I}
+\newcommand{\Jcal}{\mathcal J}
+\newcommand{\Kcal}{\mathcal K}
+\newcommand{\Lcal}{\mathcal L}
+\newcommand{\Mcal}{\mathcal M}
+\newcommand{\Ncal}{\mathcal N}
+\newcommand{\Ocal}{\mathcal O}
+\newcommand{\Pcal}{\mathcal P}
+\newcommand{\Qcal}{\mathcal Q}
+\newcommand{\Rcal}{\mathcal R}
+\newcommand{\Scal}{\mathcal S}
+\newcommand{\Tcal}{\mathcal T}
+\newcommand{\Ucal}{\mathcal U}
+\newcommand{\Vcal}{\mathcal V}
+\newcommand{\Wcal}{\mathcal W}
+\newcommand{\Xcal}{\mathcal X}
+\newcommand{\Ycal}{\mathcal Y}
+\newcommand{\Zcal}{\mathcal Z}
+
+\newcommand{\Ascr}{\mathscr A}
+\newcommand{\Bscr}{\mathscr B}
+\newcommand{\Cscr}{\mathscr C}
+\newcommand{\Dscr}{\mathscr D}
+\newcommand{\Escr}{\mathscr E}
+\newcommand{\Fscr}{\mathscr F}
+\newcommand{\Gscr}{\mathscr G}
+\newcommand{\Hscr}{\mathscr H}
+\newcommand{\Iscr}{\mathscr I}
+\newcommand{\Jscr}{\mathscr J}
+\newcommand{\Kscr}{\mathscr K}
+\newcommand{\Lscr}{\mathscr L}
+\newcommand{\Mscr}{\mathscr M}
+\newcommand{\Nscr}{\mathscr N}
+\newcommand{\Oscr}{\mathscr O}
+\newcommand{\Pscr}{\mathscr P}
+\newcommand{\Qscr}{\mathscr Q}
+\newcommand{\Rscr}{\mathscr R}
+\newcommand{\Sscr}{\mathscr S}
+\newcommand{\Tscr}{\mathscr T}
+\newcommand{\Uscr}{\mathscr U}
+\newcommand{\Vscr}{\mathscr V}
+\newcommand{\Wscr}{\mathscr W}
+\newcommand{\Xscr}{\mathscr X}
+\newcommand{\Yscr}{\mathscr Y}
+\newcommand{\Zscr}{\mathscr Z}
+
+\newcommand{\Afrak}{\mathfrak A}
+\newcommand{\Bfrak}{\mathfrak B}
+\newcommand{\Cfrak}{\mathfrak C}
+\newcommand{\Dfrak}{\mathfrak D}
+\newcommand{\Efrak}{\mathfrak E}
+\newcommand{\Ffrak}{\mathfrak F}
+\newcommand{\Gfrak}{\mathfrak G}
+\newcommand{\Hfrak}{\mathfrak H}
+\newcommand{\Ifrak}{\mathfrak I}
+\newcommand{\Jfrak}{\mathfrak J}
+\newcommand{\Kfrak}{\mathfrak K}
+\newcommand{\Lfrak}{\mathfrak L}
+\newcommand{\Mfrak}{\mathfrak M}
+\newcommand{\Nfrak}{\mathfrak N}
+\newcommand{\Ofrak}{\mathfrak O}
+\newcommand{\Pfrak}{\mathfrak P}
+\newcommand{\Qfrak}{\mathfrak Q}
+\newcommand{\Rfrak}{\mathfrak R}
+\newcommand{\Sfrak}{\mathfrak S}
+\newcommand{\Tfrak}{\mathfrak T}
+\newcommand{\Ufrak}{\mathfrak U}
+\newcommand{\Vfrak}{\mathfrak V}
+\newcommand{\Wfrak}{\mathfrak W}
+\newcommand{\Xfrak}{\mathfrak X}
+\newcommand{\Yfrak}{\mathfrak Y}
+\newcommand{\Zfrak}{\mathfrak Z}
+
+% Bold vectors, matrices, and homogenization notation
+\renewcommand{\b}{\ensuremath{\mathbf{b}}}
+\newcommand{\vv}{\ensuremath{\mathbf{v}}}
+\newcommand{\f}{\mathbf{f}}
+\newcommand{\J}{\mathbf{J}}
+\newcommand{\g}{\mathbf{g}}
+\newcommand{\h}{\mathbf{h}}
+\newcommand{\s}{\mathbf{s}}
+\renewcommand{\tt}{\mathbf{t}}
+\newcommand{\G}{\mathbf{G}}
+\renewcommand{\a}{\mathbf{a}}
+\renewcommand{\k}{\mathbf{k}}
+\newcommand{\m}{\mathbf{m}}
+\newcommand{\K}{\mathbf{K}}
+\newcommand{\bfA}{\mathbf{A}}
+\newcommand{\bfB}{\mathbf{B}}
+\newcommand{\bfJ}{\mathbf{J}}
+\newcommand{\bfE}{\mathbf{E}_0}
+\newcommand{\bfAhom}{\overline{\mathbf{A}}}
+\newcommand{\bfBhom}{\overline{\mathbf{B}}}
+\newcommand{\be}{\mathbf{E}}
+\newcommand{\bg}{\mathbf{G}}
+\newcommand{\bp}{\mathbf{P}}
+\newcommand{\bgg}{\mathbf{\Gamma}}
+
+\newcommand*{\Id}{\ensuremath{\mathrm{I}_d}}
+\newcommand*{\Itwo}{\ensuremath{\mathrm{I}_2}}
+\newcommand*{\Itwod}{\ensuremath{\mathrm{I}_{2d}}}
+\newcommand{\ahom}{\bar{\a}}
+\newcommand{\bhom}{\bar{\mathbf{b}}}
+\newcommand{\shom}{\bar{\mathbf{s}}}
+\newcommand{\khom}{\bar{\mathbf{k}}}
+\newcommand{\ghom}{\bar{\mathbf{g}}}
+\newcommand{\hhom}{\bar{\mathbf{h}}}
+\newcommand{\thom}{\bar{\mathbf{t}}}
+\newcommand{\uhom}{u_{\mathrm{hom}}}
+\newcommand{\Rbf}{\mathbf{R}}
+\newcommand{\Reynolds}{\mathring{\mathbf{R}}}
+\newcommand{\Lat}{\ensuremath{\mathbb{L}_0}}
+\newcommand{\Rbar}{\mathring{\overline R}}
+\newcommand{\RSZ}{\mathcal R}
+\renewcommand{\L}{\underline{L}}
+
+% Coarse-grained ellipticity notation
+\newcommand{\per}{\mathrm{per}}
+\newcommand{\sym}{\mathrm{sym}}
+\renewcommand{\skew}{\mathrm{skew}}
+\newcommand{\q}{q}
+\newcommand{\iSch}{\mathrm{iSch}}
+\newcommand{\gSch}{\mathrm{gSch}}
+\newcommand{\pr}{\mathrm{par}}
+\newcommand{\ellipticity}{\mathcal{E}}
+\newcommand{\cent}{\mathrm{cen}}
+\newcommand{\data}{\mathrm{data}}
+\newcommand{\Jstarbar}{{\overline{J}}\negphantom{J}\phantom{J}^*}
+\newcommand{\Lsol}{L^2_{\scriptscriptstyle{\mathrm{sol}}}}
+\newcommand{\Lsolo}{L^2_{\mathrm{sol,0}}}
+\newcommand{\Lpot}{L^2_{\mathrm{pot}}}
+\newcommand{\Lpoto}{L^2_{\mathrm{pot,0}}}
+\newcommand{\CFS}{\mathsf{CFS}}
+\newcommand{\AFRD}{\mathsf{AFRD}}
+\newcommand{\FRD}{\mathsf{FRD}}
+
+% Thick bar accent
+\DeclareSymbolFont{boldoperators}{OT1}{cmr}{bx}{n}
+\SetSymbolFont{boldoperators}{bold}{OT1}{cmr}{bx}{n}
+\newcommand\thickbar[1]{\accentset{\rule{.45em}{.6pt}}{#1}}
+\renewcommand{\bar}{\thickbar}
+
+% Cone symbol and admissible cones
+\newsavebox{\precone}
+\savebox{\precone}{%
+  \begin{tikzpicture}[baseline=-0.65ex,scale=0.13,inner sep=0pt,outer sep=0pt]
+    \draw (0,0) ellipse (1 and 0.35);
+    \draw (-1,0) -- (0,-2) -- (1,0);
+    \draw[dashed] (-1,0) arc (180:360:1 and 0.35);
+  \end{tikzpicture}%
+}
+\newcommand{\cone}{\makebox[8pt][l]{\usebox{\precone}}}
+\newcommand{\bacon}{\mathbin{\scalerel*{\cone}{\bigtriangleup}}}
+\newcommand{\baconsol}{\bacon_{\scriptscriptstyle{\mathrm{sol}}}}
+\newcommand{\baconsub}{\bacon_{\scriptscriptstyle{\mathrm{sub}}}}
+\newcommand{\baconconv}{\bacon_{\scriptscriptstyle{\mathrm{conv}}}}
+\newcommand{\bacontrunc}{\bacon_{\scriptscriptstyle{\mathrm{trunc}}}}
+\newcommand{\baconpow}{\bacon_{\scriptscriptstyle{\mathrm{pow}}}}
+\newcommand{\baconmax}{\bacon_{\scriptscriptstyle{\mathrm{max}}}}
+
+% Negative phantom commands for underlined negative Sobolev notation.
+\makeatletter
+\newcommand{\negphantom}{\v@true\h@true\negph@nt}
+\newcommand{\neghphantom}{\v@false\h@true\negph@nt}
+\newcommand{\negph@nt}{%
+  \ifmmode\expandafter\mathpalette\expandafter\mathnegph@nt
+  \else\expandafter\makenegph@nt\fi}
+\newcommand{\makenegph@nt}[1]{%
+  \setbox\z@\hbox{\color@begingroup#1\color@endgroup}\finnegph@nt}
+\newcommand{\finnegph@nt}{%
+  \setbox\tw@\null
+  \ifv@ \ht\tw@\ht\z@\dp\tw@\dp\z@\fi
+  \ifh@ \wd\tw@-\wd\z@\fi
+  \box\tw@}
+\newcommand{\mathnegph@nt}[2]{%
+  \setbox\z@\hbox{$\m@th #1{#2}$}\finnegph@nt}
+\makeatother
+
+\newcommand{\Hminus}{\hat{\phantom{H}}\negphantom{H}H^{-1}}
+\newcommand{\Hminusul}{\hat{\phantom{H}}\negphantom{H}\underline{H}^{-1}}
+\newcommand{\Hminusuls}[1]{\hat{\phantom{H}}\negphantom{H}\underline{H}^{#1}}
+\newcommand{\Hminusulh}{\hat{\phantom{H}}\negphantom{H}\underline{H}^{-\nicefrac12}}
+\newcommand{\Wminus}{\hat{\phantom{W}}\negphantom{W}W^{-1}}
+\newcommand{\Wminusul}[2]{\hat{\phantom{W}}\negphantom{W}\underline{\phantom{H}}\negphantom{H}W^{#1,#2}}
+\newcommand{\Wminusnoul}[2]{{\phantom{W}}\negphantom{W}\Wul{#1}{#2}}
+\newcommand{\Wul}[2]{\underline{\phantom{H}}\negphantom{H}W^{#1,#2}}
+\newcommand{\Woul}[2]{\underline{\phantom{H}}\negphantom{H}W_0^{#1,#2}}
+
+% Besov spaces
+\newcommand{\Besov}[3]{\underline{B}_{#1,#2}^{#3}}
+\newcommand{\BesovDualZero}[3]{\underline{B}_{#1,#2}^{-#3}}
+\newcommand{\cs}{\mathfrak{c}}
+\newcommand{\besov}[3]{\mathring{B}^{#1}_{#2,#3}}
+\newcommand{\BesovDualSum}[3]{%
+  \mathord{\mathring{\mkern-2mu\underline{B}}}^{#3}_{#1,#2}%
+}
+\newcommand{\BesovDual}[3]{%
+  \mathord{\widehat{\mkern-2mu\underline{B}}}\!^{#3}_{#1,#2}%
+}
+
+% Dashed integrals and averaged sums
+\def\Xint#1{\mathchoice
+  {\XXint\displaystyle\textstyle{#1}}%
+  {\XXint\textstyle\scriptstyle{#1}}%
+  {\XXint\scriptstyle\scriptscriptstyle{#1}}%
+  {\XXint\scriptscriptstyle\scriptscriptstyle{#1}}%
+  \!\int}
+\def\XXint#1#2#3{{\setbox0=\hbox{$#1{#2#3}{\int}$}%
+  \vcenter{\hbox{$#2#3$}}\kern-.5\wd0}}
+\def\ddashint{\Xint=}
+\def\fint{\Xint-}
+
+\newcommand{\avsum}{\mathop{\mathpalette\avsuminner\relax}\displaylimits}
+\newcommand{\avsumtext}{\mathop{\mathpalette\avsuminnerr\relax}\displaylimits}
+\makeatletter
+\newcommand\avsuminner[2]{%
+  {\sbox0{$\m@th#1\sum$}%
+   \vphantom{\usebox0}%
+   \ooalign{%
+     \hidewidth\smash{\rule[.23em]{.70\wd0}{1.1pt}\relax}\hidewidth\cr
+     $\m@th#1\sum$\cr}}}
+\newcommand\avsuminnerr[2]{%
+  {\sbox0{$\m@th#1\sum$}%
+   \vphantom{\usebox0}%
+   \ooalign{%
+     \hidewidth\smash{\rule[.23em]{.70\wd0}{0.7pt}\relax}\hidewidth\cr
+     $\m@th#1\sum$\cr}}}
+\makeatother
+
+% Parenthesis spacing convention from the coarse-grained paper.
+\makeatletter
+\let\ap@originalleft\left
+\let\ap@originalright\right
+\renewcommand{\left}{\mathopen{}\mathclose\bgroup\ap@originalleft}
+\renewcommand{\right}{\aftergroup\egroup\ap@originalright}
+\makeatother
+
+% Cube symbols
+\newcommand{\cu}{\square}
+\newcommand{\cus}{%
+\mathchoice
+  {\mathrel{\rotatebox[origin=c]{45}{$\square$}\!\!}}
+  {\mathrel{\rotatebox[origin=c]{45}{$\textstyle\square$}\!\!}}
+  {\mathrel{\rotatebox[origin=c]{45}{$\scriptstyle{\square}$}}}
+  {\mathrel{\rotatebox[origin=c]{45}{$\scriptscriptstyle{\square}$}}}%
+}
+
+% Bold multi-index/vector notation
+\def\kk{{\boldsymbol{k}}}
+\def\aa{{\boldsymbol{\alpha}}}
+\def\bb{{\boldsymbol{\beta}}}
+\def\xx{\boldsymbol{x}}
+\def\yy{\boldsymbol{y}}
+\def\gb{\boldsymbol{g}}
+\def\lll{{\boldsymbol{\ell}}}
+\def\KK{\boldsymbol{K}}
+\def\XX{\boldsymbol{X}}
+\def\Chi{{\boldsymbol{\chi}}}
+\def\Eta{{\boldsymbol{\eta}}}
+
+% Handy figure helper used in SPDE/numerical papers.
+\newcommand{\includegraphicspage}[2][0.3\textwidth]{%
+  \begin{minipage}{#1}\includegraphics[width=\textwidth]{#2}\end{minipage}%
+}
+
+% Revision helpers are deliberately neutral by default.
+\newcommand{\newtext}[1]{\textcolor{revblue}{#1}}
+\newcommand{\stkout}[1]{\ifmmode\text{\sout{\ensuremath{#1}}}\else\sout{#1}\fi}
+
+\endinput

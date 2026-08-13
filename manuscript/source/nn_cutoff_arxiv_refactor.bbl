@@ -1,0 +1,227 @@
+\newcommand{\etalchar}[1]{$^{#1}$}
+\begin{thebibliography}{SGGSD17}
+
+\bibitem[AB26]{avelin-barrera2026-chi2-cutoff}
+Benny Avelin and Gerardo Barrera.
+\newblock $\chi^2$-cut-off phenomenon for {Galerkin} projections of {Fokker--Planck} equations with monomial potentials, 2026.
+\newblock Preprint. \href{https://arxiv.org/abs/2603.29473}{arXiv:2603.29473}.
+
+\bibitem[AK22]{avelin-karlsson2022}
+Benny Avelin and Anders Karlsson.
+\newblock Deep limits and a {Cut-Off} phenomenon for neural networks.
+\newblock {\em Journal of Machine Learning Research}, 23(191):1--29, 2022.
+\newblock \href{https://jmlr.org/papers/v23/21-0431.html}{JMLR:21-0431}.
+
+\bibitem[AK26a]{armstrong-kempe2026}
+Scott Armstrong and Julia Kempe.
+\newblock Formalization of {D}e {G}iorgi--{N}ash--{M}oser theory in {L}ean, 2026.
+\newblock Preprint. \href{https://arxiv.org/abs/2604.05984}{arXiv:2604.05984}.
+
+\bibitem[AK26b]{armstrong-kuusi2026-coarsegraining}
+Scott Armstrong and Tuomo Kuusi.
+\newblock {CoarseGraining}: a {Lean 4} formalization of {Coarse-Graining Theory for Elliptic Equations}.
+\newblock Software repository, 2026.
+\newblock Commit 8c0565e0a54a (25 July 2026), Apache-2.0 license. \href{https://github.com/scottnarmstrong/CoarseGraining/tree/8c0565e0a54a68da4c2cb92a76ac556d6e05258c}{Repository snapshot}.
+
+\bibitem[BBF09]{barrera-bertoncini-fernandez2009}
+Javiera Barrera, Olivier Bertoncini, and Roberto Fern\'{a}ndez.
+\newblock Abrupt convergence and escape behavior for birth and death chains.
+\newblock {\em Journal of Statistical Physics}, 137(4):595--623, 2009.
+\newblock \href{https://doi.org/10.1007/s10955-009-9861-7}{doi:10.1007/s10955-009-9861-7}.
+
+\bibitem[BdH15]{bovier-denhollander2015}
+Anton Bovier and Frank den Hollander.
+\newblock {\em Metastability: A Potential-Theoretic Approach}, volume 351 of {\em Grundlehren der mathematischen Wissenschaften}.
+\newblock Springer, Cham, 2015.
+\newblock \href{https://doi.org/10.1007/978-3-319-24777-9}{doi:10.1007/978-3-319-24777-9}.
+
+\bibitem[BDM16]{buraczewski-damek-mikosch2016}
+Dariusz Buraczewski, Ewa Damek, and Thomas Mikosch.
+\newblock {\em Stochastic Models with Power-Law Tails: The Equation {$X=AX+B$}}.
+\newblock Springer Series in Operations Research and Financial Engineering. Springer, Cham, 2016.
+\newblock \href{https://doi.org/10.1007/978-3-319-29679-1}{doi:10.1007/978-3-319-29679-1}.
+
+\bibitem[BHP17]{basu-hermon-peres2017}
+Riddhipratim Basu, Jonathan Hermon, and Yuval Peres.
+\newblock Characterization of cutoff for reversible {Markov} chains.
+\newblock {\em Annals of Probability}, 45(3):1448--1487, 2017.
+\newblock \href{https://doi.org/10.1214/16-AOP1090}{doi:10.1214/16-AOP1090}.
+
+\bibitem[BHP21a]{barrera-hogele-pardo2021-tv}
+Gerardo Barrera, Michael~A. H\"{o}gele, and Juan~Carlos Pardo.
+\newblock The cutoff phenomenon in total variation for nonlinear {Langevin} systems with small layered stable noise.
+\newblock {\em Electronic Journal of Probability}, 26:Paper No. 119, 76, 2021.
+\newblock \href{https://doi.org/10.1214/21-EJP685}{doi:10.1214/21-EJP685}.
+
+\bibitem[BHP21b]{barrera-hogele-pardo2021-wasserstein}
+Gerardo Barrera, Michael~A. H\"{o}gele, and Juan~Carlos Pardo.
+\newblock Cutoff thermalization for {Ornstein--Uhlenbeck} systems with small {L\'evy} noise in the {Wasserstein} distance.
+\newblock {\em Journal of Statistical Physics}, 184(3):Article 27, 2021.
+\newblock \href{https://doi.org/10.1007/s10955-021-02815-0}{doi:10.1007/s10955-021-02815-0}.
+
+\bibitem[BJ20]{barrera-jara2020}
+Gerardo Barrera and Milton Jara.
+\newblock Thermalisation for small random perturbations of dynamical systems.
+\newblock {\em Annals of Applied Probability}, 30(3):1164--1208, 2020.
+\newblock \href{https://doi.org/10.1214/19-AAP1526}{doi:10.1214/19-AAP1526}.
+
+\bibitem[BL85]{bougerol-lacroix1985}
+Philippe Bougerol and Jean Lacroix.
+\newblock {\em Products of Random Matrices with Applications to {Schr{\"o}dinger} Operators}, volume~8 of {\em Progress in Probability and Statistics}.
+\newblock Birkh{\"a}user, Boston, 1985.
+\newblock \href{https://doi.org/10.1007/978-1-4684-9172-2}{doi:10.1007/978-1-4684-9172-2}.
+
+\bibitem[BSF94]{bengio-simard-frasconi1994}
+Yoshua Bengio, Patrice Simard, and Paolo Frasconi.
+\newblock Learning long-term dependencies with gradient descent is difficult.
+\newblock {\em IEEE Transactions on Neural Networks}, 5(2):157--166, 1994.
+\newblock \href{https://doi.org/10.1109/72.279181}{doi:10.1109/72.279181}.
+
+\bibitem[CG93]{carleson1993complex}
+Lennart Carleson and Theodore~W. Gamelin.
+\newblock {\em Complex Dynamics}.
+\newblock Universitext. Springer, New York, NY, 1993.
+\newblock \href{https://doi.org/10.1007/978-1-4612-4364-9}{doi:10.1007/978-1-4612-4364-9}.
+
+\bibitem[CMSM13]{collet-martinez-sanmartin2013}
+Pierre Collet, Servet Mart{\'i}nez, and Jaime San~Mart{\'i}n.
+\newblock {\em Quasi-Stationary Distributions: Markov Chains, Diffusions and Dynamical Systems}.
+\newblock Probability and Its Applications. Springer, Heidelberg, 2013.
+\newblock \href{https://doi.org/10.1007/978-3-642-33131-2}{doi:10.1007/978-3-642-33131-2}.
+
+\bibitem[CSC08]{chen-saloff-coste2008}
+Guan-Yu Chen and Laurent Saloff-Coste.
+\newblock The cutoff phenomenon for ergodic {Markov} processes.
+\newblock {\em Electronic Journal of Probability}, 13(3):26--78, 2008.
+\newblock \href{https://doi.org/10.1214/EJP.v13-474}{doi:10.1214/EJP.v13-474}.
+
+\bibitem[CV23]{champagnat-villemonais2023}
+Nicolas Champagnat and Denis Villemonais.
+\newblock General criteria for the study of quasi-stationarity.
+\newblock {\em Electronic Journal of Probability}, 28:Paper No. 22, 84, 2023.
+\newblock \href{https://doi.org/10.1214/22-EJP880}{doi:10.1214/22-EJP880}.
+
+\bibitem[DF99]{diaconis-freedman1999}
+Persi Diaconis and David Freedman.
+\newblock Iterated random functions.
+\newblock {\em SIAM Review}, 41(1):45--76, 1999.
+\newblock \href{https://doi.org/10.1137/S0036144598338446}{doi:10.1137/S0036144598338446}.
+
+\bibitem[Dia96]{diaconis1996}
+Persi Diaconis.
+\newblock The cutoff phenomenon in finite {Markov} chains.
+\newblock {\em Proceedings of the National Academy of Sciences of the United States of America}, 93(4):1659--1664, 1996.
+\newblock \href{https://doi.org/10.1073/pnas.93.4.1659}{doi:10.1073/pnas.93.4.1659}.
+
+\bibitem[DLP10]{ding-lubetzky-peres2010}
+Jian Ding, Eyal Lubetzky, and Yuval Peres.
+\newblock Total-variation cutoff in birth-and-death chains.
+\newblock {\em Probability Theory and Related Fields}, 146(1--2):61--85, 2010.
+\newblock \href{https://doi.org/10.1007/s00440-008-0185-3}{doi:10.1007/s00440-008-0185-3}.
+
+\bibitem[DN08]{darling-norris2008}
+R.~W.~R. Darling and J.~R. Norris.
+\newblock Differential equation approximations for {Markov} chains.
+\newblock {\em Probability Surveys}, 5:37--79, 2008.
+\newblock \href{https://doi.org/10.1214/07-PS121}{doi:10.1214/07-PS121}.
+
+\bibitem[DSC06]{diaconis-saloff-coste2006}
+Persi Diaconis and Laurent Saloff-Coste.
+\newblock Separation cut-offs for birth and death chains.
+\newblock {\em Annals of Applied Probability}, 16(4):2098--2122, 2006.
+\newblock \href{https://arxiv.org/abs/math/0702411}{arXiv:math/0702411}.
+
+\bibitem[Fel71]{feller1971vol2}
+William Feller.
+\newblock {\em An Introduction to Probability Theory and Its Applications, Volume {II}}.
+\newblock John Wiley \& Sons, Inc., New York, second edition, 1971.
+
+\bibitem[GB10]{glorot-bengio2010}
+Xavier Glorot and Yoshua Bengio.
+\newblock Understanding the difficulty of training deep feedforward neural networks.
+\newblock In Yee~Whye Teh and Mike Titterington, editors, {\em Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics}, volume~9 of {\em Proceedings of Machine Learning Research}, pages 249--256, Chia Laguna Resort, Sardinia, Italy, 13--15 May 2010. PMLR.
+\newblock \href{https://proceedings.mlr.press/v9/glorot10a.html}{PMLR:9}.
+
+\bibitem[Gol91]{goldie1991}
+Charles~M. Goldie.
+\newblock Implicit renewal theory and tails of solutions of random equations.
+\newblock {\em Annals of Applied Probability}, 1(1):126--166, 1991.
+\newblock \href{https://doi.org/10.1214/aoap/1177005985}{doi:10.1214/aoap/1177005985}.
+
+\bibitem[Gut09]{gut2009stopped}
+Allan Gut.
+\newblock {\em Stopped Random Walks: Limit Theorems and Applications}.
+\newblock Springer Series in Operations Research and Financial Engineering. Springer, New York, second edition, 2009.
+\newblock \href{https://doi.org/10.1007/978-0-387-87835-5}{doi:10.1007/978-0-387-87835-5}.
+
+\bibitem[Hig02]{higham2002}
+Nicholas~J. Higham.
+\newblock {\em Accuracy and Stability of Numerical Algorithms}.
+\newblock SIAM, Philadelphia, PA, second edition, 2002.
+\newblock \href{https://doi.org/10.1137/1.9780898718027}{doi:10.1137/1.9780898718027}.
+
+\bibitem[HZRS15]{he-etal2015}
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+\newblock Delving deep into rectifiers: Surpassing human-level performance on {ImageNet} classification.
+\newblock In {\em Proceedings of the IEEE International Conference on Computer Vision}, pages 1026--1034, 2015.
+\newblock \href{https://doi.org/10.1109/ICCV.2015.123}{doi:10.1109/ICCV.2015.123}.
+
+\bibitem[KB37]{kryloff-bogoliouboff1937}
+Nicolas Kryloff and Nicolas Bogoliouboff.
+\newblock {La th{\'e}orie g{\'e}n{\'e}rale de la mesure dans son application {\`a} l'{\'e}tude des syst{\`e}mes dynamiques de la m{\'e}canique non lin{\'e}aire}.
+\newblock {\em Annals of Mathematics}, 38(1):65--113, 1937.
+\newblock \href{https://doi.org/10.2307/1968511}{doi:10.2307/1968511}.
+
+\bibitem[Kes73]{kesten1973}
+Harry Kesten.
+\newblock Random difference equations and renewal theory for products of random matrices.
+\newblock {\em Acta Mathematica}, 131:207--248, 1973.
+\newblock \href{https://doi.org/10.1007/BF02392040}{doi:10.1007/BF02392040}.
+
+\bibitem[LP17]{levin-peres-wilmer2017}
+David~A. Levin and Yuval Peres.
+\newblock {\em Markov Chains and Mixing Times}.
+\newblock American Mathematical Society, Providence, RI, second edition, 2017.
+\newblock With contributions by Elizabeth L. Wilmer. \href{https://bookstore.ams.org/mbk-107}{AMS:MBK/107}.
+
+\bibitem[MY01]{martinez-ycart2001}
+Servet Mart{\'i}nez and Bernard Ycart.
+\newblock Decay rates and cutoff for convergence and hitting times of {Markov} chains with countably infinite state space.
+\newblock {\em Advances in Applied Probability}, 33(1):188--205, 2001.
+\newblock \href{https://doi.org/10.1017/S0001867800010697}{doi:10.1017/S0001867800010697}.
+
+\bibitem[Num84]{nummelin1984}
+Esa Nummelin.
+\newblock {\em General Irreducible Markov Chains and Non-Negative Operators}, volume~83 of {\em Cambridge Tracts in Mathematics}.
+\newblock Cambridge University Press, Cambridge, 1984.
+\newblock \href{https://doi.org/10.1017/CBO9780511526237}{doi:10.1017/CBO9780511526237}.
+
+\bibitem[PLR{\etalchar{+}}16]{poole-etal2016}
+Ben Poole, Subhaneil Lahiri, Maithra Raghu, Jascha Sohl-Dickstein, and Surya Ganguli.
+\newblock Exponential expressivity in deep neural networks through transient chaos.
+\newblock In Daniel~D. Lee, Masashi Sugiyama, Ulrike von Luxburg, Isabelle Guyon, and Roman Garnett, editors, {\em Advances in Neural Information Processing Systems}, volume~29, pages 3360--3368. Curran Associates, Inc., 2016.
+\newblock \href{https://papers.nips.cc/paper/6322-exponential-expressivity-in-deep-neural-networks-through-transient-chaos}{NeurIPS:2016}.
+
+\bibitem[PS26]{pedrotti-salez2026-local-product}
+Francesco Pedrotti and Justin Salez.
+\newblock The local product condition implies cutoff, 2026.
+\newblock Preprint. \href{https://arxiv.org/abs/2607.05345}{arXiv:2607.05345}.
+
+\bibitem[Sal24]{salez2024-curvature}
+Justin Salez.
+\newblock Cutoff for non-negatively curved {Markov} chains.
+\newblock {\em Journal of the European Mathematical Society}, 26(11):4375--4392, 2024.
+\newblock \href{https://doi.org/10.4171/JEMS/1348}{doi:10.4171/JEMS/1348}.
+
+\bibitem[SGGSD17]{schoenholz-etal2017}
+Samuel~S. Schoenholz, Justin Gilmer, Surya Ganguli, and Jascha Sohl-Dickstein.
+\newblock Deep information propagation.
+\newblock In {\em International Conference on Learning Representations}, 2017.
+\newblock \href{https://openreview.net/forum?id=H1W1UN9gg}{OpenReview:H1W1UN9gg}.
+
+\bibitem[War19]{warnke2019}
+Lutz Warnke.
+\newblock On {Wormald}'s differential equation method, 2019.
+\newblock Preprint. \href{https://arxiv.org/abs/1905.08928}{arXiv:1905.08928}.
+
+\end{thebibliography}

@@ -1,12 +1,15 @@
 # Manuscript-to-Lean correspondence
 
-A map from *Absorption cutoff and stationary singularities for rounded Gaussian
-random dynamical systems* (Benny Avelin) to this Lean development, together with
-an explicit ledger of every known place where the two differ.
+A map from the bundled release snapshot of *Absorption cutoff and stationary
+singularities for rounded Gaussian random dynamical systems* (Benny Avelin) to
+this Lean development, together with an explicit ledger of every known place
+where the two differ. The exact source is
+[`manuscript/absorption-cutoff.pdf`](manuscript/absorption-cutoff.pdf).
 
-The full dependency graph — 955 declarations, each carrying its `\lean{}` name —
-lives in the blueprint (`blueprint/src/content.tex`); this file records the
-paper-facing surface and the divergences.
+The full dependency graph — 956 declaration references (952 distinct Lean
+names), each carrying its `\lean{}` name — lives in the blueprint
+(`blueprint/src/content.tex`); this file records the paper-facing surface and
+the divergences.
 
 ## Headline results
 
@@ -75,8 +78,10 @@ bandlimited kernels, and the key renewal theorem) behind §7.
 
 These are the known differences between the manuscript and the Lean development.
 All of them are packaging or proof-route differences, or places where the Lean
-result is *stronger*; there is no hypothesis in this development weaker than the
-manuscript's.
+result is *stronger*. After unfolding the standing notation and the equivalent
+regime formulations recorded below, the manuscript's hypotheses imply those of
+the corresponding Lean declaration, and its conclusion implies the manuscript's
+conclusion.
 
 1. **§3 is stated sequentially.** The manuscript writes the limit as `ρ ↓ 0`;
    the public `rounded_gaussian_nearest_cutoff` gives the equivalent formulation
@@ -109,12 +114,12 @@ manuscript's.
    `Supercritical A N`, where `Supercritical` means that the logarithmic radial
    multiplier has positive mean. This is the defining characterization of the
    same fixed-dimensional regime used in the paper.
-7. **The tail asymptotics use normalized convergence.** The manuscript writes
-   the directional and radial conclusions with `\sim`. Lean states that the
-   corresponding probabilities, multiplied by `s^{-β}`, converge to
-   `c σ̄_N(B)` and `c`. This is the equivalent normalized limit when the
-   comparison constant is positive, and it remains meaningful when
-   `σ̄_N(B) = 0`.
+7. **Only the radial tail notation differs.** The manuscript and Lean now both
+   state the directional conclusion as normalized convergence: the directional
+   probability, multiplied by `s^{-β}`, converges to `c σ̄_N(B)`. This remains
+   meaningful when `σ̄_N(B) = 0`. The manuscript writes the radial conclusion
+   as `π(0 < ‖x‖₂ ≤ s) \sim c s^β`, whereas Lean states the equivalent
+   normalized limit `s^{-β} π(0 < ‖x‖₂ ≤ s) → c`; here `c > 0`.
 8. **The metastability family is indexed by positive dimensions.** The paper's
    family `Y_0^{(N)}` is defined for `N ≥ 1`. Lean represents it as a function on
    natural numbers and therefore states its compact-well hypothesis as
@@ -133,10 +138,12 @@ applied to is that of `def:nd-nonlinear-forcing`, and
 
 ## What the comparator does and does not establish
 
-For each of the seven theorems the comparator confirms three things: the solution
-proves the **same elaborated statement** as the Mathlib-only challenge; it uses no
-axiom outside `propext`, `Quot.sound`, `Classical.choice`; and the Lean kernel
-accepts it. Both sides are built inside a `landrun` sandbox.
+Each Mathlib-only challenge contains one intentional statement-level `sorry`;
+the corresponding solution proves that exact statement from the development.
+For each of the seven audited declarations, the comparator confirms three
+things: the solution proves the **same elaborated statement** as the challenge;
+it uses no axiom outside `propext`, `Quot.sound`, `Classical.choice`; and the Lean
+kernel accepts it. Both sides are built inside a `landrun` sandbox.
 
 It does **not** establish that the challenge statement is the theorem you care
 about — that is a human reading, and it is exactly the reading the challenge files

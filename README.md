@@ -21,13 +21,15 @@ point of the grid `ρℤ`. Rounding makes the zero bin absorbing, and the paper
 describes when and how sharply the chain is absorbed — and, in the supercritical
 regime, what the invariant law looks like near the origin.
 
-- **86 Lean modules, 72,094 lines** under `AbsorptionCutoff/`, plus **15 audit
-  files and 3,455 lines** in the Mathlib-only audit surface under `Audit/`.
-- **No `sorry`** anywhere in the library. (Each comparator challenge in `Audit/`
-  contains its single intentional statement-level `sorry`, filled by the
-  corresponding solution file.)
-- **No custom `axiom`.** The public theorems reduce to Mathlib's three standard
-  foundational axioms — `propext`, `Classical.choice`, `Quot.sound` — verified by
+- **86 Lean modules and roughly 72,000 lines** under `AbsorptionCutoff/`, plus
+  **15 audit modules and roughly 3,800 lines** in the Mathlib-only audit surface
+  (`Audit.lean` and `Audit/`).
+- **No `sorry`** anywhere in the production library under `AbsorptionCutoff/`.
+  (Each comparator challenge in `Audit/` contains its single intentional
+  statement-level `sorry`, filled by the corresponding solution file.)
+- **No custom `axiom`.** The seven audited declarations use no axioms beyond
+  Mathlib's three standard foundational axioms — `propext`, `Classical.choice`,
+  `Quot.sound` — verified by
   [`AbsorptionCutoff/Meta/AxiomsAudit.lean`](AbsorptionCutoff/Meta/AxiomsAudit.lean).
 - Pinned to Lean `v4.32.0` and Mathlib `v4.32.0`.
 
@@ -42,14 +44,20 @@ the metastability theorem also has a focused compatibility alias and an
 independent audit. Where a Lean statement is packaged differently from the
 manuscript, it is recorded theorem by theorem in
 [`CORRESPONDENCE.md`](CORRESPONDENCE.md). Every difference listed there is
-packaging, proof route, or a case where the Lean result is *stronger*: no theorem
-here rests on a hypothesis weaker than the manuscript's.
+packaging, proof route, or a case where the Lean result is *stronger*. After
+unfolding the standing notation and equivalent regime formulations, the
+manuscript's hypotheses imply those of the corresponding Lean declaration, and
+its conclusion implies the manuscript's conclusion.
 
 ## The manuscript
 
-Not included in this repository. **TODO: arXiv identifier**, to be linked here,
-in [`CITATION.cff`](CITATION.cff), and in
-[`formalization.yaml`](formalization.yaml) once the manuscript is posted.
+The exact manuscript snapshot used for this release is included as
+[`manuscript/absorption-cutoff.pdf`](manuscript/absorption-cutoff.pdf), together
+with self-contained LaTeX build inputs. Its SHA-256 digest and provenance are
+recorded in
+[`manuscript/README.md`](manuscript/README.md). This fixed snapshot makes the
+source-to-Lean correspondence reviewable before an arXiv version is available;
+the arXiv identifier will be added when the manuscript is posted.
 
 ## Main results
 
@@ -127,8 +135,8 @@ and that the Lean kernel accepts it, building both sides in a `landrun` sandbox.
 | [`Audit/VectorCutoff/`](Audit/VectorCutoff/) | `…VectorCutoff.gaussian_vector_cutoff` |
 | [`Audit/PowerSingularity/`](Audit/PowerSingularity/) | `…PowerSingularity.nd_power_singularity` |
 
-Each challenge rebuilds between 8 and 27 project definitions from Mathlib
-primitives; each solution repeats them verbatim and bridges to the development
+Each challenge rebuilds its statement vocabulary from Mathlib primitives; each
+solution repeats it verbatim and bridges to the development
 with `rfl` lemmas, so the Mathlib-only statement is *definitionally* the
 development's theorem rather than merely equivalent to it. Every configuration
 permits only
@@ -138,8 +146,7 @@ permits only
 ```
 
 and sets `enable_nanoda: false`. All seven audit targets printed
-`Your solution is okay!` on 2026-08-12; the corrected Mathlib-only metastability
-target was rerun successfully on 2026-08-13.
+`Your solution is okay!` in the full-suite rerun on 2026-08-13.
 
 For ordinary Lean development, build natively first:
 
@@ -149,11 +156,11 @@ lake build           # complete library; parallel native build
 lake build Audit     # library plus all seven audit challenge/solutions
 ```
 
-The current checkout completes both targets successfully. The audit target
-emits only the seven expected warnings for the intentional `sorry`s in the
+The current checkout completes both targets successfully. The audit target's
+output includes the seven expected warnings for the intentional `sorry`s in the
 challenge files. Prefer `lake build` over `lake env lean <file>` when you want
 parallel compilation; the latter is a focused, mostly serial single-file
-check. Lake's `-j` option controls native parallelism.
+check. Lean's task-pool size can be set with `LEAN_NUM_THREADS` when needed.
 
 To reproduce the comparator audit in its pinned sandbox:
 
@@ -162,9 +169,11 @@ docker build -f docker/audit.Dockerfile -t absorptioncutoff-audit .
 scripts/audit-docker.sh          # or: scripts/audit-docker.sh PowerSingularity
 ```
 
-Docker is used for the comparator's reproducible Linux/Landlock environment,
-not because Lean requires Docker for normal builds. The image pins comparator,
-`lean4export`, and `landrun`. Two caveats are stated
+Docker is used for the comparator's controlled Linux/Landlock environment, not
+because Lean requires Docker for normal builds. The image pins its base images
+by digest, Elan archives by checksum, and comparator, `lean4export`, and
+`landrun` by commit. Ubuntu's package index is not snapshot-pinned, so rebuilding
+the image is not claimed to be bit-for-bit reproducible. Two further caveats are stated
 in full in [`formalization.yaml`](formalization.yaml) and belong here too:
 the comparator is invoked through
 [`docker/landrun-argv-shim.sh`](docker/landrun-argv-shim.sh), which repairs an
@@ -177,9 +186,10 @@ guarantee than the documented one.
 
 The formal dependency graph is maintained as a
 [`leanblueprint`](https://github.com/PatrickMassot/leanblueprint) under
-[`blueprint/`](blueprint/): **955 declarations**, each carrying its `\lean{}` name
-and `\leanok` status. The generated declaration list is committed, and after
-building the audit library all names resolve against the project via
+[`blueprint/`](blueprint/): **956 declaration references (952 distinct Lean
+names)**, each carrying its `\lean{}` name and `\leanok` status. The generated
+declaration list is committed, and after building the audit library all names
+resolve against the project via
 `lake exe checkdecls blueprint/lean_decls`. The build workflow runs this check
 on every commit.
 
@@ -197,18 +207,19 @@ lake build Audit     # complete native build plus audit surface
 `lake exe cache get` requires the committed
 [`lake-manifest.json`](lake-manifest.json), which pins the exact dependency
 revisions. `lake build Audit` elaborates the whole tree, the audit root, and the
-seven challenge/solution pairs (8,755 jobs in the current tree) and emits exactly
-seven warnings — the seven intentional `sorry`s. Live build status and timings are in the
+seven challenge/solution pairs; its output includes one expected `sorry` warning
+from each challenge. Live build status and timings are in the
 [Actions tab](https://github.com/BennyAvelin/AbsorptionCutoff/actions) and the
 badges above. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for practical notes on
 working with a development of this size.
 
-The pinned local comparator audit was rerun on 2026-08-12 from the merged
-`main` branch with `scripts/audit-docker.sh`. All seven configurations printed
-`Your solution is okay!` and passed: fixed-width, dimension, metastability,
-fixed-dimensional absorption, scalar cutoff, vector cutoff, and power
-singularity. The per-target configurations and comparator results are recorded
-in the `Audit/*/comparator.json` files.
+The pinned local comparator audit was rerun on 2026-08-13 from commit `b0943d9`
+on the merged `main` branch with `scripts/audit-docker.sh`. All seven
+configurations printed `Your solution is okay!` and passed: fixed-width,
+dimension, metastability, fixed-dimensional absorption, scalar cutoff, vector
+cutoff, and power singularity. The committed `Audit/*/comparator.json` files
+record the per-target configurations; the successful output is preserved in
+the [comparator CI run](https://github.com/BennyAvelin/AbsorptionCutoff/actions/runs/31692518893).
 
 To use the library, `import AbsorptionCutoff` pulls in the whole development; the public
 results are in `import AbsorptionCutoff.MainTheorems`.
@@ -228,11 +239,12 @@ AbsorptionCutoff/
   Metastability.lean               persistence and absorption (§5)
   Supercritical/                   the supercritical route (§6) and the
                                    stationary/renewal theory (§7)
-  MainTheorems.lean                the seven public aliases
+  MainTheorems.lean                paper-facing and compatibility aliases
   Meta/AxiomsAudit.lean            #print axioms for those seven
 AbsorptionCutoff.lean                      root module (imports the whole library)
 Audit/                             Mathlib-only comparator challenges/solutions
 blueprint/                         the formal dependency graph
+manuscript/                        fixed source snapshot and its provenance
 notes/                             companion proof notes (see below)
 docker/, scripts/                  the pinned audit environment and runners
 ```
@@ -253,6 +265,18 @@ Abel-regularized Fourier argument that identifies Blackwell's constant).
 
 ## How this was built
 
+This project was motivated in part by two large-scale Lean formalizations by
+Scott Armstrong and collaborators:
+[`DeGiorgi`](https://github.com/scottnarmstrong/DeGiorgi), by Scott Armstrong and
+Julia Kempe, which formalizes core elliptic De Giorgi–Nash–Moser theory, and
+[`CoarseGraining`](https://github.com/scottnarmstrong/CoarseGraining), by Scott
+Armstrong and Tuomo Kuusi, which formalizes coarse-graining theory and
+quantitative stochastic homogenization. They demonstrated that closely
+supervised, LLM-assisted formalization can bring substantial modern analysis
+into Lean on a practical timescale. In particular, CoarseGraining's explicit
+manuscript-to-Lean correspondence and independent comparator checks helped
+motivate the release and audit structure used here.
+
 This development was produced by **autoformalization**: the Lean code was written
 from the manuscript's arguments by large language models — OpenAI's ChatGPT and
 Anthropic's Claude — driven by agentic coding harnesses under the close
@@ -262,11 +286,20 @@ and review status are disclosed in
 [mathlib-initiative](https://github.com/mathlib-initiative/formalization.yaml)
 standard.
 
-None of the guarantee rests on the models having behaved well. Correctness is
-enforced by the Lean kernel and Mathlib: there is no `sorry` and no custom axiom,
-both machine-verified, and the seven public statements are additionally
-comparator-checked against restatements a human can read without the
-development.
+The Lean kernel checks the proof terms for the formal statements actually
+written: the production library contains no `sorry` and declares no custom
+axiom, both machine-verified, and the seven audited declarations are additionally
+comparator-checked against Mathlib-only restatements. Kernel checking alone does
+not establish that those statements faithfully express the manuscript. That
+semantic correspondence is documented theorem by theorem in
+[`CORRESPONDENCE.md`](CORRESPONDENCE.md) and has been reviewed by the author; it
+has not received external peer review.
+
+The public Git history begins from a curated release snapshot. The roughly
+2,870 earlier agentic development commits reported in
+[`formalization.yaml`](formalization.yaml) are not part of this repository's
+public history. Release-level corrections are summarized in
+[`CHANGELOG.md`](CHANGELOG.md).
 
 ## Author and citation
 
@@ -283,8 +316,13 @@ Built on [Lean 4](https://lean-lang.org) and
 [`lean4export`](https://github.com/leanprover/lean4export), and
 [`landrun`](https://github.com/Zouuup/landrun); the blueprint uses
 [`leanblueprint`](https://github.com/PatrickMassot/leanblueprint) and
-[`checkdecls`](https://github.com/PatrickMassot/checkdecls).
+[`checkdecls`](https://github.com/PatrickMassot/checkdecls). Template provenance
+and retained third-party attribution are recorded in [`NOTICE`](NOTICE).
 
 ## License
 
-Licensed under the **Apache License 2.0** (see [`LICENSE`](LICENSE)).
+The Lean source, documentation, scripts, and project metadata are licensed under
+the **Apache License 2.0** (see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)). The
+bundled manuscript and its source inputs are © 2026 Benny Avelin, all rights
+reserved, and are not covered by the Apache license; see
+[`manuscript/README.md`](manuscript/README.md).
