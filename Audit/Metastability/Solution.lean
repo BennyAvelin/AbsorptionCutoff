@@ -211,11 +211,12 @@ def roundedRadiusBound (ρ : ℝ) : ℝ :=
   (Q₁ ρ⁻¹ : ℝ) ^ 2
 
 
-/-- The finite rounded vector state space attained after applying `tanh` and
-rounding coordinatewise. -/
-def roundedVectorStateSpace (ρ : ℝ) (N : ℕ) : Set (Fin N → ℝ) :=
-  {x | ∀ i, ∃ k : ℤ,
-    |(k : ℝ)| ≤ |(Q₁ ρ⁻¹ : ℝ)| ∧ x i = ρ * (k : ℝ)}
+/-- The paper's finite rounded vector state space
+`(ρℤ)^N ∩ [-1-ρ/2, 1+ρ/2]^N`. -/
+def roundedStateSpace (ρ : ℝ) (N : ℕ) : Set (Fin N → ℝ) :=
+  {y |
+    (∀ i, ∃ z : ℤ, y i = ρ * z) ∧
+      ∀ i, y i ∈ Set.Icc (-1 - ρ / 2) (1 + ρ / 2)}
 
 
 /-! ## The positive-drift structure -/
@@ -311,9 +312,8 @@ lemma roundedRadiusBound_eq (ρ : ℝ) :
     roundedRadiusBound ρ = AbsorptionCutoff.roundedRadiusBound ρ := rfl
 
 
-lemma roundedVectorStateSpace_eq (ρ : ℝ) (N : ℕ) :
-    roundedVectorStateSpace ρ N =
-      AbsorptionCutoff.roundedVectorStateSpace ρ N := rfl
+lemma roundedStateSpace_eq (ρ : ℝ) (N : ℕ) :
+    roundedStateSpace ρ N = AbsorptionCutoff.roundedStateSpace ρ N := rfl
 
 
 lemma roundedMeanMap_eq : roundedMeanMap = AbsorptionCutoff.roundedMeanMap := rfl
@@ -382,7 +382,7 @@ theorem rounded_qualitative_metastability
                                 (fun (s : ℕ)
                                   (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
                       atTop (𝓝 1))) ∧
-            ∀ (N : ℕ), 0 < N → ∀ x ∈ roundedVectorStateSpace ρ N,
+            ∀ (N : ℕ), 0 < N → ∀ x ∈ roundedStateSpace ρ N,
               ∀ᵐ ω ∂markovPathMeasure (Measure.dirac x)
                   (roundedPkernel A ρ N),
                 absorptionTime

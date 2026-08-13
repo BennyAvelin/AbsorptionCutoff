@@ -3650,13 +3650,11 @@ theorem tendsto_roundedPkernel_survival_and_ae_absorption
   rw [ae_iff]
   simpa only [Einf, not_ne_iff] using hInfZero
 
-/-- Paper-facing form of `thm:rounded-qualitative-metastability`. Above the
-fixed-precision existence threshold it selects a rightmost positive-drift
-component, exposes the full right-stability margin, gives the entrance and
-finite-horizon exit estimates with common constants, derives exponential
-survival for deterministic rounded-vector initial families, and records
-almost-sure absorption in every fixed positive dimension. -/
-theorem rounded_qualitative_metastability_paper
+/-- Internal assembly of the metastability conclusions together with
+fixed-dimensional absorption from states attained by the rounded dynamics.
+The public paper-facing theorem below strengthens the last clause to the full
+finite rounded state space. -/
+private theorem rounded_qualitative_metastability_attainable
     {A ρ : ℝ} (hρ : 0 < ρ) (hρ_lt : ρ < 1)
     (hA : roundedExistenceThreshold ρ < A) :
     ∃ h : ℝ, h ∈ roundedPositiveDriftSet A ρ ∧
@@ -3929,7 +3927,7 @@ theorem ae_absorption_roundedPkernel_of_rounded_state
     {A ρ : ℝ} (hρ : 0 < ρ) (hρ_lt : ρ < 1)
     (hA : roundedExistenceThreshold ρ < A)
     {N : ℕ} (hN : 0 < N)
-    (y : Fin N → ℝ) (hy : y ∈ roundedStateSpace ρ N) :
+    (y : Fin N → ℝ) (_hy : y ∈ roundedStateSpace ρ N) :
     ∀ᵐ ω ∂markovPathMeasure
         (Measure.dirac y) (roundedPkernel A ρ N),
       absorptionTime
@@ -4020,5 +4018,70 @@ theorem ae_absorption_roundedPkernel_of_rounded_state
       (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω ≠ ⊤
   rw [ae_iff]
   simpa only [Einf, not_ne_iff] using hInfZero
+
+/-- Paper-facing form of `thm:rounded-qualitative-metastability`. Above the
+fixed-precision existence threshold it selects a rightmost positive-drift
+component, exposes the full right-stability margin, gives the entrance and
+finite-horizon exit estimates with common constants, derives exponential
+survival for deterministic rounded-vector initial families, and records
+almost-sure absorption from every point of the paper's finite rounded state
+space in every fixed positive dimension. -/
+theorem rounded_qualitative_metastability_paper
+    {A ρ : ℝ} (hρ : 0 < ρ) (hρ_lt : ρ < 1)
+    (hA : roundedExistenceThreshold ρ < A) :
+    ∃ h : ℝ, h ∈ roundedPositiveDriftSet A ρ ∧
+      IsRightmostRoundedPositiveDriftComponent A ρ h ∧
+      let Ccomp := roundedPositiveDriftComponent A ρ h
+        ∃ η₀ : ℝ, 0 < η₀ ∧
+          sInf Ccomp < sSup Ccomp - η₀ ∧
+          sSup Ccomp + η₀ < roundedRadiusBound ρ ∧
+          (∀ u ∈ Set.Ioc (sSup Ccomp) (sSup Ccomp + η₀),
+            roundedMeanMap A ρ u < u) ∧
+          ((∀ (B : Set ℝ), IsCompact B →
+              B ⊆ Set.Ioc (sInf Ccomp) (sSup Ccomp) →
+              ∀ η : ℝ, 0 < η → η < η₀ →
+                ∃ Tη : ℕ, ∃ C c₀ c₁ : ℝ,
+                  0 < C ∧ 0 < c₀ ∧ 0 < c₁ ∧ c₁ < c₀ ∧
+                  (∀ (N : ℕ), 0 < N → ∀ x : Fin N → ℝ,
+                    roundedRadiusSq ρ N x ∈ B →
+                    (markovPathMeasure
+                        (Measure.dirac (roundedRadiusSq ρ N x))
+                        (Hkernel A ρ N)).real
+                        {ω : ℕ → ℝ |
+                          |ω Tη - sSup Ccomp| > η / 2} ≤
+                      C * Real.exp (-c₀ * N)) ∧
+                  (∀ (N : ℕ), 0 < N → ∀ x : Fin N → ℝ,
+                    roundedRadiusSq ρ N x ∈ B → ∀ T : ℕ,
+                    (markovPathMeasure
+                        (Measure.dirac (roundedRadiusSq ρ N x))
+                        (Hkernel A ρ N)).real
+                        (metastableExitEvent (sSup Ccomp) η Tη T) ≤
+                      C * (1 + T) * Real.exp (-c₀ * N)) ∧
+                  (∀ x : ∀ N : ℕ, Fin N → ℝ,
+                    (∀ N, 0 < N → roundedRadiusSq ρ N (x N) ∈ B) →
+                    Tendsto
+                      (fun N : ℕ =>
+                        (markovPathMeasure (Measure.dirac (x N))
+                            (roundedPkernel A ρ N)).real
+                          {ω |
+                            ((Tη + ⌊Real.exp (c₁ * N)⌋₊ : ℕ) :
+                                WithTop ℕ) <
+                              absorptionTime
+                                (fun (s : ℕ)
+                                  (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
+                      atTop (𝓝 1))) ∧
+            ∀ (N : ℕ), 0 < N → ∀ x ∈ roundedStateSpace ρ N,
+              ∀ᵐ ω ∂markovPathMeasure (Measure.dirac x)
+                  (roundedPkernel A ρ N),
+                absorptionTime
+                  (fun (s : ℕ) (ω : ℕ → (Fin N → ℝ)) => ω s) ω ≠ ⊤) := by
+  obtain ⟨h, hh, hrightmost, hconclusions⟩ :=
+    rounded_qualitative_metastability_attainable hρ hρ_lt hA
+  refine ⟨h, hh, hrightmost, ?_⟩
+  dsimp only at hconclusions ⊢
+  obtain ⟨η₀, hη₀, hleft, hright, hstable, hmetastable, _⟩ := hconclusions
+  refine ⟨η₀, hη₀, hleft, hright, hstable, hmetastable, ?_⟩
+  intro N hN x hx
+  exact ae_absorption_roundedPkernel_of_rounded_state hρ hρ_lt hA hN x hx
 
 end AbsorptionCutoff

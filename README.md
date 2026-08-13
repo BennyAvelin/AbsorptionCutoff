@@ -79,9 +79,10 @@ entrance time and to `0` two steps after it.
 paper-facing theorem. Starting from a positive-dimensional family whose rounded
 radii remain in a compact subset of a rightmost positive-drift component, the
 chain survives for a time **exponential in `N`** with probability tending to one;
-while in each *fixed* dimension it is absorbed almost surely. The focused
-compatibility alias `rounded_fixed_dimension_absorption` exposes the latter
-clause separately and is audited independently.
+while in each *fixed* dimension it is absorbed almost surely from every point of
+the full paper state space `(ρℤ)^N ∩ [-1-ρ/2, 1+ρ/2]^N`. The focused
+compatibility alias `rounded_fixed_dimension_absorption` exposes this same
+full-state-space clause separately and is audited independently.
 
 **Supercritical dimension cutoff** — `gaussian_process_cutoff` and
 `gaussian_vector_cutoff`. For `A > 1`, the scalar squared-radius chain and the

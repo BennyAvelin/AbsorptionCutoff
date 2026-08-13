@@ -25,7 +25,9 @@ status:
     nonlinearity and nearest-grid rounding: the fixed-width vanishing-mesh cutoff
     profile, with the full cutoff predicate checking center divergence, eventual
     window positivity, and the little-o window condition; the fixed-precision
-    dimension cutoff, both clauses of qualitative metastability, the
+    dimension cutoff, both clauses of qualitative metastability (including
+    fixed-dimensional absorption from every point of the full finite rounded
+    state space), the
     supercritical dimension cutoff in scalar and reconstructed
     vector form, and the fixed-dimensional stationary power singularity. Every
     result stated in the manuscript's main-results section is formalized and

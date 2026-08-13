@@ -19,10 +19,11 @@ The source correspondences are:
 * `weightVar`, `gaussianMat`, `Pstep`: `AbsorptionCutoff/VectorReduction.lean`;
 * `roundedPstep`, `roundedPkernel`, `roundedRadiusSq`:
   `AbsorptionCutoff/RoundedVectorReduction.lean`;
+* `roundedStateSpace`: `AbsorptionCutoff/RoundedVectorReduction.lean`;
 * `markovHistoryKernel`, `markovPathMeasure`: `AbsorptionCutoff/MarkovTrajectory.lean`;
 * `absorptionTime`: `AbsorptionCutoff/AbsorptionTime.lean`;
 * `roundedMeanMap`: `AbsorptionCutoff/Lattice.lean`;
-* the threshold, state-space, exit-event, positive-drift objects, and theorem:
+* the threshold, exit-event, positive-drift objects, and theorem:
   `AbsorptionCutoff/Metastability.lean`.
 
 The only proof omitted in this file is the final theorem's.
@@ -221,11 +222,12 @@ def roundedRadiusBound (ρ : ℝ) : ℝ :=
   (Q₁ ρ⁻¹ : ℝ) ^ 2
 
 
-/-- The finite rounded vector state space attained after applying `tanh` and
-rounding coordinatewise. -/
-def roundedVectorStateSpace (ρ : ℝ) (N : ℕ) : Set (Fin N → ℝ) :=
-  {x | ∀ i, ∃ k : ℤ,
-    |(k : ℝ)| ≤ |(Q₁ ρ⁻¹ : ℝ)| ∧ x i = ρ * (k : ℝ)}
+/-- The paper's finite rounded vector state space
+`(ρℤ)^N ∩ [-1-ρ/2, 1+ρ/2]^N`. -/
+def roundedStateSpace (ρ : ℝ) (N : ℕ) : Set (Fin N → ℝ) :=
+  {y |
+    (∀ i, ∃ z : ℤ, y i = ρ * z) ∧
+      ∀ i, y i ∈ Set.Icc (-1 - ρ / 2) (1 + ρ / 2)}
 
 
 /-! ## The positive-drift structure -/
@@ -307,7 +309,7 @@ theorem rounded_qualitative_metastability
                                 (fun (s : ℕ)
                                   (ω : ℕ → (Fin N → ℝ)) => ω s) ω})
                       atTop (𝓝 1))) ∧
-            ∀ (N : ℕ), 0 < N → ∀ x ∈ roundedVectorStateSpace ρ N,
+            ∀ (N : ℕ), 0 < N → ∀ x ∈ roundedStateSpace ρ N,
               ∀ᵐ ω ∂markovPathMeasure (Measure.dirac x)
                   (roundedPkernel A ρ N),
                 absorptionTime

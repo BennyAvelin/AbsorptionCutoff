@@ -29,8 +29,10 @@ not a seventh manuscript theorem.
 The manuscript has six headline statement blocks. Its metastability theorem has
 two logically independent conclusions — exponential persistence as the
 dimension grows and almost-sure absorption in each fixed dimension. The combined
-paper-facing alias contains both. The absorption clause also remains available
-through a focused compatibility alias, giving seven comparator targets in total.
+paper-facing alias contains both, with the absorption clause quantified over the
+paper's full state space `(ρℤ)^N ∩ [-1-ρ/2, 1+ρ/2]^N`. The same clause also
+remains available through a focused compatibility alias, giving seven comparator
+targets in total.
 
 ## Coverage by section
 
@@ -50,7 +52,8 @@ through a focused compatibility alias, giving seven comparator targets in total.
 - **§4, fixed-precision dimension cutoff.** Complete, including the
   rounded-vector lift and the mixing-time consequences.
 - **§5, qualitative metastability.** Complete through exponential persistence and
-  fixed-state-space almost-sure absorption.
+  almost-sure absorption from every point of the full finite rounded state space
+  `(ρℤ)^N ∩ [-1-ρ/2, 1+ρ/2]^N`.
 - **§6, supercritical dimension cutoff.** Complete in scalar and reconstructed
   vector form, including the two-sided profiles and the full `HasCutoff`
   wrappers. The constant window one is proved admissible from divergence of the
