@@ -27,8 +27,9 @@ status:
     metastability, the supercritical dimension cutoff in scalar and reconstructed
     vector form, and the fixed-dimensional stationary power singularity. Every
     result stated in the manuscript's main-results section is formalized and
-    exposed in AbsorptionCutoff/MainTheorems.lean; all seven are additionally checked by
-    leanprover/comparator against restatements written in Mathlib vocabulary
+    exposed in AbsorptionCutoff/MainTheorems.lean. The six paper-facing results,
+    plus a focused alias for the fixed-dimensional absorption clause, are checked
+    by leanprover/comparator against restatements written in Mathlib vocabulary
     only. Two supporting libraries were built in-project for lack of Mathlib
     equivalents: positive-drift first-passage asymptotics, and renewal theory up
     to the key renewal theorem.
@@ -191,11 +192,11 @@ alignment:
       lean: "AbsorptionCutoff.MainTheorems.subcritical_dimension_cutoff"
       module: "AbsorptionCutoff.MainTheorems"
       status: "comparator-checked"
-    - source: "thm:rounded-qualitative-metastability (persistence clause)"
+    - source: "thm:rounded-qualitative-metastability"
       lean: "AbsorptionCutoff.MainTheorems.rounded_qualitative_metastability"
       module: "AbsorptionCutoff.MainTheorems"
       status: "comparator-checked"
-    - source: "thm:rounded-qualitative-metastability (absorption clause)"
+    - source: "thm:rounded-qualitative-metastability (focused absorption-clause audit)"
       lean: "AbsorptionCutoff.MainTheorems.rounded_fixed_dimension_absorption"
       module: "AbsorptionCutoff.MainTheorems"
       status: "comparator-checked"

@@ -69,10 +69,11 @@ the cutoff-time divergence and TV pair but omits the equivalent survival pair. -
 alias subcritical_dimension_cutoff_tv :=
   AbsorptionCutoff.subcritical_dimension_cutoff_roundedVector_intro
 
-/-! ## Rounded metastability and fixed-dimensional absorption -/
+/-! ## Metastability and fixed-dimensional absorption -/
 
 /-- Paper `thm:rounded-qualitative-metastability`, including entrance, exit,
-exponential persistence, and fixed-dimensional absorption. -/
+exponential persistence for positive-dimensional initial families, and
+fixed-dimensional absorption. -/
 alias rounded_qualitative_metastability :=
   AbsorptionCutoff.rounded_qualitative_metastability_paper
 

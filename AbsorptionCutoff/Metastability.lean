@@ -3688,7 +3688,7 @@ theorem rounded_qualitative_metastability_paper
                         (metastableExitEvent (sSup Ccomp) η Tη T) ≤
                       C * (1 + T) * Real.exp (-c₀ * N)) ∧
                   (∀ x : ∀ N : ℕ, Fin N → ℝ,
-                    (∀ N, roundedRadiusSq ρ N (x N) ∈ B) →
+                    (∀ N, 0 < N → roundedRadiusSq ρ N (x N) ∈ B) →
                     Tendsto
                       (fun N : ℕ =>
                         (markovPathMeasure (Measure.dirac (x N))
@@ -3785,7 +3785,7 @@ theorem rounded_qualitative_metastability_paper
       have hlower : ∀ᶠ N in atTop, 1 - b N ≤ p N := by
         filter_upwards [eventually_atTop.2 ⟨1, fun _ hN => hN⟩] with N hN
         have hexitN :=
-          hexit N (by omega) (x N) (hxB N)
+          hexit N (by omega) (x N) (hxB N (by omega))
             ⌊Real.exp (c₁ * N)⌋₊
         have hbridge :=
           one_sub_measureReal_metastableExitEvent_le_survival

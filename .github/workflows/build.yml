@@ -31,6 +31,9 @@ jobs:
         with:
           use-mathlib-cache: true
 
+      - name: Check Mathlib-only challenge imports
+        run: scripts/check-audit-challenge-imports.sh
+
       # The Mathlib-only comparator surface. Each Challenge.lean ends in one
       # intentional statement-level `sorry`, which is why `Audit` is not part of
       # `defaultTargets` and is built separately here.
@@ -42,7 +45,8 @@ jobs:
       - name: Check blueprint declarations
         run: lake exe checkdecls blueprint/lean_decls
 
-      # Prints `#print axioms` for the seven headline theorems, so the log itself
-      # records that they use only propext, Classical.choice, and Quot.sound.
+      # Prints `#print axioms` for the six paper-facing results and the focused
+      # absorption alias, so the log records that they use only propext,
+      # Classical.choice, and Quot.sound.
       - name: Axiom audit
         run: lake build AbsorptionCutoff.Meta.AxiomsAudit

@@ -33,13 +33,17 @@ regime, what the invariant law looks like near the origin.
 
 ## Scope and faithfulness
 
-**Every theorem in the manuscript's main-results section is formalized**, and all
-seven are exposed as aliases in
-[`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean). Where the Lean
-statement is packaged differently from the manuscript, it is recorded theorem by
-theorem in [`CORRESPONDENCE.md`](CORRESPONDENCE.md). Every difference listed
-there is packaging, proof route, or a case where the Lean result is *stronger*:
-no theorem here rests on a hypothesis weaker than the manuscript's.
+**Every theorem in the manuscript's main-results section is formalized.** The
+manuscript has six headline statement blocks; they are exposed through the six
+paper-facing aliases in
+[`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean). There
+are seven comparator targets because the fixed-dimensional absorption clause of
+the metastability theorem also has a focused compatibility alias and an
+independent audit. Where a Lean statement is packaged differently from the
+manuscript, it is recorded theorem by theorem in
+[`CORRESPONDENCE.md`](CORRESPONDENCE.md). Every difference listed there is
+packaging, proof route, or a case where the Lean result is *stronger*: no theorem
+here rests on a hypothesis weaker than the manuscript's.
 
 ## The manuscript
 
@@ -49,7 +53,9 @@ in [`CITATION.cff`](CITATION.cff), and in
 
 ## Main results
 
-All seven are stated in [`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean).
+All six paper-facing results are stated in
+[`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean),
+alongside compatibility aliases used by the seven focused audits.
 
 **Fixed-width vanishing-mesh cutoff** — `rounded_gaussian_nearest_cutoff`. Fix the
 dimension `N` and assume `0 < A < A_c(N)`. Along any positive mesh sequence
@@ -63,12 +69,13 @@ same theorem includes `HasCutoff` at center `L_ρ/γ_{A,N}` with window
 distance from `δ₀` tends to `1` one step before the deterministic terminal-scale
 entrance time and to `0` two steps after it.
 
-**Rounded metastability** — `rounded_qualitative_metastability` and
-`rounded_fixed_dimension_absorption`, the theorem's two logically independent
-clauses. Starting anywhere in a compact subset of a rightmost positive-drift
-component, the chain survives for a time **exponential in `N`** with probability
-tending to one; while in each *fixed* dimension it is absorbed almost surely, and
-the survival probability of the time-`t` marginal tends to zero.
+**Metastability** — `rounded_qualitative_metastability` is the combined
+paper-facing theorem. Starting from a positive-dimensional family whose rounded
+radii remain in a compact subset of a rightmost positive-drift component, the
+chain survives for a time **exponential in `N`** with probability tending to one;
+while in each *fixed* dimension it is absorbed almost surely. The focused
+compatibility alias `rounded_fixed_dimension_absorption` exposes the latter
+clause separately and is audited independently.
 
 **Supercritical dimension cutoff** — `gaussian_process_cutoff` and
 `gaussian_vector_cutoff`. For `A > 1`, the scalar squared-radius chain and the
@@ -94,7 +101,8 @@ transfer moment equation `ℳ_{A,N}(β) = 1` in `(0,N)` — and `C(A,N,π) > 0`.
 ## Verified against a Mathlib-only statement
 
 So that the claims above can be checked without trusting the ~70k-line
-development, **all seven are independently verified by
+development, **the six paper-facing results and the focused
+fixed-dimensional-absorption alias are independently verified by
 [`leanprover/comparator`](https://github.com/leanprover/comparator)**. Each is
 restated using **only Mathlib** — no project definitions — in a `Challenge.lean`
 ending in one intentional `sorry`, and a `Solution.lean` proves that exact
@@ -122,8 +130,9 @@ permits only
 ["propext", "Quot.sound", "Classical.choice"]
 ```
 
-and sets `enable_nanoda: false`. All seven printed `Your solution is okay!` on
-2026-08-12.
+and sets `enable_nanoda: false`. All seven audit targets printed
+`Your solution is okay!` on 2026-08-12; the corrected Mathlib-only metastability
+target was rerun successfully on 2026-08-13.
 
 For ordinary Lean development, build natively first:
 

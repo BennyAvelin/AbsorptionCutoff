@@ -75,6 +75,10 @@ jobs:
       - name: Confirm the runner is unprivileged
         run: id
 
+      - name: Check Mathlib-only challenge imports
+        working-directory: project
+        run: scripts/check-audit-challenge-imports.sh
+
       # The same script the local Docker run invokes.
       - name: Run every comparator challenge
         working-directory: project

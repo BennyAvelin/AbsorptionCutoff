@@ -10,24 +10,27 @@ paper-facing surface and the divergences.
 
 ## Headline results
 
-Every one of these is exposed as an alias in
-[`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean) and is independently
-checked by `leanprover/comparator` against a Mathlib-only restatement.
+Every paper-facing result below is exposed as an alias in
+[`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean) and is
+independently checked by `leanprover/comparator` against a Mathlib-only
+restatement. The focused absorption row is an additional compatibility surface,
+not a seventh manuscript theorem.
 
 | Manuscript | Lean alias | Proved in | Comparator |
 |---|---|---|---|
 | `thm:rounded-gaussian-nearest-cutoff` (§3) | `rounded_gaussian_nearest_cutoff` | `AbsorptionCutoff/FixedWidthAbsorptionRegenerationFinal.lean` | `Audit/FixedWidthCutoff/` |
 | `thm:subcritical-dimension-cutoff` (§4) | `subcritical_dimension_cutoff` | `AbsorptionCutoff/RoundedVectorReduction.lean` | `Audit/DimensionCutoff/` |
-| `thm:rounded-qualitative-metastability` (§5), persistence clause | `rounded_qualitative_metastability` | `AbsorptionCutoff/Metastability.lean` | `Audit/Metastability/` |
-| `thm:rounded-qualitative-metastability` (§5), absorption clause | `rounded_fixed_dimension_absorption` | `AbsorptionCutoff/Metastability.lean` | `Audit/FixedDimensionAbsorption/` |
+| `thm:rounded-qualitative-metastability` (§5) | `rounded_qualitative_metastability` | `AbsorptionCutoff/Metastability.lean` | `Audit/Metastability/` |
+| Focused audit of its absorption clause | `rounded_fixed_dimension_absorption` | `AbsorptionCutoff/Metastability.lean` | `Audit/FixedDimensionAbsorption/` |
 | `thm:gaussian-process-cutoff` (§6) | `gaussian_process_cutoff` | `AbsorptionCutoff/Supercritical/CutoffLimitAssembly.lean` | `Audit/ScalarCutoff/` |
 | `cor:gaussian-vector-cutoff` (§6) | `gaussian_vector_cutoff` | `AbsorptionCutoff/Supercritical/CutoffLimitAssembly.lean` | `Audit/VectorCutoff/` |
 | `thm:nd-power-singularity:intro` (§7) | `nd_power_singularity` | `AbsorptionCutoff/Supercritical/PowerSingularityRenewal.lean` | `Audit/PowerSingularity/` |
 
-The manuscript's metastability theorem has two logically independent
-conclusions — exponential persistence as the dimension grows, and almost-sure
-absorption in each fixed dimension. They appear as two separate aliases above,
-and are audited separately.
+The manuscript has six headline statement blocks. Its metastability theorem has
+two logically independent conclusions — exponential persistence as the
+dimension grows and almost-sure absorption in each fixed dimension. The combined
+paper-facing alias contains both. The absorption clause also remains available
+through a focused compatibility alias, giving seven comparator targets in total.
 
 ## Coverage by section
 
@@ -105,6 +108,13 @@ manuscript's.
    `c σ̄_N(B)` and `c`. This is the equivalent normalized limit when the
    comparison constant is positive, and it remains meaningful when
    `σ̄_N(B) = 0`.
+8. **The metastability family is indexed by positive dimensions.** The paper's
+   family `Y_0^{(N)}` is defined for `N ≥ 1`. Lean represents it as a function on
+   natural numbers and therefore states its compact-well hypothesis as
+   `∀ N, 0 < N → roundedRadiusSq ρ N (x N) ∈ B`. This excludes the formal
+   zero-dimensional value without changing the asymptotic claim. The same
+   capstone additionally exposes the uniform entrance and finite-horizon exit
+   estimates used to prove exponential survival.
 
 On the continuity hypothesis of the key renewal theorem: the Lean proof
 approximates the forcing in the directly Riemann integrable norm and therefore
