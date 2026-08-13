@@ -20,7 +20,8 @@ It imports only `Mathlib`. Every object the statement mentions is rebuilt below
 from Mathlib primitives. The source correspondences are:
 
 * `Q₁`, `gridRound`, `Qρ`: `AbsorptionCutoff/Rounding.lean`;
-* `tvDist`: `AbsorptionCutoff/Cutoff.lean`;
+* `tvDist`, `HasCutoffLimits`, `IsCutoffWindow`, `HasCutoff`:
+  `AbsorptionCutoff/Cutoff.lean`;
 * `gaussianVec`: `AbsorptionCutoff/Chains.lean`;
 * `weightVar`, `gaussianMat`, `Pstep`: `AbsorptionCutoff/VectorReduction.lean`;
 * `roundedPstep`, `roundedPkernel`: `AbsorptionCutoff/RoundedVectorReduction.lean`;
@@ -49,10 +50,22 @@ noncomputable section
 def tvDist {E : Type*} [MeasurableSpace E] (μ ν : Measure E) : ℝ :=
   ⨆ s : {s : Set E // MeasurableSet s}, |(μ s.1).toReal - (ν s.1).toReal|
 
-/-- Total-variation cutoff at center `tCut` with window `w`. -/
-def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+/-- The two early/late limiting conditions in the windowed cutoff convention. -/
+def HasCutoffLimits (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
   Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (nhds 1) ∧
   Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (nhds 0)
+
+/-- The cutoff center and window are asymptotically admissible. Window positivity is
+eventual because cutoff is unchanged by modifying finitely many indices. -/
+def IsCutoffWindow (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto tCut atTop atTop ∧
+  (∀ᶠ n in atTop, 0 < w n) ∧
+  Asymptotics.IsLittleO atTop w tCut
+
+/-- Total-variation cutoff at center `tCut` with window `w`, including the
+paper's center-divergence, positivity, and little-o requirements. -/
+def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  IsCutoffWindow tCut w ∧ HasCutoffLimits d tCut w
 
 /-! ## Nearest-grid rounding -/
 

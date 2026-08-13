@@ -16,7 +16,8 @@ dimension `N`, at the time `supercriticalCutoffTime` with window `1`.
 It imports only `Mathlib`. Every object the statement mentions is rebuilt below
 from Mathlib primitives. The source correspondences are:
 
-* `tvDist`: `AbsorptionCutoff/Cutoff.lean`;
+* `tvDist`, `HasCutoffLimits`, `IsCutoffWindow`, `HasCutoff`:
+  `AbsorptionCutoff/Cutoff.lean`;
 * `V`: `AbsorptionCutoff/MeanMap/Basic.lean`;
 * `radiusSq`, `weightVar`, `gaussianMat`, `Pstep`, `Pkernel`:
   `AbsorptionCutoff/VectorReduction.lean`;
@@ -39,6 +40,21 @@ noncomputable section
 /-- Total-variation distance `‖μ − ν‖_TV = sup_B |μ(B) − ν(B)|` over measurable `B`. -/
 def tvDist {E : Type*} [MeasurableSpace E] (μ ν : Measure E) : ℝ :=
   ⨆ s : {s : Set E // MeasurableSet s}, |(μ s.1).toReal - (ν s.1).toReal|
+
+/-- The two early/late limiting conditions in the windowed cutoff convention. -/
+def HasCutoffLimits (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (𝓝 1) ∧
+  Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (𝓝 0)
+
+/-- The cutoff center and window are asymptotically admissible. -/
+def IsCutoffWindow (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto tCut atTop atTop ∧
+  (∀ᶠ n in atTop, 0 < w n) ∧
+  Asymptotics.IsLittleO atTop w tCut
+
+/-- Full cutoff: admissibility of the center/window and both limiting conditions. -/
+def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  IsCutoffWindow tCut w ∧ HasCutoffLimits d tCut w
 
 /-! ## The scalar mean map -/
 
@@ -145,26 +161,12 @@ theorem gaussian_vector_cutoff
             (ρ : Measure (Fin N → ℝ))
                 ({0} : Set (Fin N → ℝ)) = 0 →
             ρ = π N) ∧
-      Filter.Tendsto
-        (fun c : ℝ =>
-          Filter.liminf
-            (fun N : ℕ =>
-              tvDist
-                (((Pkernel A N) ^
-                    ⌊supercriticalCutoffTime A qStar q₀ N - c⌋₊) (x N))
-                (π N : Measure (Fin N → ℝ)))
-            Filter.atTop)
-        Filter.atTop (nhds 1) ∧
-      Filter.Tendsto
-        (fun c : ℝ =>
-          Filter.limsup
-            (fun N : ℕ =>
-              tvDist
-                (((Pkernel A N) ^
-                    ⌊supercriticalCutoffTime A qStar q₀ N + c⌋₊) (x N))
-                (π N : Measure (Fin N → ℝ)))
-            Filter.atTop)
-        Filter.atTop (nhds 0) := by
+      HasCutoff
+        (fun N t =>
+          tvDist (((Pkernel A N) ^ t) (x N))
+            (π N : Measure (Fin N → ℝ)))
+        (supercriticalCutoffTime A qStar q₀)
+        (fun _ => 1) := by
   sorry
 
 end

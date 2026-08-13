@@ -12,7 +12,8 @@ This file repeats, verbatim, the statement vocabulary and the theorem of
 `Audit/VectorCutoff/Challenge.lean`, and proves the theorem from the
 development's public index `AbsorptionCutoff.MainTheorems`.
 
-Each audit definition is a literal copy of its project counterpart, so the bridge
+Each audit definition, including the complete cutoff admissibility and limit
+conditions, is a literal copy of its project counterpart, so the bridge
 lemmas below all hold by `rfl`; they are stated explicitly rather than left to
 unification so that any future drift between the two vocabularies fails loudly
 here instead of silently changing what the comparator checks.
@@ -29,6 +30,21 @@ noncomputable section
 /-- Total-variation distance `‖μ − ν‖_TV = sup_B |μ(B) − ν(B)|` over measurable `B`. -/
 def tvDist {E : Type*} [MeasurableSpace E] (μ ν : Measure E) : ℝ :=
   ⨆ s : {s : Set E // MeasurableSet s}, |(μ s.1).toReal - (ν s.1).toReal|
+
+/-- The two early/late limiting conditions in the windowed cutoff convention. -/
+def HasCutoffLimits (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (𝓝 1) ∧
+  Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (𝓝 0)
+
+/-- The cutoff center and window are asymptotically admissible. -/
+def IsCutoffWindow (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto tCut atTop atTop ∧
+  (∀ᶠ n in atTop, 0 < w n) ∧
+  Asymptotics.IsLittleO atTop w tCut
+
+/-- Full cutoff: admissibility of the center/window and both limiting conditions. -/
+def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  IsCutoffWindow tCut w ∧ HasCutoffLimits d tCut w
 
 /-! ## The scalar mean map -/
 
@@ -110,6 +126,12 @@ is `rfl`. Stating them makes any future divergence a build error. -/
 lemma tvDist_eq {E : Type*} [MeasurableSpace E] (mu nu : Measure E) :
     tvDist mu nu = AbsorptionCutoff.tvDist mu nu := rfl
 
+lemma HasCutoffLimits_eq : HasCutoffLimits = AbsorptionCutoff.HasCutoffLimits := rfl
+
+lemma IsCutoffWindow_eq : IsCutoffWindow = AbsorptionCutoff.IsCutoffWindow := rfl
+
+lemma HasCutoff_eq : HasCutoff = AbsorptionCutoff.HasCutoff := rfl
+
 lemma V_eq : V = AbsorptionCutoff.V := rfl
 
 lemma weightVar_eq (A : ℝ) (N : ℕ) : weightVar A N = AbsorptionCutoff.weightVar A N := rfl
@@ -168,26 +190,12 @@ theorem gaussian_vector_cutoff
             (ρ : Measure (Fin N → ℝ))
                 ({0} : Set (Fin N → ℝ)) = 0 →
             ρ = π N) ∧
-      Filter.Tendsto
-        (fun c : ℝ =>
-          Filter.liminf
-            (fun N : ℕ =>
-              tvDist
-                (((Pkernel A N) ^
-                    ⌊supercriticalCutoffTime A qStar q₀ N - c⌋₊) (x N))
-                (π N : Measure (Fin N → ℝ)))
-            Filter.atTop)
-        Filter.atTop (nhds 1) ∧
-      Filter.Tendsto
-        (fun c : ℝ =>
-          Filter.limsup
-            (fun N : ℕ =>
-              tvDist
-                (((Pkernel A N) ^
-                    ⌊supercriticalCutoffTime A qStar q₀ N + c⌋₊) (x N))
-                (π N : Measure (Fin N → ℝ)))
-            Filter.atTop)
-        Filter.atTop (nhds 0)
+      HasCutoff
+        (fun N t =>
+          tvDist (((Pkernel A N) ^ t) (x N))
+            (π N : Measure (Fin N → ℝ)))
+        (supercriticalCutoffTime A qStar q₀)
+        (fun _ => 1)
 :=
   AbsorptionCutoff.MainTheorems.gaussian_vector_cutoff
     x hA hqStar hfix hq₀ hq₀ne hbox hradius

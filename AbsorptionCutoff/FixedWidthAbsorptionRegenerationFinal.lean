@@ -5603,6 +5603,67 @@ noncomputable def fixedWidthCutoffWindow
     (μ σ : ℝ) (L : ℕ → ℝ) (r : ℕ) : ℝ :=
   (σ / (μ * Real.sqrt μ)) * Real.sqrt (L r)
 
+/-- A positive drift turns every diverging logarithmic level into a diverging
+fixed-width cutoff center. -/
+lemma tendsto_fixedWidthCutoffTime_atTop
+    {μ : ℝ} (hμ : 0 < μ) {L : ℕ → ℝ}
+    (hL : Tendsto L atTop atTop) :
+    Tendsto (fixedWidthCutoffTime μ L) atTop atTop := by
+  change Tendsto (fun r ↦ L r / μ) atTop atTop
+  simpa only [div_eq_mul_inv, mul_comm] using
+    hL.const_mul_atTop (inv_pos.mpr hμ)
+
+/-- The fixed-width square-root window is positive throughout the asymptotic
+regime when its drift and standard deviation are positive. -/
+lemma eventually_fixedWidthCutoffWindow_pos
+    {μ σ : ℝ} (hμ : 0 < μ) (hσ : 0 < σ)
+    {L : ℕ → ℝ} (hL : Tendsto L atTop atTop) :
+    ∀ᶠ r in atTop, 0 < fixedWidthCutoffWindow μ σ L r := by
+  filter_upwards [hL.eventually_gt_atTop 0] with r hr
+  unfold fixedWidthCutoffWindow
+  exact mul_pos (div_pos hσ (mul_pos hμ (Real.sqrt_pos.2 hμ)))
+    (Real.sqrt_pos.2 hr)
+
+/-- The fixed-width square-root window is negligible compared with its linear
+cutoff center. -/
+lemma isLittleO_fixedWidthCutoffWindow
+    {μ σ : ℝ} (hμ : 0 < μ)
+    {L : ℕ → ℝ} (hL : Tendsto L atTop atTop) :
+    Asymptotics.IsLittleO atTop
+      (fixedWidthCutoffWindow μ σ L)
+      (fixedWidthCutoffTime μ L) := by
+  apply Asymptotics.isLittleO_of_tendsto'
+  · filter_upwards [hL.eventually_gt_atTop 0] with r hr
+    intro hzero
+    have : L r = 0 := (div_eq_zero_iff.mp hzero).resolve_right hμ.ne'
+    exact (ne_of_gt hr this).elim
+  · have hsqrt : Tendsto (fun r ↦ Real.sqrt (L r)) atTop atTop :=
+      Real.tendsto_sqrt_atTop.comp hL
+    have hratio : Tendsto (fun r ↦ Real.sqrt (L r) / L r)
+        atTop (nhds 0) := by
+      refine (tendsto_inv_atTop_zero.comp hsqrt).congr' ?_
+      filter_upwards [hL.eventually_gt_atTop 0] with r hr
+      exact Real.sqrt_div_self.symm
+    have hscaled : Tendsto
+        (fun r ↦ (σ / (μ * Real.sqrt μ) * μ) *
+          (Real.sqrt (L r) / L r)) atTop (nhds 0) := by
+      simpa only [mul_zero] using tendsto_const_nhds.mul hratio
+    refine hscaled.congr' ?_
+    filter_upwards [hL.eventually_gt_atTop 0] with r hr
+    unfold fixedWidthCutoffWindow fixedWidthCutoffTime
+    field_simp [hμ.ne', ne_of_gt hr]
+
+/-- The Gaussian fixed-width center and window satisfy all admissibility
+conditions in the paper's cutoff definition. -/
+lemma isCutoffWindow_fixedWidth
+    {μ σ : ℝ} (hμ : 0 < μ) (hσ : 0 < σ)
+    {L : ℕ → ℝ} (hL : Tendsto L atTop atTop) :
+    IsCutoffWindow (fixedWidthCutoffTime μ L)
+      (fixedWidthCutoffWindow μ σ L) := by
+  exact ⟨tendsto_fixedWidthCutoffTime_atTop hμ hL,
+    eventually_fixedWidthCutoffWindow_pos hμ hσ hL,
+    isLittleO_fixedWidthCutoffWindow hμ hL⟩
+
 /-- The common cutoff API's floored center-plus-window time is exactly the
 zero-perturbation post-floor time used by the Gaussian profile. -/
 lemma natFloor_fixedWidthCutoffTime_add_mul_window
@@ -5647,8 +5708,11 @@ theorem hasCutoff_roundedPkernel_fixedWidth
       (Measure.dirac (0 : Fin N → ℝ))
   change HasCutoff d (fixedWidthCutoffTime μ L)
     (fixedWidthCutoffWindow μ σ L)
-  rw [HasCutoff]
-  constructor
+  have hμ : 0 < μ :=
+    integral_fixedWidthIncrementProcess_zero_pos_of_subcritical hsub
+  have hσ : 0 < σ := fixedWidthStdDev_pos hA hN
+  rw [HasCutoff, HasCutoffLimits]
+  refine ⟨isCutoffWindow_fixedWidth hμ hσ hL, ?_, ?_⟩
   · have hpoint (c : ℝ) :
         Tendsto
           (fun r ↦ d r
@@ -5895,6 +5959,19 @@ lemma tendsto_fixedWidthLogMeshScale_atTop
   exact
     (Filter.tendsto_neg_atTop_iff.mpr Real.tendsto_log_nhdsGT_zero).comp hρ
 
+/-- Including a fixed positive initial norm preserves divergence of the
+negative-log mesh scale. -/
+lemma tendsto_fixedWidthInitialLogMeshScale_atTop
+    {R₀ : ℝ} (hR₀ : 0 < R₀)
+    {ρ : ℕ → ℝ} (hρpos : ∀ r, 0 < ρ r)
+    (hρ : Tendsto ρ atTop (nhdsWithin 0 (Set.Ioi 0))) :
+    Tendsto (fixedWidthInitialLogMeshScale R₀ ρ) atTop atTop := by
+  have hL : Tendsto (fixedWidthLogMeshScale ρ) atTop atTop :=
+    tendsto_fixedWidthLogMeshScale_atTop hρ
+  refine (tendsto_atTop_add_const_right atTop (Real.log R₀) hL).congr' ?_
+  exact Eventually.of_forall fun r ↦
+    (fixedWidthInitialLogMeshScale_eq hR₀ hρpos r).symm
+
 /-- Including the fixed initial norm does not change the logarithmic scale to
 first order. -/
 lemma tendsto_fixedWidthInitialLogMeshScale_div
@@ -5950,10 +6027,8 @@ lemma tendsto_sqrt_fixedWidthInitialLogMeshScale_div_sqrt
   have hL : Tendsto (fixedWidthLogMeshScale ρ) atTop atTop :=
     tendsto_fixedWidthLogMeshScale_atTop hρ
   have hLR₀ :
-      Tendsto (fixedWidthInitialLogMeshScale R₀ ρ) atTop atTop := by
-    refine (tendsto_atTop_add_const_right atTop (Real.log R₀) hL).congr' ?_
-    exact Eventually.of_forall fun r ↦
-      (fixedWidthInitialLogMeshScale_eq hR₀ hρpos r).symm
+      Tendsto (fixedWidthInitialLogMeshScale R₀ ρ) atTop atTop :=
+    tendsto_fixedWidthInitialLogMeshScale_atTop hR₀ hρpos hρ
   refine hsqrt.congr' ?_
   filter_upwards [hL.eventually_ge_atTop 0, hLR₀.eventually_ge_atTop 0]
     with r hLnonneg hLR₀nonneg
@@ -6193,8 +6268,13 @@ theorem hasCutoff_roundedPkernel_fixedWidthMesh
       (Measure.dirac (0 : Fin N → ℝ))
   change HasCutoff d (fixedWidthCutoffTime μ L)
     (fixedWidthCutoffWindow μ σ L)
-  rw [HasCutoff]
-  constructor
+  have hμ : 0 < μ :=
+    integral_fixedWidthIncrementProcess_zero_pos_of_subcritical hsub
+  have hσ : 0 < σ := fixedWidthStdDev_pos hA hN
+  have hLtop : Tendsto L atTop atTop :=
+    tendsto_fixedWidthInitialLogMeshScale_atTop hx0 hρpos hρ
+  rw [HasCutoff, HasCutoffLimits]
+  refine ⟨isCutoffWindow_fixedWidth hμ hσ hLtop, ?_, ?_⟩
   · have hpoint (c : ℝ) :
         Tendsto
           (fun r ↦ d r

@@ -57,12 +57,18 @@ All six paper-facing results are stated in
 [`AbsorptionCutoff/MainTheorems.lean`](AbsorptionCutoff/MainTheorems.lean),
 alongside compatibility aliases used by the seven focused audits.
 
+The shared `HasCutoff` predicate implements the manuscript's full cutoff
+definition: the center tends to infinity, the window is eventually positive and
+is little-o of the center, and the two early/late total-variation limits hold.
+The two limit conditions alone are available separately as `HasCutoffLimits`.
+
 **Fixed-width vanishing-mesh cutoff** — `rounded_gaussian_nearest_cutoff`. Fix the
 dimension `N` and assume `0 < A < A_c(N)`. Along any positive mesh sequence
 `ρ_r → 0`, at the paper's floored time the total-variation distance equals the
 canonical absorption-time survival probability and converges to `Φ(−a)`. The
-same theorem includes `HasCutoff` at center `L_ρ/γ_{A,N}` with window
-`σ_N γ_{A,N}^{-3/2}√L_ρ` and Gaussian profile.
+same theorem includes the full manuscript `HasCutoff` conclusion at center
+`L_ρ/γ_{A,N}` with window `σ_N γ_{A,N}^{-3/2}√L_ρ` and Gaussian profile; in
+particular the center diverges and the window is positive and little-o of it.
 
 **Fixed-precision dimension cutoff** — `subcritical_dimension_cutoff`. Fix the mesh
 `ρ ∈ (0,1)` and a width below the lattice threshold `A_lat`. As `N → ∞` the
@@ -83,7 +89,7 @@ reconstructed vector chain both have total-variation cutoff at
 
 > `t_N = ( ½·log N + log|κ(A, q*, q₀)| ) / |log V_A′(q*)|`
 
-with window `1`, against an eventually unique family of invariant laws whose
+with the admissible constant window `1`, against an eventually unique family of invariant laws whose
 `(q − q*)²`-variance is `O(1/N)`. Here `q*` is the positive fixed point of the
 Gaussian mean map `V_A` and `κ` its Koenigs coefficient.
 
@@ -170,7 +176,7 @@ guarantee than the documented one.
 
 The formal dependency graph is maintained as a
 [`leanblueprint`](https://github.com/PatrickMassot/leanblueprint) under
-[`blueprint/`](blueprint/): **952 declarations**, each carrying its `\lean{}` name
+[`blueprint/`](blueprint/): **955 declarations**, each carrying its `\lean{}` name
 and `\leanok` status. The generated declaration list is committed, and after
 building the audit library all names resolve against the project via
 `lake exe checkdecls blueprint/lean_decls`. The build workflow runs this check
@@ -214,7 +220,7 @@ AbsorptionCutoff/
   Chains.lean, VectorReduction.lean, RoundedVectorReduction.lean
                                    the scalar, vector and rounded kernels
   MeanMap/                         the Gaussian mean map V_A and its dynamics
-  Cutoff.lean                      total variation, HasCutoff, mixing time
+  Cutoff.lean                      total variation, cutoff admissibility/limits, mixing time
   FirstPassageCLT.lean             positive-drift first-passage asymptotics
   FixedWidth*.lean                 the fixed-width cutoff route (§3)
   DimensionCutoff.lean, OrbitAmplification.lean, RadiusConcentration.lean   (§4)

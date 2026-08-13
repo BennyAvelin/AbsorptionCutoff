@@ -23,8 +23,10 @@ status:
     A Lean 4 / Mathlib formalization of absorption cutoff and stationary
     singularities for Gaussian random dynamical systems with coordinatewise tanh
     nonlinearity and nearest-grid rounding: the fixed-width vanishing-mesh cutoff
-    profile, the fixed-precision dimension cutoff, both clauses of qualitative
-    metastability, the supercritical dimension cutoff in scalar and reconstructed
+    profile, with the full cutoff predicate checking center divergence, eventual
+    window positivity, and the little-o window condition; the fixed-precision
+    dimension cutoff, both clauses of qualitative metastability, the
+    supercritical dimension cutoff in scalar and reconstructed
     vector form, and the fixed-dimensional stationary power singularity. Every
     result stated in the manuscript's main-results section is formalized and
     exposed in AbsorptionCutoff/MainTheorems.lean. The six paper-facing results,

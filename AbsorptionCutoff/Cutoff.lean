@@ -16,8 +16,13 @@ type-check already pins down the ambiguous spots flagged in the LaTeX source.
 * `AbsorptionCutoff.tvDist` — total-variation distance `sup_B |μ(B) − ν(B)|`.
 * `AbsorptionCutoff.dSeq`   — distance to equilibrium `d(t) = ‖κ^t(x,·) − π‖_TV` via the
   Mathlib kernel power `κ ^ t`.
-* `AbsorptionCutoff.HasCutoff` — total-variation cutoff at `tCut n` with window `w n`
-  (windowed convention), for a family indexed by `n → ∞`.
+* `AbsorptionCutoff.HasCutoffLimits` — the two early/late distance limits in the
+  windowed cutoff convention.
+* `AbsorptionCutoff.IsCutoffWindow` — admissibility of a cutoff center and window:
+  the center diverges, the window is eventually positive, and it is negligible
+  compared with the center.
+* `AbsorptionCutoff.HasCutoff` — the paper's complete total-variation cutoff
+  definition, combining admissibility with the two distance limits.
 * `AbsorptionCutoff.mixingTime` — `t_mix(ε) = inf{t : d(t) ≤ ε}`, `⊤` if none.
 * `AbsorptionCutoff.IsAbsorbing` — a point `a` is absorbing for a kernel `κ`.
 
@@ -297,12 +302,98 @@ lemma dSeq_dirac_antitone {κ : Kernel E E} [IsMarkovKernel κ] {a : E}
   rw [prob_compl_eq_one_sub ha, prob_compl_eq_one_sub ha]
   exact tsub_le_tsub_left (absorb_mass_mono ha habs x t) 1
 
-/-- **Total-variation cutoff** at time `tCut n` with window `w n`, for a family of
-chains indexed by `n → ∞` (paper `def:intro-cutoff`, windowed convention). `d n t`
-is the distance to equilibrium of the `n`-th chain at time `t`. -/
-def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+/-- The two early/late distance limits in the windowed cutoff convention. This is
+the limit component of the paper's cutoff definition; by itself it does not assert
+that the center diverges or that the proposed window is admissible. -/
+def HasCutoffLimits (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
   Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (𝓝 1) ∧
   Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (𝓝 0)
+
+/-- Admissibility of a cutoff center `tCut` and window `w`. The center tends to
+infinity, the window is positive throughout the asymptotic regime, and
+`w = o(tCut)`. Eventual positivity is the sequence-level form of the paper's
+`w n > 0`: changing finitely many indices cannot affect a cutoff statement. -/
+def IsCutoffWindow (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto tCut atTop atTop ∧
+  (∀ᶠ n in atTop, 0 < w n) ∧
+  Asymptotics.IsLittleO atTop w tCut
+
+/-- **Total-variation cutoff** at time `tCut n` with window `w n`, for a family of
+chains indexed by `n → ∞` (paper `def:intro-cutoff`, windowed convention). `d n t`
+is the distance to equilibrium of the `n`-th chain. This is the complete paper
+definition: an admissible center/window together with the two cutoff limits. -/
+def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  IsCutoffWindow tCut w ∧ HasCutoffLimits d tCut w
+
+lemma hasCutoff_iff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) :
+    HasCutoff d tCut w ↔ IsCutoffWindow tCut w ∧ HasCutoffLimits d tCut w :=
+  Iff.rfl
+
+namespace HasCutoff
+
+lemma of {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (hwindow : IsCutoffWindow tCut w) (hlimits : HasCutoffLimits d tCut w) :
+    HasCutoff d tCut w :=
+  ⟨hwindow, hlimits⟩
+
+lemma isCutoffWindow {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (h : HasCutoff d tCut w) : IsCutoffWindow tCut w :=
+  h.1
+
+lemma limits {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (h : HasCutoff d tCut w) : HasCutoffLimits d tCut w :=
+  h.2
+
+lemma tendsto_center {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (h : HasCutoff d tCut w) : Tendsto tCut atTop atTop :=
+  h.1.1
+
+lemma eventually_window_pos {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (h : HasCutoff d tCut w) : ∀ᶠ n in atTop, 0 < w n :=
+  h.1.2.1
+
+lemma window_isLittleO {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (h : HasCutoff d tCut w) : Asymptotics.IsLittleO atTop w tCut :=
+  h.1.2.2
+
+lemma early_limit {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (h : HasCutoff d tCut w) :
+    Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop)
+      atTop (𝓝 1) :=
+  h.2.1
+
+lemma late_limit {d : ℕ → ℕ → ℝ} {tCut w : ℕ → ℝ}
+    (h : HasCutoff d tCut w) :
+    Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop)
+      atTop (𝓝 0) :=
+  h.2.2
+
+end HasCutoff
+
+private def constantCenterPathologyDistance (_n t : ℕ) : ℝ :=
+  if t = 0 then 1 else 0
+
+/-- Regression test for the missing-admissibility defect: the early/late limits can
+hold with the constant center `0`, but the complete cutoff predicate rejects it. -/
+example :
+    HasCutoffLimits constantCenterPathologyDistance (fun _ => 0) (fun _ => 1) ∧
+      ¬ HasCutoff constantCenterPathologyDistance (fun _ => 0) (fun _ => 1) := by
+  constructor
+  · constructor
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [eventually_ge_atTop (0 : ℝ)] with c hc
+      have hfloor : ⌊-c⌋₊ = 0 := Nat.floor_eq_zero.mpr (by linarith)
+      simp [constantCenterPathologyDistance, hfloor]
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [eventually_ge_atTop (1 : ℝ)] with c hc
+      have hnat : ⌊c⌋₊ ≠ 0 := Nat.ne_of_gt (Nat.floor_pos.mpr hc)
+      simp [constantCenterPathologyDistance, hnat]
+  · intro h
+    have hcenter : Tendsto (fun _ : ℕ => (0 : ℝ)) atTop atTop := h.tendsto_center
+    have hge := (tendsto_atTop.1 hcenter) 1
+    obtain ⟨N, hN⟩ := eventually_atTop.1 hge
+    have hn := hN N le_rfl
+    norm_num at hn
 
 /-- **Mixing time** `t_mix(ε) = inf{t : d(t) ≤ ε}`, with value `⊤` if no such `t`
 exists (paper `def:intro-mixing-time`). -/

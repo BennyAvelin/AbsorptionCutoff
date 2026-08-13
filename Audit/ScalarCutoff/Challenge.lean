@@ -20,7 +20,8 @@ It is the scalar half of the pair whose vector form is audited in
 It imports only `Mathlib`. Every object the statement mentions is rebuilt below
 from Mathlib primitives. The source correspondences are:
 
-* `tvDist`, `HasCutoff`: `AbsorptionCutoff/Cutoff.lean`;
+* `tvDist`, `HasCutoffLimits`, `IsCutoffWindow`, `HasCutoff`:
+  `AbsorptionCutoff/Cutoff.lean`;
 * `V`: `AbsorptionCutoff/MeanMap/Basic.lean`;
 * `gaussianVec`, `Fmap`, `Kchain`: `AbsorptionCutoff/Chains.lean`;
 * `radiusSq`: `AbsorptionCutoff/VectorReduction.lean`;
@@ -44,12 +45,22 @@ noncomputable section
 def tvDist {E : Type*} [MeasurableSpace E] (μ ν : Measure E) : ℝ :=
   ⨆ s : {s : Set E // MeasurableSet s}, |(μ s.1).toReal - (ν s.1).toReal|
 
-/-- A family of distance profiles `d n t` has **cutoff** at time `tCut` with window
-`w`: rescaling time by `tCut n ± c * w n` drives the profile to `1` and to `0` as
-`c → ∞`. -/
-def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+/-- The two early/late limiting conditions in the windowed cutoff convention. -/
+def HasCutoffLimits (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
   Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (𝓝 1) ∧
   Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (𝓝 0)
+
+/-- The cutoff center and window are asymptotically admissible. Window positivity is
+eventual because cutoff is unchanged by modifying finitely many indices. -/
+def IsCutoffWindow (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto tCut atTop atTop ∧
+  (∀ᶠ n in atTop, 0 < w n) ∧
+  Asymptotics.IsLittleO atTop w tCut
+
+/-- A family of distance profiles `d n t` has **cutoff** at time `tCut` with window
+`w`, including the paper's center-divergence, positivity, and little-o conditions. -/
+def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  IsCutoffWindow tCut w ∧ HasCutoffLimits d tCut w
 
 /-! ## The scalar mean map -/
 

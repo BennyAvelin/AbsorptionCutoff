@@ -4,7 +4,7 @@ A map from *Absorption cutoff and stationary singularities for rounded Gaussian
 random dynamical systems* (Benny Avelin) to this Lean development, together with
 an explicit ledger of every known place where the two differ.
 
-The full dependency graph — 952 declarations, each carrying its `\lean{}` name —
+The full dependency graph — 955 declarations, each carrying its `\lean{}` name —
 lives in the blueprint (`blueprint/src/content.tex`); this file records the
 paper-facing surface and the divergences.
 
@@ -43,14 +43,18 @@ through a focused compatibility alias, giving seven comparator targets in total.
   specializes it to the Gaussian log-radius recursion with its finite nonlinear
   correction; establishes synchronous rounded/unrounded coupling, entrance,
   restart, and post-entrance absorption; and derives the exact rounded survival
-  and total-variation profiles, packaged as `HasCutoff` together with the
-  manuscript's `O_ε(window)` mixing-time bounds.
+  and total-variation profiles, packaged as the full manuscript `HasCutoff`
+  predicate together with the manuscript's `O_ε(window)` mixing-time bounds.
+  The formalized predicate checks that the center tends to infinity, the window
+  is eventually positive and little-o of the center, and both cutoff limits hold.
 - **§4, fixed-precision dimension cutoff.** Complete, including the
   rounded-vector lift and the mixing-time consequences.
 - **§5, qualitative metastability.** Complete through exponential persistence and
   fixed-state-space almost-sure absorption.
 - **§6, supercritical dimension cutoff.** Complete in scalar and reconstructed
-  vector form, including the two-sided profiles and the `HasCutoff` wrappers.
+  vector form, including the two-sided profiles and the full `HasCutoff`
+  wrappers. The constant window one is proved admissible from divergence of the
+  supercritical cutoff center.
 - **§7, stationary singularity.** Complete for the full theorem stated in the
   introduction and for every fixed positive dimension. The development proves
   the Gamma-form characterization and uniqueness of the Cramér exponent, the
@@ -75,7 +79,7 @@ manuscript's.
    the public `rounded_gaussian_nearest_cutoff` gives the equivalent formulation
    along every positive sequence `ρ_r → 0`, at the manuscript's exact floored
    `L_ρ = log(‖x₀‖₂/ρ)` time. It bundles the exact TV/survival identity,
-   Gaussian profile limit, and same-scale `HasCutoff` conclusion; the former
+   Gaussian profile limit, and same-scale full `HasCutoff` conclusion; the former
    profile-only result remains available as
    `tendsto_tvDist_roundedPkernel_fixedWidthMesh`.
 2. **The renewal route differs in two harmless ways.** Lean sends the terminal

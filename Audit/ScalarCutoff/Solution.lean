@@ -12,7 +12,8 @@ This file repeats, verbatim, the statement vocabulary and the theorem of
 `Audit/ScalarCutoff/Challenge.lean`, and proves the theorem from the
 development's public index `AbsorptionCutoff.MainTheorems`.
 
-Each audit definition is a literal copy of its project counterpart, so the bridge
+Each audit definition, including the complete cutoff admissibility and limit
+conditions, is a literal copy of its project counterpart, so the bridge
 lemmas below all hold by `rfl`; they are stated explicitly rather than left to
 unification so that any future drift between the two vocabularies fails loudly
 here instead of silently changing what the comparator checks.
@@ -30,12 +31,22 @@ noncomputable section
 def tvDist {E : Type*} [MeasurableSpace E] (μ ν : Measure E) : ℝ :=
   ⨆ s : {s : Set E // MeasurableSet s}, |(μ s.1).toReal - (ν s.1).toReal|
 
-/-- A family of distance profiles `d n t` has **cutoff** at time `tCut` with window
-`w`: rescaling time by `tCut n ± c * w n` drives the profile to `1` and to `0` as
-`c → ∞`. -/
-def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+/-- The two early/late limiting conditions in the windowed cutoff convention. -/
+def HasCutoffLimits (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
   Tendsto (fun c : ℝ => liminf (fun n => d n ⌊tCut n - c * w n⌋₊) atTop) atTop (𝓝 1) ∧
   Tendsto (fun c : ℝ => limsup (fun n => d n ⌊tCut n + c * w n⌋₊) atTop) atTop (𝓝 0)
+
+/-- The cutoff center and window are asymptotically admissible. Window positivity is
+eventual because cutoff is unchanged by modifying finitely many indices. -/
+def IsCutoffWindow (tCut w : ℕ → ℝ) : Prop :=
+  Tendsto tCut atTop atTop ∧
+  (∀ᶠ n in atTop, 0 < w n) ∧
+  Asymptotics.IsLittleO atTop w tCut
+
+/-- A family of distance profiles `d n t` has **cutoff** at time `tCut` with window
+`w`, including the paper's center-divergence, positivity, and little-o conditions. -/
+def HasCutoff (d : ℕ → ℕ → ℝ) (tCut w : ℕ → ℝ) : Prop :=
+  IsCutoffWindow tCut w ∧ HasCutoffLimits d tCut w
 
 /-! ## The scalar mean map -/
 
@@ -112,6 +123,10 @@ is `rfl`. Stating them makes any future divergence a build error. -/
 
 lemma tvDist_eq {E : Type*} [MeasurableSpace E] (mu nu : Measure E) :
     tvDist mu nu = AbsorptionCutoff.tvDist mu nu := rfl
+
+lemma HasCutoffLimits_eq : HasCutoffLimits = AbsorptionCutoff.HasCutoffLimits := rfl
+
+lemma IsCutoffWindow_eq : IsCutoffWindow = AbsorptionCutoff.IsCutoffWindow := rfl
 
 lemma HasCutoff_eq : HasCutoff = AbsorptionCutoff.HasCutoff := rfl
 

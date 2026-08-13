@@ -579,13 +579,33 @@ It corresponds to the first formalized batch.
   power $\kappa^t$.
 \end{definition}
 
+\begin{definition}[Admissible cutoff center and window]
+  \label{def:cutoff-window}
+  \lean{AbsorptionCutoff.IsCutoffWindow}
+  \leanok
+  A cutoff center and window are admissible when $t_n\to\infty$, the window
+  $a_n$ is eventually positive, and $a_n=o(t_n)$. Eventual positivity is the
+  sequence formulation of the paper's $a_n>0$: changing finitely many indices
+  does not affect any cutoff limit.
+\end{definition}
+
+\begin{definition}[Windowed cutoff limits]
+  \label{def:cutoff-limits}
+  \lean{AbsorptionCutoff.HasCutoffLimits}
+  \leanok
+  \uses{def:dseq}
+  The two early and late iterated total-variation limits obtained by evaluating
+  at $t_n-ca_n$ and $t_n+ca_n$, respectively, and then sending $c\to\infty$.
+\end{definition}
+
 \begin{definition}[Total-variation cutoff]
   \label{def:cutoff}
   \lean{AbsorptionCutoff.HasCutoff}
   \leanok
-  \uses{def:dseq}
-  For a family indexed by $n\to\infty$ with cutoff time $t_n$ and window $a_n$,
-  the windowed-convention cutoff of the paper's Definition.
+  \uses{def:cutoff-window, def:cutoff-limits}
+  The conjunction of admissibility of $(t_n,a_n)$ and the two windowed cutoff
+  limits. Thus this is the full cutoff definition used in the paper, rather than
+  only its two limiting conclusions.
 \end{definition}
 
 \begin{definition}[Mixing time]
@@ -2576,16 +2596,19 @@ squared-radius kernel $K_{A,N}$ and a reconstruction kernel $J_{A,N}$.
   \label{thm:gaussian-process-cutoff}
   \lean{AbsorptionCutoff.exists_stationary_family_hasCutoff_of_forall_mem_Icc,
     AbsorptionCutoff.exists_unique_nonzero_invariant_family_hasCutoff_of_forall_mem_Icc,
+    AbsorptionCutoff.isCutoffWindow_supercriticalCutoffTime_one,
     AbsorptionCutoff.exists_unique_invariant_probability_Kchain_of_apply_singleton_zero}
   \leanok
-  \uses{def:Kchain, prop:gaussian-compactness-selection,
+  \uses{def:Kchain, def:cutoff, prop:gaussian-compactness-selection,
     lem:gaussian-vector-radius-laws}
   Let $A>1$, let $q_\ast\in(0,1)$ be the attracting nonzero fixed point of
   $V_A$, and let deterministic $x_N\in[-1,1]^N$ satisfy
   $N^{-1}\lVert x_N\rVert_2^2\to q_0\in(0,1]$, where $q_0\ne q_\ast$.
-  Then the origin-free invariant scalar laws selected for $K_{A,N}$ satisfy
-  the paper's two iterated total-variation limits at the cutoff center
-  $t_N(q_0)$ with constant window one.  The interior irreducibility theorem
+  Then the origin-free invariant scalar laws selected for $K_{A,N}$ have cutoff
+  in the full sense of Definition~\ref{def:cutoff} at $t_N(q_0)$ with constant
+  window one. In particular, the center diverges, the window is positive and
+  little-o of the center, and the paper's two iterated total-variation limits
+  hold. The interior irreducibility theorem
   identifies each selected law with the unique nonzero invariant law for all
   sufficiently large $N$.
 \end{theorem}
@@ -2601,7 +2624,8 @@ squared-radius kernel $K_{A,N}$ and a reconstruction kernel $J_{A,N}$.
     lem:gaussian-invariant-transfer}
   Under the same assumptions, reconstructing the scalar stationary law
   through $J_{A,N}$ gives the unique origin-free invariant vector law.  The
-  vector chain has the same cutoff center and constant window one.
+  vector chain has the same full cutoff statement, center, and constant window
+  one.
 \end{corollary}
 \begin{proof}\leanok\end{proof}
 
@@ -2667,7 +2691,8 @@ to the rounded vector chain.
     AbsorptionCutoff.exists_eventually_fixedWidth_mixingTime_bounds}
   \leanok
   \uses{thm:fixed-width-tv-profile, def:cutoff, def:mixing}
-  The rounded vector kernels have total-variation cutoff at center $L/\mu$ and
+  The rounded vector kernels have total-variation cutoff in the full sense of
+  Definition~\ref{def:cutoff} at center $L/\mu$ and
   window $\sigma\mu^{-3/2}\sqrt L$.  For every fixed
   $\varepsilon\in(0,1)$, two constant Gaussian-profile offsets eventually
   bracket the mixing time, giving

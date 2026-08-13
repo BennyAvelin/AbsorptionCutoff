@@ -18,6 +18,24 @@ open MeasureTheory ProbabilityTheory
 
 namespace AbsorptionCutoff
 
+/-- The paper's constant-one supercritical window is admissible: the cutoff
+center diverges, the window is positive, and it is negligible relative to the
+center. -/
+lemma isCutoffWindow_supercriticalCutoffTime_one
+    {A qStar q₀ : ℝ}
+    (hA : 1 < A)
+    (hqStar : qStar ∈ Set.Ioo (0 : ℝ) 1)
+    (hfix : V A qStar = qStar) :
+    IsCutoffWindow
+      (supercriticalCutoffTime A qStar q₀)
+      (fun _ => 1) := by
+  have hcenter :=
+    tendsto_supercriticalCutoffTime_atTop
+      (q₀ := q₀) hA hqStar hfix
+  refine ⟨hcenter, Filter.Eventually.of_forall (fun _ => zero_lt_one), ?_⟩
+  rw [Asymptotics.isLittleO_const_left]
+  exact Or.inr (tendsto_norm_atTop_atTop.comp hcenter)
+
 /-- The terminal synchronous distance has one inverse-square-root cutoff
 profile constant for every fixed shift. -/
 theorem
@@ -1465,7 +1483,8 @@ theorem
     exists_reconstructed_invariant_vector_family_tendsto_outer_tvDist_cutoff_profile
       x hA hqStar hfix hq₀ hq₀ne hradius hradiusMem hb
   refine ⟨C, ν, hC, hν, hvector, ?_⟩
-  simpa only [HasCutoff, supercriticalIntegerCutoffTime_eq,
+  refine ⟨isCutoffWindow_supercriticalCutoffTime_one hA hqStar hfix, ?_⟩
+  simpa only [HasCutoffLimits, supercriticalIntegerCutoffTime_eq,
     mul_one, sub_eq_add_neg] using And.intro hearly hlate
 
 /-- A vector whose coordinates lie in `[-1,1]` has normalized squared radius
@@ -1592,26 +1611,12 @@ theorem
             (ρ : Measure (Fin N → ℝ))
                 ({0} : Set (Fin N → ℝ)) = 0 →
             ρ = π N) ∧
-      Filter.Tendsto
-        (fun c : ℝ =>
-          Filter.liminf
-            (fun N : ℕ =>
-              tvDist
-                (((Pkernel A N) ^
-                    ⌊supercriticalCutoffTime A qStar q₀ N - c⌋₊) (x N))
-                (π N : Measure (Fin N → ℝ)))
-            Filter.atTop)
-        Filter.atTop (nhds 1) ∧
-      Filter.Tendsto
-        (fun c : ℝ =>
-          Filter.limsup
-            (fun N : ℕ =>
-              tvDist
-                (((Pkernel A N) ^
-                    ⌊supercriticalCutoffTime A qStar q₀ N + c⌋₊) (x N))
-                (π N : Measure (Fin N → ℝ)))
-            Filter.atTop)
-        Filter.atTop (nhds 0) := by
+      HasCutoff
+        (fun N t =>
+          tvDist (((Pkernel A N) ^ t) (x N))
+            (π N : Measure (Fin N → ℝ)))
+        (supercriticalCutoffTime A qStar q₀)
+        (fun _ => 1) := by
   obtain ⟨C, ν, hC, hν, hvector, hcutoff⟩ :=
     exists_reconstructed_invariant_vector_family_hasCutoff_of_forall_mem_Icc
       (b := 1) x hA hqStar hfix hq₀ hq₀ne hbox hradius (by norm_num)
@@ -1627,7 +1632,7 @@ theorem
       (zero_lt_one.trans hA) (Nat.zero_lt_of_lt hN)
       (ρ : Measure (Fin N → ℝ)) (π N : Measure (Fin N → ℝ))
       hρ hvectorN.1 hρ0 hvectorN.2
-  · simpa [HasCutoff, π] using hcutoff
+  · simpa [π] using hcutoff
 
 /-- One origin-free invariant scalar family carries both fixed-shift cutoff
 profiles, with every constant selected before the shift. -/
@@ -1906,7 +1911,8 @@ theorem
     exists_stationary_family_tendsto_outer_tvDist_cutoff_profile
       q hA hqStar hfix hq₀ hq₀ne hq hqmem hb
   refine ⟨C, ν, hC, hν, ?_⟩
-  simpa only [HasCutoff, supercriticalIntegerCutoffTime_eq,
+  refine ⟨isCutoffWindow_supercriticalCutoffTime_one hA hqStar hfix, ?_⟩
+  simpa only [HasCutoffLimits, supercriticalIntegerCutoffTime_eq,
     mul_one, sub_eq_add_neg, markovPathMeasure_dirac_map_eval] using
     And.intro hearly hlate
 
