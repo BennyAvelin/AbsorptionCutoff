@@ -2,11 +2,11 @@
 
 `manuscript.pdf` is the current manuscript snapshot tracked alongside the
 formalization. It was rebuilt from the author's LaTeX source on 2026-08-15 and
-contains 71 pages.
+contains 72 pages.
 
 Provenance: the PDF was built from the file now bundled as `manuscript.tex` in
 the [`BennyAvelin/NNCutoff`](https://github.com/BennyAvelin/NNCutoff) source
-repository at commit `1bc4a8a29e0fe2bdd27f06ca2e48b0ca2b94c844`. The
+repository at commit `9795eec6a32dff9ca60a4fbcc5850cfb79fc0338`. The
 self-contained LaTeX inputs from that commit are bundled in [`source/`](source/).
 The bundle includes the `.bbl` generated from that commit's `refs.bib` and the
 seven used figures. From that directory, the
@@ -17,7 +17,7 @@ three times.
 SHA-256:
 
 ```text
-f7bb06730684105c30307ae8adf3c27fe0a905b7ddb5b1067e033911c6c9e766  manuscript.pdf
+8b830dc4e88daa8c363dd33779debf881036f8808866ff8149d5f557531afe3f  manuscript.pdf
 ```
 
 This copy and its build inputs are included so the manuscript-to-Lean

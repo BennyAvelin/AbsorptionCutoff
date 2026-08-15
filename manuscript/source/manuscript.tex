@@ -1439,8 +1439,11 @@ limits started from positive radii do not charge the origin.
 
 The proofs of \cref{prop:gaussian-compactness-selection,prop:gaussian-nonzero-invariant-existence} are in \cref{app:common-invariant-law}.
 
+\clearpage
 \subsection{Notation guide}
 \label{subsec:notation-guide}
+
+We use the following notation throughout the paper.
 
 \begin{table}[H]
   \centering
@@ -1449,61 +1452,78 @@ The proofs of \cref{prop:gaussian-compactness-selection,prop:gaussian-nonzero-in
   \renewcommand{\arraystretch}{1.15}
   \begin{tabular}{@{}p{0.22\textwidth}p{0.70\textwidth}@{}}
     \toprule
-    Symbol & Meaning and first definition \\
+    Symbol & Definition \\
     \midrule
     $\mathsf W_{t,A}^{(N)}$
-      & Gaussian weight matrix,
+      & matrix of weights at layer $t$, with independent
+        $\mathcal N(0,A^2/N)$ entries,
         \cref{eq:gaussian-weights}. \\
     $\mathcal G_N$
-      & standard Gaussian measure on $\R^N$,
+      & law of a standard Gaussian vector in $\R^N$,
         \cref{eq:gaussian-q-kernel}. \\
     $X_t^{(N)}$, $Y_t^{(N)}$
-      & unrounded and rounded vector chains,
+      & vector chains before and after rounding,
         \cref{eq:unrounded-chain,eq:rounded-chain}. \\
     $Q_\varrho$, $Q_1$
-      & rounding at meshes $\varrho$ and $1$, as defined in
+      & nearest-grid rounding with mesh $\varrho$ or $1$,
         \cref{eq:rounded-chain,eq:subcritical-exact-grid-radius}. \\
     $\tau_\varrho^{(N)}$
-      & absorption time of the rounded vector chain, \cref{eq:absorption-time}. \\
+      & first time at which $Y_t^{(N)}=0$, \cref{eq:absorption-time}. \\
     $Z_t^{(N)}$, $R_t^{(N)}$
-      & scalar states of $X^{(N)}$,
+      & normalized squared radius and Euclidean radius of $X_t^{(N)}$,
         introduced before \cref{eq:q-chain}. \\
     $\mathscr H_t^{(N)}$, $U_{A,\varrho}$
-      & scalar state of $Y^{(N)}$ and its one-coordinate update,
+      & normalized squared radius of $Y_t^{(N)}$ and the contribution of one
+        coordinate to the next radius,
         \cref{eq:subcritical-exact-grid-radius,eq:rounded-coordinate-observable}. \\
     $F_{A,N}$, $K_{A,N}$
-      & random map and transition kernel of $Z^{(N)}$,
+      & update map for $Z^{(N)}$ and its transition kernel,
         \cref{eq:gaussian-random-map,eq:gaussian-q-kernel}. \\
     $P_{A,N}$, $P_{\varrho,A,N}$
-      & unrounded and rounded vector transition kernels, defined before
+      & transition kernels of $X^{(N)}$ and $Y^{(N)}$, defined before
         \cref{eq:gaussian-vector-kernel-factorization,eq:absorption-time}. \\
     $J_{A,N}$
-      & reconstruction kernel from $Z^{(N)}$ to $X^{(N)}$, introduced before
+      & law of $X_{t+1}^{(N)}$ given $Z_t^{(N)}=q$, introduced before
         \cref{prop:gaussian-tv-reduction}. \\
     $V_A$
-      & mean map of $Z^{(N)}$, \cref{eq:mean-field-map}. \\
+      & conditional mean of $Z_{t+1}^{(N)}$ given $Z_t^{(N)}=q$,
+        \cref{eq:mean-field-map}. \\
     $A_c(N)$, $A_c$
-      & fixed-width threshold, with $A_c=A_c(N)$ when $N$ is fixed,
-        as defined in \cref{eq:fixed-width-critical}. \\
-    $\gamma_{A,N}$
-      & negative mean of $\log\ell_{A,N}$,
+      & solution of $\Ee\log\ell_{A,N}=0$, with $A_c=A_c(N)$ when $N$ is
+        fixed, \cref{eq:fixed-width-critical}. \\
+    $\ell_{A,N}$, $\gamma_{A,N}$, $\sigma_N$
+      & multiplier near zero, with $\gamma_{A,N}=-\Ee\log\ell_{A,N}$ and
+        $\sigma_N^2=\Var(\log\ell_{A,N})$,
         \cref{eq:gaussian-ell,eq:gaussian-log-multiplier-moments}. \\
     $\chi_N$
-      & Euclidean norm of a standard Gaussian vector in $\R^N$,
+      & norm of a standard Gaussian vector in $\R^N$,
         \cref{eq:gaussian-ell}. \\
     $L_A$
-      & lattice comparison map,
+      & upper comparison map for $V_{A,\varrho}$,
         \cref{eq:subcritical-lattice-map}. \\
     $V_{A,\varrho}$
-      & mean map of $\mathscr H^{(N)}$, \cref{eq:rounded-radius-map}. \\
+      & conditional mean of $\mathscr H_{t+1}^{(N)}$ given
+        $\mathscr H_t^{(N)}=h$, \cref{eq:rounded-radius-map}. \\
+    $\bar h_{t,N}$, $\bar t_N$
+      & orbit of $V_{A,\varrho}$ and the first time it falls below
+        $(\log N)^{-1}$,
+        \cref{eq:subcritical-exact-lattice-orbit,eq:subcritical-exact-hitting-time}. \\
     $A_{\mathrm{lat}}$
-      & threshold for $L_A(h)<h$ on $(0,\infty)$,
+      & threshold below which $L_A(h)<h$ for every $h>0$,
         \cref{eq:subcritical-lattice-threshold}. \\
+    $A_{\mathrm{ex}}(\varrho)$, $\mathcal O_{A,\varrho}$
+      & threshold above which
+        $\mathcal O_{A,\varrho}=\{h:V_{A,\varrho}(h)>h\}$ is nonempty,
+        \cref{eq:metastable-exact-threshold,eq:metastable-positive-region}. \\
     $q_\ast$, $\mu_A$, $C(q_0)$
-      & fixed point and coefficients in the asymptotic for $V_A^t(q_0)$,
+      & fixed point of $V_A$, derivative at that point, and coefficient in
+        the asymptotic for $V_A^t(q_0)$,
         \cref{eq:gaussian-fixed-point,eq:gaussian-deterministic-asymptotic}. \\
+    $\beta_{A,N}$
+      & positive solution of the Cramér equation $r_{A,N}(\beta)=1$,
+        \cref{eq:nd-beta-equation,eq:nd-beta-equation-explicit}. \\
     $\nu_{A,N}$, $\pi_{A,N}$
-      & nonzero invariant laws of $Z^{(N)}$ and $X^{(N)}$,
+      & invariant laws of $Z^{(N)}$ and $X^{(N)}$ away from zero,
         \cref{eq:gaussian-q-stationary-equation,eq:gaussian-vector-stationary-from-q}. \\
     \bottomrule
   \end{tabular}
