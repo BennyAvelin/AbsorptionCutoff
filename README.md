@@ -51,13 +51,14 @@ its conclusion implies the manuscript's conclusion.
 
 ## The manuscript
 
-The exact manuscript snapshot used for this release is included as
+The current manuscript snapshot tracked by this repository is included as
 [`manuscript/manuscript.pdf`](manuscript/manuscript.pdf), together
 with self-contained LaTeX build inputs. Its SHA-256 digest and provenance are
 recorded in
-[`manuscript/README.md`](manuscript/README.md). This fixed snapshot makes the
-source-to-Lean correspondence reviewable before an arXiv version is available;
-the arXiv identifier will be added when the manuscript is posted.
+[`manuscript/README.md`](manuscript/README.md). This copy makes the source-to-Lean
+correspondence reviewable before an arXiv version is available. The manuscript
+snapshot shipped with formalization release 1.1.0 remains available at tag
+`v1.1`.
 
 ## Main results
 
