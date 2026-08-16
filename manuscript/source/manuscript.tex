@@ -26,7 +26,8 @@
 
 \begin{abstract}
   We study Gaussian random dynamical systems with coordinatewise $\tanh$
-  nonlinearity and nearest-grid rounding. Gaussian symmetry reduces the
+  nonlinearity, where finite precision is modeled by nearest-grid rounding
+  after each step. Gaussian symmetry reduces the
   dynamics to an exact Markov chain for the normalized squared radius.
   Rounding makes the
   origin absorbing, and the total variation distance to the absorbing
@@ -250,11 +251,7 @@ as $N\to\infty$, $A<A_{\mathrm{lat}}$ gives the absorption cutoff, while
 $A>A_{\mathrm{ex}}(\varrho)$ gives metastability.
 
 For both absorption cutoffs, the relevant distance is
-\begin{equation*}
-  \norm{
-    P_{\varrho,A,N}^t(Q_\varrho x,\cdot)-\delta_0
-  }_{\TV}.
-\end{equation*}
+\cref{eq:intro-tv-absorption}.
 In the supercritical large-dimension problem, the origin is repelling and
 $X^{(N)}$ has a nonzero invariant law. The relevant distance is
 then total variation distance to this law.
@@ -713,7 +710,7 @@ cannot verify that a restatement expresses the intended mathematics.
 The paper and Lean code sometimes use different notation or equivalent
 hypotheses. After unfolding the definitions and equivalences, every printed
 result follows from its Lean declaration. No formalized result requires an
-additional hypothesis, and several have stronger conclusions.
+additional hypothesis.
 
 Our use of autoformalization is inspired by the recent Lean formalizations of
 De Giorgi--Nash--Moser theory by Armstrong and Kempe
@@ -734,9 +731,11 @@ coordinates, the radius is a perturbed random walk, and a first-passage central
 limit theorem gives the Gaussian profile. An estimate on the finite grid then
 turns entrance at this scale into absorption.
 
-For \cref{thm:subcritical-dimension-cutoff:intro}, $\mathscr H^{(N)}$ concentrates
-around the iterates of $V_{A,\varrho}$. When $A<A_{\mathrm{lat}}$, the orbit
-reaches the absorption scale, and absorption occurs within two further steps.
+For \cref{thm:subcritical-dimension-cutoff:intro}, the lattice comparison
+$V_{A,\varrho}\leq L_A$ gives uniform contraction of the deterministic orbit
+when $A<A_{\mathrm{lat}}$. The chain $\mathscr H^{(N)}$ concentrates around this
+orbit until it reaches the absorption scale, and absorption occurs within two
+further steps.
 For \cref{thm:rounded-qualitative-metastability:intro}, the iterates starting in
 $B\subset(h_-,h_+]$ approach $h_+$, and Hoeffding bounds keep
 $\mathscr H^{(N)}$ near $h_+$ for exponentially many steps.
@@ -1088,9 +1087,10 @@ We use the following fixed-point and linearization facts for $V_A$.
     \qquad
     \mu_A:=V_A'(q_\ast)\in(0,1).
   \end{equation}
-  Every orbit of $V_A$ started from $(0,1]$ converges to $q_\ast$. If
-  $q_0\in(0,1]\setminus\{q_\ast\}$, then there is a continuous function $C$
-  in a neighborhood of $q_0$, with $C(q_0)\neq0$, such that
+  If $A>1$, every orbit of $V_A$ started from $(0,1]$ converges to $q_\ast$.
+  In this case, for every $q_0\in(0,1]\setminus\{q_\ast\}$, there is a
+  continuous function $C$ in a neighborhood of $q_0$, with $C(q_0)\neq0$,
+  such that
   \begin{equation}\label{eq:gaussian-deterministic-asymptotic}
     V_A^t(q)-q_\ast
     =
@@ -1100,6 +1100,7 @@ We use the following fixed-point and linearization facts for $V_A$.
 \end{lemma}
 
 \begin{proof}
+  \emph{Step 1: Monotonicity, concavity, and fixed points.}
   Fix $a>0$ and put $f_a(q):=\tanh^2(a\sqrt q)$ for $q>0$. With
   $x=a\sqrt q$,
   \begin{equation*}
@@ -1109,38 +1110,46 @@ We use the following fixed-point and linearization facts for $V_A$.
   \end{equation*}
   The functions $x\mapsto\tanh x/x$ and
   $x\mapsto\operatorname{sech}^2x$ are strictly decreasing on
-  $(0,\infty)$, hence $f_a'$ is strictly decreasing and $f_a$ is strictly
+  $(0,\infty)$. Hence $f_a'$ is strictly decreasing and $f_a$ is strictly
   concave. Since
   $\tanh^2(A\sqrt q\,G)=f_{A\abs G}(q)$ and $\Pp(\abs G>0)=1$, integration
   gives strict concavity of $V_A$. The same formula gives strict
-  monotonicity, and the expansion in \cref{eq:gaussian-mean-field-near-zero} gives
-  $V_A'(0+)=A^2$. Finally $V_A(1)<1$ since
+  monotonicity. The expansion in \cref{eq:gaussian-mean-field-near-zero} gives
+  $V_A'(0+)=A^2$, while $V_A(1)<1$ since
   $\tanh^2(AG)<1$ almost surely.
 
-  Concavity gives no positive fixed point when $A\leq1$ and exactly one when
-  $A>1$. At the positive fixed point,
+  Strict concavity now gives no positive fixed point when $A\leq1$ and exactly
+  one when $A>1$. At the positive fixed point,
   concavity gives
   \begin{equation*}
     0<V_A'(q_\ast)<\frac{V_A(q_\ast)}{q_\ast}=1.
   \end{equation*}
 
-  If $A>1$, then $V_A(q)>q$ for $0<q<q_\ast$ and
-  $V_A(q)<q$ for $q_\ast<q\leq1$. Since $V_A$ is increasing, the orbit
-  is monotone and bounded on each side of $q_\ast$, and therefore converges to
-  $q_\ast$.
+  \emph{Step 2: Convergence of the orbit.}
+  Suppose that $A>1$. Then $V_A(q)>q$ for $0<q<q_\ast$ and
+  $V_A(q)<q$ for $q_\ast<q\leq1$. The orbit started at $q_\ast$ is constant.
+  Since $V_A$ is increasing, every other orbit is monotone and remains on the
+  same side of $q_\ast$. It is therefore bounded and converges to $q_\ast$.
 
-  The asymptotic \cref{eq:gaussian-deterministic-asymptotic} follows from the
-  one-dimensional Koenigs linearization theorem
-  \cite[Ch.~II, Sec.~2, Theorem~2.1]{carleson1993complex}. The
-  Taylor expansion at the attracting fixed point is
+  \emph{Step 3: Linearization at $q_\ast$.}
+  We prove \cref{eq:gaussian-deterministic-asymptotic} by the standard Koenigs
+  product argument; see
+  \cite[Ch.~II, Sec.~2, Theorem~2.1]{carleson1993complex}. The Taylor expansion
+  at the attracting fixed point is
   \begin{equation*}
     V_A(q)-q_\ast
     =
     \mu_A(q-q_\ast)+O((q-q_\ast)^2)
   \end{equation*}
-  near $q_\ast$. After a finite time the orbit is in a neighborhood on
-  which $\abs{V_A(q)-q_\ast}\leq\rho\abs{q-q_\ast}$ for some
-  $\rho<1$. For all later times before the orbit reaches $q_\ast$, write
+  near $q_\ast$. Fix $q_0\in(0,1]\setminus\{q_\ast\}$. By Step~2, there are
+  a neighborhood $U$ of $q_0$, an integer $s\geq0$, and $\rho\in(0,1)$ such
+  that, for every $q\in U$ and $t\geq s$,
+  \begin{equation*}
+    \abs{V_A^{t+1}(q)-q_\ast}
+    \leq
+    \rho\abs{V_A^t(q)-q_\ast}.
+  \end{equation*}
+  For $t\geq s$, we have
   \begin{equation*}
     \frac{V_A^{t+1}(q)-q_\ast}{\mu_A^{t+1}}
     =
@@ -1149,15 +1158,13 @@ We use the following fixed-point and linearization facts for $V_A$.
     {\mu_A(V_A^t(q)-q_\ast)} .
   \end{equation*}
   The last factor is $1+O(\abs{V_A^t(q)-q_\ast})$, uniformly for $q$ in a
-  small neighborhood of any fixed $q_0\neq q_\ast$. Since the orbit is
-  eventually contained in a contraction neighborhood of $q_\ast$, the series
+  sufficiently small choice of $U$. The contraction estimate implies that
   \begin{equation*}
-    \sum_{t=0}^\infty
-    |V_A^t(q)-q_\ast|
+    \sum_{t=s}^\infty
+    \abs{V_A^t(q)-q_\ast}
   \end{equation*}
-  is locally uniformly summable. Hence the logarithms of the product factors
-  are locally uniformly summable, the Koenigs product converges locally
-  uniformly, and we may define
+  converges uniformly for $q\in U$. Hence the Koenigs product converges
+  uniformly on $U$, and we may define
   \begin{equation*}
     C(q)
     =
@@ -1166,12 +1173,16 @@ We use the following fixed-point and linearization facts for $V_A$.
     \frac{V_A(V_A^j(q))-V_A(q_\ast)}
     {\mu_A(V_A^j(q)-q_\ast)}
   \end{equation*}
-  for any entrance time $s$ after which the orbit stays in the contraction
-  neighborhood. This formula is independent of the chosen sufficiently large
-  $s$, locally uniform in $q$, and continuous. It is nonzero at $q_0$ because
-  every factor is positive and finite and the orbit approaches $q_\ast$
-  monotonically from one side without crossing it. This proves
-  \cref{eq:gaussian-deterministic-asymptotic}.
+  for $q\in U$. The finite products telescope, and therefore
+  \begin{equation*}
+    \frac{V_A^t(q)-q_\ast}{\mu_A^t}
+    \longrightarrow
+    C(q)
+  \end{equation*}
+  uniformly on $U$. The product representation shows that $C$ is continuous.
+  Moreover, $C(q_0)\neq0$ because the orbit approaches $q_\ast$ monotonically
+  without reaching or crossing it. This proves
+  \cref{eq:gaussian-deterministic-asymptotic} and completes the proof.
 \end{proof}
 
 \subsection{Common scalar estimates}
@@ -1591,7 +1602,6 @@ where $\psi_1$ is the trigamma function. For $0<\varrho<R_0$, the cutoff scale i
 \end{equation}
 Here and below $\Phi_{\mathrm G}$ denotes the distribution function of a
 standard Gaussian random variable.
-The nonlinear correction to the logarithmic radius is summable.
 
 \begin{lemma}
 \label{lem:rounded-gaussian-log-reduction}
@@ -1613,15 +1623,14 @@ The nonlinear correction to the logarithmic radius is summable.
 \end{lemma}
 
 \begin{proof}
-  For each fixed $t$, $X^{(N)}$ satisfies $R_t>0$ almost
-  surely. Since the time set is countable, the event
+  \emph{Step 1: Gaussian normalization.}
+  For each fixed $t$, we have $R_t>0$ almost surely. Hence
   \begin{equation*}
     \Omega_{\mathrm{nz}}
     :=
     \bigcap_{t\geq0}\{R_t>0\}
   \end{equation*}
-  has probability one. For each $j\geq1$, define, on
-  $\{R_{j-1}>0\}$,
+  has probability one. On $\{R_{j-1}>0\}$, define
   \begin{equation*}
     G^{(j)}
     :=
@@ -1629,10 +1638,10 @@ The nonlinear correction to the logarithmic radius is summable.
     \mathsf W_{j,A}^{(N)}X_{j-1}^{(N)}.
   \end{equation*}
   Extend $G^{(j)}$ arbitrarily across the null event
-  $\{R_{j-1}=0\}$.
-  Conditionally on the past, $G^{(j)}$ is standard Gaussian and its law does
-  not depend on the past. Thus $(G^{(j)})_{j\geq1}$ are independent standard
-  Gaussian vectors. Taking $\chi_{N,j}:=\norm{G^{(j)}}_2$, the radius update is
+  $\{R_{j-1}=0\}$. Conditionally on the past, $G^{(j)}$ is a standard
+  Gaussian vector whose law does not depend on the past. Therefore,
+  $(G^{(j)})_{j\geq1}$ are independent standard Gaussian vectors. With
+  $\chi_{N,j}:=\norm{G^{(j)}}_2$, we have
   \begin{equation*}
     R_j
     =
@@ -1640,14 +1649,16 @@ The nonlinear correction to the logarithmic radius is summable.
       \tanh\left(\frac A{\sqrt N}G^{(j)}R_{j-1}\right)
     }_2.
   \end{equation*}
-  Set $M_j:=(A/\sqrt N)\chi_{N,j}$. Since
-  $\abs{\tanh z}\leq\abs z$ coordinatewise,
+  Set $M_j:=(A/\sqrt N)\chi_{N,j}$. The coordinatewise bound
+  $\abs{\tanh z}\leq\abs z$ gives
   \begin{equation}\label{eq:rounded-gaussian-linear-domination}
     R_j
     \leq
     M_jR_{j-1}
     \qquad\mbox{for every }j\geq1.
   \end{equation}
+
+  \emph{Step 2: The logarithmic error.}
   Define
   \begin{equation*}
     \eta_j
@@ -1659,19 +1670,19 @@ The nonlinear correction to the logarithmic radius is summable.
     \qquad
     \xi_j:=-\log M_j,
   \end{equation*}
-  which gives \cref{eq:rounded-gaussian-log-reduction} simultaneously for
-  every $t\geq0$ on $\Omega_{\mathrm{nz}}$.
+  Then $E_t$ is increasing, and telescoping gives
+  \cref{eq:rounded-gaussian-log-reduction} simultaneously for every $t\geq0$
+  on $\Omega_{\mathrm{nz}}$.
 
-  To prove finiteness of the error series, let $u\in\R$, with the value at
-  zero defined by continuity. Then
+  For $u\in\R$, with the value at zero defined by continuity, we have
   \begin{equation*}
     0\leq
     \log\frac{\abs u}{\abs{\tanh u}}
     \leq
     C u^2 .
   \end{equation*}
-  Applying this coordinatewise, if $u=(u_1,\ldots,u_N)$ and
-  $v_i=\tanh(u_i)$, with ratios at $u_i=0$ understood by continuity, then
+  Let $u=(u_1,\ldots,u_N)$ and $v_i=\tanh(u_i)$, where the ratios below are
+  understood by continuity when $u_i=0$. Then
   \begin{equation*}
     \norm u_2^2
     =
@@ -1687,17 +1698,18 @@ The nonlinear correction to the logarithmic radius is summable.
     CM_j^2R_{j-1}^2.
   \end{equation}
 
+  \emph{Step 3: Summability of the error.}
   Since $A<A_c(N)$, the variables $\log M_j$ have negative mean. By the strong
-  law of large numbers, for some $\kappa>0$ and all sufficiently large $j$,
+  law of large numbers, there is a $\kappa>0$ such that, almost surely,
   \begin{equation*}
     \prod_{i=1}^jM_i\leq e^{-\kappa j}
   \end{equation*}
-  almost surely. Combining this with
-  \cref{eq:rounded-gaussian-linear-domination} gives
-  $R_j\leq R_0e^{-\kappa j}$ eventually almost surely. On the other hand,
-  $\chi_{N,j}^2 \leq e^{\kappa j}$ eventually almost surely by the Gaussian
-  tail bound and Borel--Cantelli.
-  Therefore the tail of the error series is almost surely bounded by
+  for all sufficiently large $j$. By
+  \cref{eq:rounded-gaussian-linear-domination}, it follows that
+  $R_j\leq R_0e^{-\kappa j}$ for all sufficiently large $j$. The Gaussian tail
+  bound and Borel--Cantelli also give
+  $\chi_{N,j}^2\leq e^{\kappa j}$ for all sufficiently large $j$. Thus,
+  almost surely,
   \begin{equation*}
     C\sum_{j\ \mathrm{large}}M_j^2R_{j-1}^2
     \leq
@@ -1710,9 +1722,10 @@ The nonlinear correction to the logarithmic radius is summable.
   \end{equation*}
   The finitely many remaining terms are finite almost surely. Intersecting
   $\Omega_{\mathrm{nz}}$ with the probability-one events furnished by the
-  strong law and Borel--Cantelli gives an event $\Omega_{\log}$ on which all
-  the preceding identities hold simultaneously for every time and
-  $E_t\uparrow E_\infty<\infty$.
+  strong law and Borel--Cantelli gives an event $\Omega_{\log}$ on which
+  \cref{eq:rounded-gaussian-log-reduction} holds for every $t\geq0$ and
+  $E_t\uparrow E_\infty<\infty$. Since $E_t\leq E_\infty$ on this event, the
+  family $(E_t)_{t\geq0}$ is tight. This completes the proof.
 \end{proof}
 
 For a positive threshold $\varepsilon_\varrho$, define
@@ -1749,9 +1762,9 @@ The same profile holds for moving thresholds.
 \end{proposition}
 
 \begin{proof}
-  On the probability-one event supplied by
-  \cref{lem:rounded-gaussian-log-reduction}, simultaneously for every
-  $t\geq0$,
+  \emph{Step 1: Reduction to a perturbed random walk.}
+  By \cref{lem:rounded-gaussian-log-reduction}, there is a probability-one
+  event on which, simultaneously for every $t\geq0$,
   \begin{equation*}
     -\log R_t
     =
@@ -1768,17 +1781,17 @@ The same profile holds for moving thresholds.
     \inf\{t\geq0:S_t+E_t\geq L_{\varepsilon_\varrho}\}.
   \end{equation*}
 
+  \emph{Step 2: First-passage asymptotics.}
   Let $H_u=\inf\{t\geq0:S_t\geq u\}$, and let
   $\nu(u)=\inf\{t\geq0:S_t>u\}$ be the strict first-passage time used in
-  \cite{gut2009stopped}. The law of $\xi_1$ is
-  absolutely continuous, and hence
-  so is the law of $S_t$ for every $t\geq1$. Thus, for every fixed $u>0$,
+  \cite{gut2009stopped}. Since the law of $\xi_1$ is absolutely continuous,
+  the same is true of $S_t$ for every $t\geq1$. Hence, for every fixed $u>0$,
   \begin{equation*}
     \Pp\bigl(S_t=u\text{ for some }t\geq0\bigr)=0,
   \end{equation*}
-  and therefore $H_u=\nu(u)$ almost surely. The increments have mean
-  $\gamma_{A,N}>0$ and variance $\sigma_N^2<\infty$ by
-  \cref{eq:rounded-gaussian-drift-variance-critical}. Hence
+  and $H_u=\nu(u)$ almost surely. By
+  \cref{eq:rounded-gaussian-drift-variance-critical}, the increments have mean
+  $\gamma_{A,N}>0$ and variance $\sigma_N^2<\infty$. Thus,
   \cite[Theorem~3.5.1]{gut2009stopped}, with
   $\mu=\gamma_{A,N}$ and $\sigma=\sigma_N$, gives
   \begin{equation*}
@@ -1791,6 +1804,7 @@ The same profile holds for moving thresholds.
   $b_u=o(\sqrt u)$, because the resulting changes in the centering and
   normalization are negligible.
 
+  \emph{Step 3: Comparison of the entrance times.}
   Fix $B<\infty$. On $\{E_\infty\leq B\}$, the entrance time satisfies the
   pathwise bounds
   \begin{equation}\label{eq:rounded-gaussian-hitting-bounds}
@@ -1826,8 +1840,10 @@ The same profile holds for moving thresholds.
     \leq
     \Phi_{\mathrm G}(-a)+\Pp(E_\infty>B).
   \end{equation*}
-  Sending $B\to\infty$ proves the displayed limit. For the final assertion,
-  fix $\delta>0$. Since
+  Sending $B\to\infty$ proves the first assertion.
+
+  \emph{Step 4: Perturbation of the time scale.}
+  Fix $\delta>0$. Since
   \begin{equation*}
     \frac{u_\varrho}
     {\sigma_N\gamma_{A,N}^{-3/2}\sqrt{L_\varrho}}
@@ -1837,7 +1853,7 @@ The same profile holds for moving thresholds.
   small $\varrho$, between those at $t_\varrho(a-\delta)$ and
   $t_\varrho(a+\delta)$, up to a uniformly bounded time shift. The first part
   and continuity of $a\mapsto\Phi_{\mathrm G}(-a)$ give the result after
-  $\delta\downarrow0$.
+  sending $\delta\downarrow0$. This completes the proof.
 \end{proof}
 
 \subsection{Rounding comparison and absorption}
@@ -1881,7 +1897,7 @@ grid size times a polylogarithmic factor on the cutoff time scale.
 \end{lemma}
 
 \begin{proof}
-  \emph{Step 1: }
+  \emph{Step 1: A scalar recursion for the coupling error.}
   Let $D_t:=Y_t^{(N)}-X_t^{(N)}$ and $d_t:=\norm{D_t}_2$.
   For the common Gaussian matrix at time $t+1$, set
   \begin{equation*}
@@ -1894,7 +1910,7 @@ grid size times a polylogarithmic factor on the cutoff time scale.
     d_{t+1}
     \leq
     \norm{\mathcal T_{t+1}(Y_t^{(N)})-
-      \mathcal T_{t+1}(X_t^{(N)})}_2 
+      \mathcal T_{t+1}(X_t^{(N)})}_2
     +\norm{Q_\varrho(\mathcal T_{t+1}(Y_t^{(N)}))-
       \mathcal T_{t+1}(Y_t^{(N)})}_2.
   \end{equation*}
@@ -1909,7 +1925,7 @@ grid size times a polylogarithmic factor on the cutoff time scale.
     =
     \norm{\mathsf W_{t+1,A}^{(N)}D_t}_2 .
   \end{equation*}
-  Thus
+  Combining these bounds gives
   \begin{equation}\label{eq:rounded-gaussian-difference-recursion}
     d_{t+1}
     \leq
@@ -1927,7 +1943,7 @@ grid size times a polylogarithmic factor on the cutoff time scale.
     M_{t+1}:=\norm{\mathsf W_{t+1,A}^{(N)}\theta_t}_2 .
   \end{equation*}
   Conditionally on $\mathcal F_t$, the vector $\theta_t$ is a fixed unit vector,
-  so the Gaussian weights give
+  and hence the Gaussian weights give
   \begin{equation*}
     \mathsf W_{t+1,A}^{(N)}\theta_t
     \sim
@@ -1935,24 +1951,25 @@ grid size times a polylogarithmic factor on the cutoff time scale.
   \end{equation*}
   independently of $\mathcal F_t$. Thus $(M_j)_{j\geq1}$ are independent
   copies of $\ell_{A,N}$ from \cref{eq:gaussian-ell}. In particular,
-  $\Ee\log M_j=-\gamma_{A,N}<0$. Moreover
-  $\norm{\mathsf W_{t+1,A}^{(N)}D_t}_2=M_{t+1}\,d_t$ holds identically, since
-  both sides vanish on $\{D_t=0\}$, so
-  \cref{eq:rounded-gaussian-difference-recursion} gives the pathwise bound
-  $d_{t+1}\leq M_{t+1}d_t+c_N\varrho$. Since $d_0\leq c_N\varrho$ and each
-  $M_{t+1}\geq0$, induction on $t$ yields $d_t\leq U_t$ for all $t$, where
-  $(U_t)_{t\geq0}$ is defined by
+  $\Ee\log M_j=-\gamma_{A,N}<0$. Since both sides vanish on $\{D_t=0\}$,
+  we also have
+  \begin{equation*}
+    \norm{\mathsf W_{t+1,A}^{(N)}D_t}_2=M_{t+1}d_t
+  \end{equation*}
+  identically. Therefore, \cref{eq:rounded-gaussian-difference-recursion}
+  yields $d_{t+1}\leq M_{t+1}d_t+c_N\varrho$. Since
+  $d_0\leq c_N\varrho$ and $M_{t+1}\geq0$, induction gives $d_t\leq U_t$ for
+  every $t\geq0$, where
   \begin{equation}\label{eq:rounded-gaussian-scalar-error-recursion}
     U_{t+1}=M_{t+1}U_t+c_N\varrho,
     \qquad
     U_0=c_N\varrho .
   \end{equation}
 
-  \emph{Step 2: }
+  \emph{Step 2: Control of the multiplier subproducts.}
   Since $M_1=(A/\sqrt N)\chi_N$ and $\chi_N^2$ is
-  chi-squared with $N$ degrees of freedom, the Gamma moment formula
-  $\Ee(\chi_N^2)^{\alpha/2}=2^{\alpha/2}\Gamma((N+\alpha)/2)/\Gamma(N/2)$ gives,
-  for every $\alpha\geq0$,
+  chi-squared with $N$ degrees of freedom, the Gamma moment formula gives, for
+  every $\alpha\geq0$,
   \begin{equation}\label{eq:rounded-gaussian-chi-log-moment}
     \log\Ee M_1^\alpha
     =
@@ -1961,16 +1978,16 @@ grid size times a polylogarithmic factor on the cutoff time scale.
     +\log\Gamma\!\left(\frac{N+\alpha}2\right)
     -\log\Gamma\!\left(\frac N2\right).
   \end{equation}
-  In particular all positive moments are finite, and differentiating
+  In particular, all positive moments are finite. Differentiating
   \cref{eq:rounded-gaussian-chi-log-moment} twice in $\alpha$ gives
   \begin{equation*}
     \frac{\mathrm{d}^2}{\mathrm{d}\alpha^2}\log\Ee M_1^\alpha
     =
     \frac14\,\psi_1\!\left(\frac{N+\alpha}2\right),
   \end{equation*}
-  with $\psi_1$ the trigamma function. As $\psi_1$ is positive and decreasing on
-  $(0,\infty)$, this second derivative is bounded on $[0,1]$ by
-  $K:=\tfrac14\psi_1(N/2)$. Put
+  where $\psi_1$ is the trigamma function. Since $\psi_1$ is positive and
+  decreasing on $(0,\infty)$, the second derivative is bounded on $[0,1]$ by
+  $K:=\tfrac14\psi_1(N/2)$. Define
   \begin{equation*}
     \Lambda(\alpha):=\log\Ee M_1^\alpha,
     \qquad
@@ -1991,7 +2008,7 @@ grid size times a polylogarithmic factor on the cutoff time scale.
     C_N\left(1+\gamma_{A,N}^{-1}\right).
   \end{equation*}
   Let $L_\varrho:=\log(1/\varrho)$. Markov's inequality and a union bound
-  therefore give, for every $p_0>0$,
+  give, for every $p_0>0$,
   \begin{equation*}
     \Pp\left(
       \max_{0\leq s\leq t\leq T_\varrho}
@@ -2006,15 +2023,15 @@ grid size times a polylogarithmic factor on the cutoff time scale.
     \frac{T_\varrho+1}{1-q}
     L_\varrho^{-\alpha_\gamma p_0}.
   \end{equation*}
-  We may choose $p_0$ so that $\alpha_\gamma p_0>2$ and, after increasing
-  $C_N$,
+  Choose $p_0$ so that $\alpha_\gamma p_0>2$. After increasing $C_N$, we may
+  also arrange that
   \begin{equation*}
     p_0
     \leq
     C_N(1+C_0)\left(1+\gamma_{A,N}^{-1}\right).
   \end{equation*}
-  Since $T_\varrho=O(L_\varrho)$, this probability tends to zero.
-  Thus
+  Since $T_\varrho=O(L_\varrho)$, the preceding probability tends to zero.
+  Hence
   \begin{equation}\label{eq:rounded-gaussian-subproduct-bound}
     \Pp\left(
       \max_{0\leq s\leq t\leq T_\varrho}
@@ -2025,6 +2042,7 @@ grid size times a polylogarithmic factor on the cutoff time scale.
     \to0 .
   \end{equation}
 
+  \emph{Step 3: Accumulation of the rounding errors.}
   On the complementary event, the explicit solution of
   \cref{eq:rounded-gaussian-scalar-error-recursion} gives, for every
   $t\leq T_\varrho$,
@@ -2041,8 +2059,9 @@ grid size times a polylogarithmic factor on the cutoff time scale.
   \end{equation*}
   for all sufficiently small $\varrho$. Set
   $p:=p_0+\lceil C_N(1+C_0)\rceil$. After increasing $C_N$, this
-  exponent satisfies \cref{eq:rounded-gaussian-p-dependence}. Since $d_t\leq U_t$,
-  this proves \cref{eq:rounded-gaussian-coupling-input}.
+  exponent satisfies \cref{eq:rounded-gaussian-p-dependence}. Since
+  $d_t\leq U_t$, we obtain \cref{eq:rounded-gaussian-coupling-input}. This
+  completes the proof.
 \end{proof}
 
 Once $Y^{(N)}$ enters a ball of radius $K\varrho$, the number of additional
@@ -2067,17 +2086,20 @@ $Y_0^{(N)}$.
 \end{lemma}
 
 \begin{proof}
-  \emph{Step 1: }
+  \emph{Step 1: Entrance into a fixed grid-scale ball.}
   Let
   \begin{equation*}
     K_t:=\frac{\widehat R_t}{\varrho}.
   \end{equation*}
   Since $\norm{Q_\varrho(z)-z}_2\leq c_N\varrho$ and $\tanh$ is one-Lipschitz
-  coordinatewise,
-  $\widehat R_{t+1}\leq\norm{\mathsf W_{t+1,A}^{(N)}Y_t^{(N)}}_2+c_N\varrho$.
+  coordinatewise, we have
+  \begin{equation*}
+    \widehat R_{t+1}
+    \leq
+    \norm{\mathsf W_{t+1,A}^{(N)}Y_t^{(N)}}_2+c_N\varrho.
+  \end{equation*}
   Let $\mathcal F_t:=\sigma(\mathsf W_{1,A}^{(N)},\ldots,\mathsf W_{t,A}^{(N)})$
-  and fix a reference unit vector $e_1\in\R^N$. Exactly as in the proof of
-  \cref{lem:rounded-gaussian-synchronous-comparison}, set
+  and fix a reference unit vector $e_1\in\R^N$. Set
   \begin{equation*}
     \theta_t
     :=
@@ -2086,8 +2108,9 @@ $Y_0^{(N)}$.
     \qquad
     M_{t+1}:=\norm{\mathsf W_{t+1,A}^{(N)}\theta_t}_2 .
   \end{equation*}
-  As in the proof of \cref{lem:rounded-gaussian-synchronous-comparison}, the
-  variables $M_j$ are independent copies of
+  The Gaussian calculation in the proof of
+  \cref{lem:rounded-gaussian-synchronous-comparison} shows that the variables
+  $M_j$ are independent copies of
   $\ell_{A,N}=(A/\sqrt N)\chi_N$. Moreover,
   $\norm{\mathsf W_{t+1,A}^{(N)}Y_t^{(N)}}_2=M_{t+1}\widehat R_t$ identically,
   with both sides zero when $Y_t^{(N)}=0$. Hence, pathwise,
@@ -2105,11 +2128,14 @@ $Y_0^{(N)}$.
   \end{equation*}
   We have $\Ee\log M_1=-\gamma_{A,N}<0$. For every $\eps>0$,
   $\log(M_1+\eps)$ has exponential moments near the origin because $M_1$ has
-  all positive moments by \cref{eq:rounded-gaussian-chi-log-moment}. Thus the
-  hypotheses of \cref{lem:negative-drift-affine-entrance} hold with $b=c_N$.
+  all positive moments by \cref{eq:rounded-gaussian-chi-log-moment}. Therefore,
+  the hypotheses of \cref{lem:negative-drift-affine-entrance} hold with
+  $b=c_N$.
   Since $K_0\leq K=U_0$,
-  \cref{eq:rounded-gaussian-grid-radius-domination} gives $K_t\leq U_t$.
-  Hence there are $K_\ast=K_\ast(A,N)<\infty$ and $c_1,c_2,c_3>0$ such that,
+  \cref{eq:rounded-gaussian-grid-radius-domination} and induction give
+  $K_t\leq U_t$ for every $t\geq0$. We may thus apply
+  \cref{lem:negative-drift-affine-entrance}. There are
+  $K_\ast=K_\ast(A,N)<\infty$ and $c_1,c_2,c_3>0$ such that,
   with $\kappa:=\inf\{t\geq0:K_t\leq K_\ast\}$,
   \begin{equation}\label{eq:rounded-gaussian-grid-entrance}
     \Pp\left(\kappa>c_1\log K+r\right)
@@ -2118,10 +2144,9 @@ $Y_0^{(N)}$.
     \qquad r\geq0.
   \end{equation}
 
-  \emph{Step 2: }
+  \emph{Step 2: Return after a failed absorption attempt.}
   Once $K_t\leq K_\ast$, $Y^{(N)}$ has a uniform positive probability of
-  absorption in the next step.
-  For a matrix $B$, write
+  absorption in the next step. For a matrix $B$, write
   $\norm{B}_{\ell^2\to\ell^2}:=
   \sup_{\norm u_2=1}\norm{Bu}_2$.
   Since $\mathsf W_{t+1,A}^{(N)}$ has a nondegenerate Gaussian law, there is
@@ -2141,7 +2166,9 @@ $Y_0^{(N)}$.
   \end{equation*}
   and hence $Y_{t+1}^{(N)}=0$. Thus each visit to
   $\{K_t\leq K_\ast\}$ is followed by absorption with conditional probability
-  at least $p_\ast$. To control a failed attempt, start with
+  at least $p_\ast$.
+
+  We next control the return time after a failed attempt. Suppose that
   $K_0\leq K_\ast$ and define
   \begin{equation*}
     \kappa^+:=\inf\{t\geq1:K_t\leq K_\ast\}.
@@ -2149,7 +2176,7 @@ $Y_0^{(N)}$.
   After one step, $Y^{(N)}$ satisfies
   $K_1\leq M_1K_\ast+c_N$, where $M_1$ has law
   $(A/\sqrt N)\chi_N$. Hence
-  \cref{eq:rounded-gaussian-grid-entrance}, conditionally applied from time one
+  \cref{eq:rounded-gaussian-grid-entrance}, applied conditionally from time one
   with initial radius $\max\{2,K_1\}$, gives
   \begin{equation*}
     \Pp\left(
@@ -2174,8 +2201,8 @@ $Y_0^{(N)}$.
   \end{equation*}
   since $\chi_N$ has moments of every positive order.
 
-  The one-step absorption event above is independent of the starting point in
-  the fixed ball, and therefore
+  The small-operator-norm event depends only on the next Gaussian matrix and
+  gives, uniformly over all starting points in the fixed ball,
   \begin{equation*}
     \sup_{\varrho\in(0,1)}
     \sup_{K_0\leq K_\ast}
@@ -2193,10 +2220,10 @@ $Y_0^{(N)}$.
     \leq
     B^{s/s_0}(1-p_\ast)^{1-s/s_0}.
   \end{equation*}
-  The right-hand side converges to $1-p_\ast$ as $s\downarrow0$. We may thus
-  fix $s\in(0,s_0)$ sufficiently small that $q_s<1$.
+  The right-hand side converges to $1-p_\ast$ as $s\downarrow0$. We may
+  therefore fix $s\in(0,s_0)$ sufficiently small that $q_s<1$.
 
-  \emph{Step 3: }
+  \emph{Step 3: Exponential tail of the absorption time.}
   For $n\geq1$, set
   \begin{equation*}
     F_{s,n}:=
@@ -2212,8 +2239,8 @@ $Y_0^{(N)}$.
     \leq
     e^s+q_sF_{s,n}.
   \end{equation*}
-  Consequently $F_{s,n}\leq e^s/(1-q_s)$ uniformly in $n$. Monotone
-  convergence now shows that
+  Since $q_s<1$, it follows that $F_{s,n}\leq e^s/(1-q_s)$ uniformly in $n$.
+  Monotone convergence then shows that
   \begin{equation*}
     \sup_{\varrho\in(0,1)}
     \sup_{K_0\leq K_\ast}
@@ -2221,7 +2248,8 @@ $Y_0^{(N)}$.
     \leq
     \frac{e^s}{1-q_s}<\infty.
   \end{equation*}
-  Markov's inequality gives $C_0<\infty$ and $c_0>0$ such that, uniformly in
+  Markov's inequality gives constants $C_0<\infty$ and $c_0>0$ such that,
+  uniformly in
   $\varrho$ and deterministic starts with $K_0\leq K_\ast$,
   \begin{equation}\label{eq:rounded-gaussian-small-ball-absorption-tail}
     \Pp\left(\tau_\varrho^{(N)}>u\right)
@@ -2241,7 +2269,7 @@ $Y_0^{(N)}$.
     \left(c_2+C_0\right)e^{-\frac12\min\{c_3,c_0\}r}.
   \end{equation*}
   After increasing the prefactor and the coefficient of $\log K$, this is
-  \cref{eq:rounded-gaussian-final-absorption}.
+  \cref{eq:rounded-gaussian-final-absorption}. This completes the proof.
 \end{proof}
 
 \subsection{Proof of the cutoff theorem}
@@ -2252,7 +2280,7 @@ $Y_0^{(N)}$.
   $t_\varrho:=t_\varrho(a)$. By \cref{eq:tv-absorption}, it is enough to prove
   $\Pp(\tau_\varrho^{(N)}>t_\varrho)\to\Phi_{\mathrm G}(-a)$.
 
-  \emph{Step 1: }
+  \emph{Step 1: Coupling and threshold preparation.}
   Since $L_\varrho=\ell_\varrho+\log R_0$ and $a$ is fixed,
   \cref{eq:rounded-gaussian-cutoff-scale} gives
   $t_\varrho=O(\ell_\varrho)$. Choose $C_0<\infty$ such that, for all
@@ -2291,7 +2319,7 @@ $Y_0^{(N)}$.
   \end{equation}
   as $\varrho\downarrow0$.
 
-  \emph{Step 2: The lower bound.}
+  \emph{Step 2: Lower bound from the inner threshold.}
   On $\{\tau_\varrho^{(N)}\leq t_\varrho\}\cap\mathcal G_\varrho$,
   absorption gives $Y_{\tau_\varrho^{(N)}}^{(N)}=0$, while
   $\tau_\varrho^{(N)}\leq t_\varrho\leq T_\varrho$. Hence
@@ -2309,7 +2337,7 @@ $Y_0^{(N)}$.
   where we used
   \cref{eq:rounded-gaussian-cutoff-good-coupling} in the last estimate.
 
-  \emph{Step 3: The upper bound.}
+  \emph{Step 3: Upper bound from the outer threshold and final absorption.}
   Let $c_{\mathrm{abs}}>0$ and $C_{\mathrm{abs}}<\infty$ be constants for
   which \cref{eq:rounded-gaussian-final-absorption} holds. Choose
   $B>C_{\mathrm{abs}}(p+3)$ and set
@@ -2392,7 +2420,7 @@ $Y_0^{(N)}$.
     \label{eq:rounded-gaussian-cutoff-upper-bound}
   \end{align}
 
-  \emph{Step 4: The profile.}
+  \emph{Step 4: Identification of the profile and cutoff window.}
   By the level calculations in Step~1, the conclusion of
   \cref{eq:rounded-gaussian-cutoff-thresholds} also holds for
   $\Theta_\varrho^+$ at $t_\varrho-h_\varrho$, because
@@ -2518,11 +2546,10 @@ $A<A_{\mathrm{lat}}$ means that $L_A(h)<h$ for every $h>0$.
 \end{lemma}
 
 \begin{proof}
-  For every
-  $\alpha>0$, $m(\alpha)>0$, since
+  \emph{Step 1: Endpoint behavior of $m$.}
+  For every $\alpha>0$, we have $m(\alpha)>0$, since
   $\Pp(\abs{\alpha G}>1/2)>0$. The map $\alpha\mapsto m(\alpha)$ is
-  continuous on $(0,\infty)$ by dominated convergence on compact
-  $\alpha$-intervals: if $\alpha\leq R$, then
+  continuous on $(0,\infty)$. Indeed, if $0<\alpha\leq R$, then
   \begin{equation*}
     Q_1(\alpha G)^2
     \leq
@@ -2530,7 +2557,8 @@ $A<A_{\mathrm{lat}}$ means that $L_A(h)<h$ for every $h>0$.
     \leq
     (R\abs G+\tfrac12)^2 .
   \end{equation*}
-  Since $Q_1(u)=0$ on $\{\abs u\leq1/2\}$ and
+  Thus continuity follows by dominated convergence. Near the origin,
+  $Q_1(u)=0$ on $\{\abs u\leq1/2\}$ and
   $\abs{Q_1(u)}\leq \abs u+1/2\leq2\abs u$ on
   $\{\abs u>1/2\}$,
   \begin{equation}\label{eq:subcritical-lattice-small-alpha}
@@ -2543,7 +2571,7 @@ $A<A_{\mathrm{lat}}$ means that $L_A(h)<h$ for every $h>0$.
     \right]
     \xrightarrow[\alpha\downarrow0]{}0 .
   \end{equation}
-  The bound $\abs{Q_1(u)-u}\leq1/2$ gives
+  At infinity, the bound $\abs{Q_1(u)-u}\leq1/2$ gives
   $Q_1(\alpha G)/\alpha\to G$ pointwise and
   \begin{equation*}
     \left(\frac{\abs{Q_1(\alpha G)}}{\alpha}\right)^2
@@ -2566,16 +2594,16 @@ $A<A_{\mathrm{lat}}$ means that $L_A(h)<h$ for every $h>0$.
     1 .
   \end{equation}
 
+  \emph{Step 2: The threshold and uniform contraction.}
   It follows from \cref{eq:subcritical-lattice-small-alpha} that
   $\alpha^2/m(\alpha)\to\infty$ as $\alpha\downarrow0$, while
   \cref{eq:subcritical-lattice-large-alpha} gives
   $\alpha^2/m(\alpha)\to1$ as $\alpha\to\infty$. Since
-  $\alpha^2/m(\alpha)$ is continuous and positive on $(0,\infty)$, these
-  two endpoint limits imply that its infimum is positive: outside a compact
-  subinterval of $(0,\infty)$ the ratio is bounded below, while on that
-  compact subinterval it has a positive minimum. Hence the threshold
-  $A_{\mathrm{lat}}$ belongs to $(0,1]$. The upper bound is
-  strict. Indeed, for $\alpha=1/2$,
+  $\alpha^2/m(\alpha)$ is continuous and positive, it is bounded below away
+  from zero outside a compact subinterval of $(0,\infty)$ and attains a
+  positive minimum on that subinterval. Hence
+  $A_{\mathrm{lat}}\in(0,1]$. To prove the strict upper bound, take
+  $\alpha=1/2$. Then
   \begin{equation*}
     Q_1(\alpha G)^2\geq1
     \quad\mbox{on }\{\abs G>1\},
@@ -2585,12 +2613,10 @@ $A<A_{\mathrm{lat}}$ means that $L_A(h)<h$ for every $h>0$.
     m(1/2)\geq\Pp(\abs G>1)>\frac14.
   \end{equation*}
   The final strict inequality can be checked by an elementary Gaussian tail
-  bound.
-  Therefore
+  bound. Therefore,
   $A_{\mathrm{lat}}^2\leq (1/2)^2/m(1/2)<1$.
 
-  By the
-  change of variables $\alpha=A\sqrt h$,
+  By the change of variables $\alpha=A\sqrt h$,
   \begin{equation*}
     \frac{L_A(h)}h
     =
@@ -2598,7 +2624,9 @@ $A<A_{\mathrm{lat}}$ means that $L_A(h)<h$ for every $h>0$.
     \qquad h>0 .
   \end{equation*}
   Thus $A<A_{\mathrm{lat}}$ implies $L_A(h)<h$ for every $h>0$.
-  The same endpoint estimates give
+  Moreover,
+  \cref{eq:subcritical-lattice-small-alpha,eq:subcritical-lattice-large-alpha}
+  give
   \begin{equation*}
     \frac{L_A(h)}h\to0
     \quad\mbox{as }h\downarrow0,
@@ -2608,9 +2636,11 @@ $A<A_{\mathrm{lat}}$ means that $L_A(h)<h$ for every $h>0$.
   \end{equation*}
   Since $h\mapsto L_A(h)/h$ is continuous on $(0,\infty)$, choose
   $0<r<R<\infty$ so that the ratio is bounded away from one on
-  $(0,r]\cup[R,\infty)$. Compactness gives the same bound on $[r,R]$, and hence
+  $(0,r]\cup[R,\infty)$. On $[r,R]$, the strict pointwise inequality and
+  compactness give the same bound. This proves
   \cref{eq:subcritical-uniform-lattice-contraction}.
 
+  \emph{Step 3: Comparison with the exact rounded map.}
   The inequality $\abs{\tanh z}\leq\abs z$ and
   \cref{eq:subcritical-rounding-monotonicity} give, pointwise in $G$,
   \begin{equation*}
@@ -3178,7 +3208,7 @@ a window of order one. In particular, for every fixed $\varepsilon\in(0,1)$,
 \end{equation*}
 
 \begin{proof}
-  \emph{Step 1: }
+  \emph{Step 1: Concentration up to the terminal time.}
   Put $a_N:=(\log N)^{-1}$ and $\bar T_N:=\bar t_N+1$.
   By \cref{lem:subcritical-lattice-regimes,eq:subcritical-exact-lattice-map-contraction},
   \begin{equation*}
@@ -3227,7 +3257,7 @@ a window of order one. In particular, for every fixed $\varepsilon\in(0,1)$,
   this is equivalent to
   $\Pp(\tau_{\varrho}^{(N)}>\bar t_N-1)\to1$.
 
-  \emph{Step 3: }
+  \emph{Step 3: The one-step absorption criterion.}
   Define
   \begin{equation}\label{eq:subcritical-exact-round-to-zero-threshold}
     b_\varrho:=\varrho^{-1}\arctanh(\varrho/2).
@@ -3247,7 +3277,7 @@ a window of order one. In particular, for every fixed $\varepsilon\in(0,1)$,
     \leq b_\varrho .
   \end{equation}
 
-  \emph{Step 4: }
+  \emph{Step 4: Entrance below the terminal scale.}
   Set
   \begin{equation*}
     s_N:=\bar t_N+1=\bar T_N.
@@ -3359,9 +3389,12 @@ a window of order one. In particular, for every fixed $\varepsilon\in(0,1)$,
   to zero is
   \begin{equation*}
     2N\Pp\left(G>\frac{b_\varrho\sqrt{\log N}}A\right)
-    \asymp
+    \sim
+    \frac{2A}{b_\varrho\sqrt{2\pi}}
     \frac{N^{1-\kappa_{A,\varrho}}}{\sqrt{\log N}}.
   \end{equation*}
+  Here $\sim$ denotes asymptotic equivalence as $N\to\infty$. The relation
+  follows from the Gaussian Mills ratio.
   Thus, when $\kappa_{A,\varrho}<1$, entrance below $(\log N)^{-1}$ does not
   uniformly imply absorption in the next step. One further deterministic
   iterate is $o((\log N)^{-1})$, and the following update absorbs with
@@ -3654,9 +3687,8 @@ in $[0,M_\varrho]$. Hence Hoeffding's inequality gives, for every $u>0$,
     \right)
     \to1 .
   \end{equation}
-  For each fixed $N$ and each deterministic choice of $Y_0^{(N)}$ in the
-  finite rounded state space, the absorption time
-  $\tau_\varrho^{(N)}$ is nevertheless finite almost surely.
+  For every fixed $N$, however, the chain is eventually absorbed almost surely
+  from every deterministic initial state.
 \end{theorem}
 
 \begin{proof}
@@ -3938,20 +3970,27 @@ Let $q_0\in(0,1]$ with $q_0\neq q_\ast$, and let $C(q_0)$ be the nonzero
 constant in \cref{eq:gaussian-deterministic-asymptotic}.
 By \cref{eq:gaussian-deterministic-asymptotic}, the deterministic bias decays
 like $C(q_0)\mu_A^t$. The cutoff scale is therefore the time at which this
-bias reaches the $N^{-1/2}$ fluctuation scale, and the resulting center and
-integer times are given by
-\cref{eq:gaussian-cutoff-time,eq:gaussian-integer-cutoff-time}.
-The proof of \cref{thm:gaussian-process-cutoff} is given in
-\cref{subsec:gaussian-cutoff-proof}.
+bias reaches the $N^{-1/2}$ fluctuation scale. Recall from
+\cref{eq:gaussian-cutoff-time,eq:gaussian-integer-cutoff-time} that
+\begin{equation*}
+  t_N(q_0)
+  :=
+  \frac{\frac12\log N+\log\abs{C(q_0)}}{\abs{\log\mu_A}},
+  \qquad
+  n_N(c)
+  :=
+  \max\{0,\lfloor t_N(q_0)+c\rfloor\} .
+\end{equation*}
 
 \subsection{Localization of \texorpdfstring{$\nu_{A,N}$}{nu(A,N)} near
 \texorpdfstring{$q_\ast$}{q*}}
 \label{subsec:gaussian-process-cutoff}
 
-We prove exponential localization of $\nu_{A,N}$ in a stable interval around
-$q_\ast$. Negative moments control the mass near zero, while deterministic
-entrance and concentration control the remaining radii. The estimates are proved in
-\cref{app:supercritical-cutoff-estimates}.
+We prove that $\nu_{A,N}$ assigns exponentially small mass to the complement
+of a compact interval around $q_\ast$ on which $V_A$ is contractive. Negative
+moments control a neighborhood of zero. Away from zero, uniform deterministic
+entrance and fixed-time concentration give the localization estimate. The
+auxiliary estimates are proved in \cref{app:supercritical-cutoff-estimates}.
 
 \begin{assumption}[Macroscopic initial radius]
 \label{ass:gaussian-stable-selected}
@@ -4966,8 +5005,8 @@ multiple of $\bar\sigma_N$. A related formulation is given in
     \sum_{k=0}^{n-1}
     \Ee\Psi_{y-S_k}(\mathbf 1).
   \end{equation*}
-  We claim that, for this fixed $y$, the terminal term tends to zero as
-  $n\to\infty$. Since
+  We claim that, for this fixed $y$,
+  $\Ee h_{y-S_n}\to0$ as $n\to\infty$. Since
   $\widehat m_{A,N}>0$, we have $S_n\to\infty$ almost surely. Fix $L<\infty$.
   On the half-line $(-\infty,L]$, local boundedness together with
   the first condition in \cref{eq:nd-renewal-boundary-conditions} gives
@@ -4999,8 +5038,8 @@ multiple of $\bar\sigma_N$. A related formulation is given in
   \begin{equation*}
     \Ee\norm{\Hcal_{y-S_n}}_{\mathrm{TV}}\to0 .
   \end{equation*}
-  Since $\norm{\mathbf 1}_\infty=1$,
-  the signed terminal term is controlled by this total variation bound,
+  Since $\norm{\mathbf 1}_\infty=1$, this total variation bound also controls
+  $\Ee h_{y-S_n}$:
   \begin{equation*}
     \abs{\Ee h_{y-S_n}}
     =
@@ -5062,15 +5101,6 @@ multiple of $\bar\sigma_N$. A related formulation is given in
   $\Psi_y(\varphi)\to0$ and $\Psi_y(\mathbf 1)\to0$, yields
   \cref{eq:nd-abstract-renewal-limit}.
 \end{proof}
-
-\begin{remark}\label{rem:nd-renewal-assumptions}
-  The simplification in \cref{lem:nd-gaussian-transfer} is special to the
-  Gaussian ensemble in \cref{eq:gaussian-weights}. For a non-isotropic matrix
-  ensemble the direction would not be refreshed from $\bar\sigma_N$ in one step,
-  and the analogue of \cref{lem:nd-gaussian-renewal} would have to be replaced by
-  a genuine Markov renewal theorem for products of random matrices
-  \cite{kesten1973} and \cite{buraczewski-damek-mikosch2016}.
-\end{remark}
 
 \subsection{The nonlinear renewal equation}
 \label{subsec:nd-nonlinear-renewal}
@@ -5331,19 +5361,16 @@ updates.
   \end{equation*}
   For each continuous test function $\varphi$ on $\mathbb S^{N-1}$, define
   \begin{equation}\label{eq:nd-forcing-definition}
-    \begin{split}
     \Psi_y^\pi(\varphi)
     :=
     e^{\beta_{A,N}y}
     \Ee\Bigl[
-      &\varphi(\Theta_+)
+      \varphi(\Theta_+)
       \one_{\{Y+\Delta+\eta>y\}}
-      \\
-      &-
+      -
       \varphi(\Theta_0)
       \one_{\{Y+\Delta>y\}}
     \Bigr].
-    \end{split}
   \end{equation}
   This bounded linear functional on $C(\mathbb S^{N-1})$ defines a finite
   signed measure, also denoted by $\Psi_y^\pi$.
@@ -6266,7 +6293,7 @@ $Z^{(N)}$ and $(q_{t,N})_{t\geq0}$.
     \frac{C^N N^{N/2}}{\Gamma(p)}
     \int_N^\infty u^{p-1-N/2}\,\mathrm{d}u
     \\
-    \leq
+    &\leq
     C_\alpha^N
     \frac{N^p}{\Gamma(p+1)}.
   \end{align*}
@@ -7152,10 +7179,7 @@ $Z^{(N)}$ and $(q_{t,N})_{t\geq0}$.
 \end{proof}
 
 \section*{Acknowledgements}
-The author used OpenAI's ChatGPT and Anthropic's Claude to draft
-and edit the manuscript and to develop the accompanying Lean formalization.
-The author supervised this work, reviewed the resulting manuscript and
-formalization, and takes responsibility for their contents.
+The author used OpenAI's ChatGPT and Anthropic's Claude in preparing this manuscript. The author takes full responsibility for its contents.
 
 \bibliographystyle{alpha}
 \bibliography{refs}
